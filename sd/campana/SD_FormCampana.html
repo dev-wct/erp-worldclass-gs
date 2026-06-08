@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <title>Registrar Nueva Campaña</title>
+    <?!= include('core/CORE_DesignSystem'); ?>
+  </head>
+  <body>
+    <div class="sap-container">
+      <div class="sap-card">
+        <div class="sap-card-header">
+          <div>
+            <div class="sap-card-title">📢 Registrar Nueva Campaña</div>
+            <div class="sap-card-subtitle">SD - Campañas de Ventas de Membresías VIP</div>
+          </div>
+        </div>
+
+        <div class="sap-card-content">
+          <div id="error" class="sap-message-strip sap-message-strip-error" style="display: none;"></div>
+
+          <form id="campForm" onsubmit="guardar(event)">
+            <div class="sap-form-grid">
+              
+              <div class="sap-form-group full-width">
+                <label class="sap-label required" for="nombre">Nombre de la Campaña</label>
+                <input type="text" class="sap-input" id="nombre" placeholder="Ej. Membresías VIP Verano" required>
+              </div>
+
+              <div class="sap-form-group">
+                <label class="sap-label required" for="fecha_inicio">Fecha de Inicio</label>
+                <input type="date" class="sap-input" id="fecha_inicio" required>
+              </div>
+              
+              <div class="sap-form-group">
+                <label class="sap-label required" for="fecha_fin">Fecha de Fin</label>
+                <input type="date" class="sap-input" id="fecha_fin" required>
+              </div>
+
+              <div class="sap-form-group">
+                <label class="sap-label required" for="objetivo_citas">Objetivo de Citas</label>
+                <input type="number" class="sap-input" id="objetivo_citas" min="0" placeholder="Ej. 100" required>
+              </div>
+              
+              <div class="sap-form-group">
+                <label class="sap-label required" for="estado">Estado Inicial</label>
+                <select id="estado" class="sap-select">
+                  <option value="PLANIFICADA">Planificada</option>
+                  <option value="ACTIVA" selected>Activa</option>
+                  <option value="FINALIZADA">Finalizada</option>
+                </select>
+              </div>
+
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--sap-border-light);">
+              <button type="button" class="sap-btn" onclick="google.script.host.close()">Cancelar</button>
+              <button type="submit" id="btnGuardar" class="sap-btn sap-btn-emphasized">💾 Registrar Campaña</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function guardar(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('btnGuardar');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
+
+        const data = {
+          nombre:         document.getElementById('nombre').value,
+          fecha_inicio:   document.getElementById('fecha_inicio').value,
+          fecha_fin:      document.getElementById('fecha_fin').value,
+          objetivo_citas: document.getElementById('objetivo_citas').value,
+          estado:         document.getElementById('estado').value
+        };
+
+        const errorDiv = document.getElementById('error');
+        errorDiv.style.display = 'none';
+
+        google.script.run
+          .withSuccessHandler(res => {
+            btn.disabled = false;
+            btn.innerText = '💾 Registrar Campaña';
+
+            if (res.ok) {
+              google.script.host.close();
+            } else {
+              mostrarError(res.errores.join('\n'));
+            }
+          })
+          .withFailureHandler(err => {
+            btn.disabled = false;
+            btn.innerText = '💾 Registrar Campaña';
+            mostrarError(err.message);
+          })
+          .apiGuardarCampana(data);
+      }
+
+      function mostrarError(msg) {
+        const box = document.getElementById('error');
+        box.innerText = msg;
+        box.style.display = 'flex';
+      }
+    </script>
+  </body>
+</html>

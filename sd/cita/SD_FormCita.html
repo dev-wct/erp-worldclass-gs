@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <title>Nueva Cita Agendada</title>
+    <?!= include('core/CORE_DesignSystem'); ?>
+  </head>
+  <body>
+    <div class="sap-container">
+      <div class="sap-card">
+        <div class="sap-card-header">
+          <div>
+            <div class="sap-card-title">🔗 Agendar Cita VIP</div>
+            <div class="sap-card-subtitle">SD - Programación de Presentación VIP en Restaurantes Asociados</div>
+          </div>
+        </div>
+
+        <div class="sap-card-content">
+          <div id="error" class="sap-message-strip sap-message-strip-error" style="display: none;"></div>
+
+          <form id="citaForm" onsubmit="guardar(event)">
+            <div class="sap-form-grid">
+              
+              <div class="sap-form-group full-width">
+                <label class="sap-label required" for="id_lead">Lead (Prospecto)</label>
+                <select id="id_lead" class="sap-select" required>
+                  <option value="">Cargando prospectos...</option>
+                </select>
+              </div>
+
+              <div class="sap-form-group full-width">
+                <label class="sap-label required" for="id_empleado_agendo">Agente que Agenda</label>
+                <select id="id_empleado_agendo" class="sap-select" required>
+                  <option value="">Cargando agentes...</option>
+                </select>
+              </div>
+
+              <div class="sap-form-group full-width">
+                <label class="sap-label required" for="restaurante">Restaurante / Lugar de Reunión</label>
+                <input type="text" class="sap-input" id="restaurante" placeholder="Ej. Portal del Ángel, Las Margaritas" required>
+              </div>
+
+              <div class="sap-form-group">
+                <label class="sap-label required" for="fecha_cita">Fecha de la Cita</label>
+                <input type="date" class="sap-input" id="fecha_cita" required>
+              </div>
+              
+              <div class="sap-form-group">
+                <label class="sap-label required" for="hora_cita">Hora de la Cita</label>
+                <input type="time" class="sap-input" id="hora_cita" required>
+              </div>
+
+              <div class="sap-form-group full-width">
+                <label class="sap-label required" for="num_acompanantes">Número de Acompañantes</label>
+                <input type="number" class="sap-input" id="num_acompanantes" min="0" value="1" required>
+              </div>
+
+              <div class="sap-form-group full-width">
+                <label class="sap-label" for="notas">Notas Especiales / Comentarios</label>
+                <textarea id="notas" class="sap-textarea" placeholder="Ej. Solicita mesa en terraza, prefiere vino tinto..."></textarea>
+              </div>
+
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--sap-border-light);">
+              <button type="button" class="sap-btn" onclick="google.script.host.close()">Cancelar</button>
+              <button type="submit" id="btnGuardar" class="sap-btn sap-btn-emphasized">💾 Agendar Cita</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.onload = function() {
+        google.script.run
+          .withSuccessHandler(catalogos => {
+            const leadSel = document.getElementById('id_lead');
+            leadSel.innerHTML = '<option value="">-- Seleccionar Lead --</option>';
+            if (catalogos.leads && catalogos.leads.length > 0) {
+              catalogos.leads.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l.id;
+                opt.textContent = l.nombre;
+                leadSel.appendChild(opt);
+              });
+            } else {
+              leadSel.innerHTML = '<option value="">No hay leads elegibles (debe contactar o perfilar primero)</option>';
+            }
+
+            const empSel = document.getElementById('id_empleado_agendo');
+            empSel.innerHTML = '<option value="">-- Seleccionar Agente --</option>';
+            if (catalogos.empleados && catalogos.empleados.length > 0) {
+              catalogos.empleados.forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e.id;
+                opt.textContent = e.nombre;
+                empSel.appendChild(opt);
+              });
+            } else {
+              empSel.innerHTML = '<option value="">No hay agentes activos</option>';
+            }
+          })
+          .withFailureHandler(err => {
+            mostrarError('Error cargando catálogos: ' + err.message);
+          })
+          .apiGetCatalogosCita();
+      };
+
+      function guardar(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('btnGuardar');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
+
+        const data = {
+          id_lead:            document.getElementById('id_lead').value,
+          id_empleado_agendo: document.getElementById('id_empleado_agendo').value,
+          restaurante:        document.getElementById('restaurante').value,
+          fecha_cita:         document.getElementById('fecha_cita').value,
+          hora_cita:          document.getElementById('hora_cita').value,
+          num_acompanantes:   document.getElementById('num_acompanantes').value,
+          notas:              document.getElementById('notas').value
+        };
+
+        const errorDiv = document.getElementById('error');
+        errorDiv.style.display = 'none';
+
+        google.script.run
+          .withSuccessHandler(res => {
+            btn.disabled = false;
+            btn.innerText = '💾 Agendar Cita';
+
+            if (res.ok) {
+              google.script.host.close();
+            } else {
+              mostrarError(res.errores.join('\n'));
+            }
+          })
+          .withFailureHandler(err => {
+            btn.disabled = false;
+            btn.innerText = '💾 Agendar Cita';
+            mostrarError(err.message);
+          })
+          .apiGuardarCita(data);
+      }
+
+      function mostrarError(msg) {
+        const box = document.getElementById('error');
+        box.innerText = msg;
+        box.style.display = 'flex';
+      }
+    </script>
+  </body>
+</html>

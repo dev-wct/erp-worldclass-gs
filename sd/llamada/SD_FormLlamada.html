@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <title>Registrar Llamada</title>
+    <?!= include('core/CORE_DesignSystem'); ?>
+    <style>
+      /* Estilos específicos y complementarios del Timer con el Design System */
+      .timer-widget {
+        display: flex;
+        align-items: center;
+        gap: var(--sap-spacing-md);
+        background-color: var(--sap-bg-hover);
+        padding: var(--sap-spacing-md);
+        border-radius: var(--sap-border-radius-sm);
+        border: 1px dashed var(--sap-border-color);
+        margin-bottom: var(--sap-spacing-lg);
+        grid-column: 1 / -1;
+      }
+      .timer-display {
+        font-size: 24px;
+        font-weight: 700;
+        font-family: monospace;
+        color: var(--sap-text-main);
+        flex-grow: 1;
+        letter-spacing: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sap-container">
+      <div class="sap-card">
+        <div class="sap-card-header">
+          <div>
+            <div class="sap-card-title">📞 Registro de Llamada</div>
+            <div class="sap-card-subtitle">SD - Control y Registro Quincenal de Llamadas de Call Center</div>
+          </div>
+        </div>
+
+        <div class="sap-card-content">
+          <div id="error" class="sap-message-strip sap-message-strip-error" style="display: none;"></div>
+
+          <form id="callForm" onsubmit="guardar(event)">
+            <div class="sap-form-grid">
+              
+              <div class="sap-form-group full-width">
+                <label class="sap-label required" for="id_lead">Lead (Prospecto)</label>
+                <select id="id_lead" class="sap-select" required>
+                  <option value="">Cargando prospectos...</option>
+                </select>
+              </div>
+
+              <div class="sap-form-group full-width">
+                <label class="sap-label required" for="id_empleado">Agente de Call Center</label>
+                <select id="id_empleado" class="sap-select" required>
+                  <option value="">Cargando agentes...</option>
+                </select>
+              </div>
+
+              <!-- Timer VIP Widget -->
+              <div class="timer-widget">
+                <div class="timer-display" id="timerLabel">00:00</div>
+                <button type="button" class="sap-btn sap-btn-accept" id="btnTimer" onclick="toggleTimer()">Iniciar Llamada</button>
+              </div>
+
+              <div class="sap-form-group">
+                <label class="sap-label required" for="duracion_seg">Duración (segundos)</label>
+                <input type="number" class="sap-input" id="duracion_seg" min="0" value="0" required>
+              </div>
+              
+              <div class="sap-form-group">
+                <label class="sap-label required" for="resultado">Resultado</label>
+                <select id="resultado" class="sap-select" required>
+                  <option value="NO CONTESTO">No Contestó</option>
+                  <option value="OCUPADO">Ocupado</option>
+                  <option value="CONTACTADO">Contactado</option>
+                  <option value="INTERESADO">Interesado</option>
+                  <option value="CITA AGENDADA">Cita Agendada</option>
+                  <option value="NO INTERESADO">No Interesado</option>
+                  <option value="TELEFONO INVALIDO">Teléfono Inválido</option>
+                </select>
+              </div>
+
+              <div class="sap-form-group full-width">
+                <label class="sap-label" for="notas">Notas de la Llamada</label>
+                <textarea id="notas" class="sap-textarea" placeholder="Detalles de la conversación, objeciones o acuerdos..."></textarea>
+              </div>
+
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--sap-border-light);">
+              <button type="button" class="sap-btn" onclick="google.script.host.close()">Cancelar</button>
+              <button type="submit" id="btnGuardar" class="sap-btn sap-btn-emphasized">💾 Guardar Llamada</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let timerInterval = null;
+      let totalSeconds = 0;
+
+      window.onload = function() {
+        google.script.run
+          .withSuccessHandler(catalogos => {
+            const leadSel = document.getElementById('id_lead');
+            leadSel.innerHTML = '<option value="">-- Seleccionar Lead --</option>';
+            if (catalogos.leads && catalogos.leads.length > 0) {
+              catalogos.leads.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l.id;
+                opt.textContent = l.nombre;
+                leadSel.appendChild(opt);
+              });
+            } else {
+              leadSel.innerHTML = '<option value="">No hay leads activos</option>';
+            }
+
+            const empSel = document.getElementById('id_empleado');
+            empSel.innerHTML = '<option value="">-- Seleccionar Agente --</option>';
+            if (catalogos.empleados && catalogos.empleados.length > 0) {
+              catalogos.empleados.forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e.id;
+                opt.textContent = e.nombre;
+                empSel.appendChild(opt);
+              });
+            } else {
+              empSel.innerHTML = '<option value="">No hay agentes activos</option>';
+            }
+          })
+          .withFailureHandler(err => {
+            mostrarError('Error cargando catálogos: ' + err.message);
+          })
+          .apiGetCatalogosLlamada();
+      };
+
+      function toggleTimer() {
+        const btn = document.getElementById('btnTimer');
+        const input = document.getElementById('duracion_seg');
+        
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          btn.innerText = 'Iniciar Llamada';
+          btn.className = 'sap-btn sap-btn-accept';
+          input.value = totalSeconds;
+        } else {
+          totalSeconds = 0;
+          document.getElementById('timerLabel').innerText = '00:00';
+          btn.innerText = 'Finalizar Llamada';
+          btn.className = 'sap-btn sap-btn-reject';
+          timerInterval = setInterval(() => {
+            totalSeconds++;
+            const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+            const secs = String(totalSeconds % 60).padStart(2, '0');
+            document.getElementById('timerLabel').innerText = `${mins}:${secs}`;
+            input.value = totalSeconds;
+          }, 1000);
+        }
+      }
+
+      function guardar(e) {
+        e.preventDefault();
+        
+        if (timerInterval) {
+          toggleTimer();
+        }
+
+        const btn = document.getElementById('btnGuardar');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
+
+        const data = {
+          id_lead:      document.getElementById('id_lead').value,
+          id_empleado:  document.getElementById('id_empleado').value,
+          duracion_seg: document.getElementById('duracion_seg').value,
+          resultado:    document.getElementById('resultado').value,
+          notas:        document.getElementById('notas').value
+        };
+
+        const errorDiv = document.getElementById('error');
+        errorDiv.style.display = 'none';
+
+        google.script.run
+          .withSuccessHandler(res => {
+            btn.disabled = false;
+            btn.innerText = '💾 Guardar Llamada';
+
+            if (res.ok) {
+              google.script.host.close();
+            } else {
+              mostrarError(res.errores.join('\n'));
+            }
+          })
+          .withFailureHandler(err => {
+            btn.disabled = false;
+            btn.innerText = '💾 Guardar Llamada';
+            mostrarError(err.message);
+          })
+          .apiGuardarLlamada(data);
+      }
+
+      function mostrarError(msg) {
+        const box = document.getElementById('error');
+        box.innerText = msg;
+        box.style.display = 'flex';
+      }
+    </script>
+  </body>
+</html>

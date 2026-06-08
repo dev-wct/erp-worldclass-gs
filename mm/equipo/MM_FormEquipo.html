@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrar Equipo</title>
+  <?!= include('core/CORE_DesignSystem'); ?>
+</head>
+<body>
+
+<div class="sap-container">
+  <div class="sap-card">
+    <div class="sap-card-header">
+      <div>
+        <div class="sap-card-title">💻 Registrar Equipo Informático</div>
+        <div class="sap-card-subtitle">MM - Catálogo de Activos en Inventario</div>
+      </div>
+    </div>
+    
+    <div class="sap-card-content">
+      <div id="msg" class="sap-message-strip" style="display: none;"></div>
+      
+      <form id="equipoForm" onsubmit="guardar(event)">
+        <div class="sap-form-grid">
+          
+          <!-- SECCIÓN: IDENTIFICACIÓN -->
+          <div class="sap-section-title">Identificación del Activo</div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label">Código Interno</label>
+            <input type="text" id="codigo_interno" class="sap-input" style="background:#f1f5f9; cursor:not-allowed;" readonly placeholder="Cargando secuencial...">
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label required">Tipo de Equipo</label>
+            <select id="id_tipo" class="sap-select" required>
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label required">Marca</label>
+            <select id="id_marca" class="sap-select" required>
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label required">Modelo</label>
+            <input type="text" id="modelo" class="sap-input" placeholder="Ej: Latitude 5420" required>
+          </div>
+    
+          <div class="sap-form-group full-width">
+            <label class="sap-label required">Número de Serie (Serial)</label>
+            <input type="text" id="serial" class="sap-input" placeholder="Ej: S1N2G3H45" style="text-transform: uppercase;" required>
+          </div>
+    
+          <!-- SECCIÓN: PROPIEDAD Y ESTADO -->
+          <div class="sap-section-title">Propiedad e Inventario</div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label required">Empresa Propietaria</label>
+            <select id="id_empresa" class="sap-select" required>
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label required">Estado del Activo</label>
+            <select id="id_estado" class="sap-select" required>
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+    
+          <!-- SECCIÓN: ADQUISICIÓN Y GARANTÍA -->
+          <div class="sap-section-title">Adquisición e Historial</div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label">Fecha de Compra</label>
+            <input type="date" id="fecha_compra" class="sap-input">
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label">Garantía Vence</label>
+            <input type="date" id="garantia_hasta" class="sap-input">
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label">Valor de Compra (GTQ)</label>
+            <input type="number" id="valor_compra" class="sap-input" placeholder="0.00" min="0" step="0.01">
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label">Enlace de Factura (Drive)</label>
+            <input type="url" id="link_factura" class="sap-input" placeholder="https://drive.google.com/...">
+          </div>
+    
+          <div class="sap-form-group full-width">
+            <label class="sap-label">Fotografía del Equipo (Drive)</label>
+            <input type="url" id="link_foto" class="sap-input" placeholder="https://drive.google.com/...">
+          </div>
+    
+          <!-- SECCIÓN: OBSERVACIONES -->
+          <div class="sap-section-title">Observaciones</div>
+    
+          <div class="sap-form-group full-width">
+            <textarea id="observaciones" class="sap-textarea" rows="3" placeholder="Notas adicionales sobre el equipo (ej. cargador entregado, estado estético)..."></textarea>
+          </div>
+    
+        </div>
+    
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--sap-border-light);">
+          <button type="button" class="sap-btn" onclick="google.script.host.close()">Cancelar</button>
+          <button type="submit" class="sap-btn sap-btn-emphasized" id="saveBtn">💾 Guardar Equipo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.onload = function() {
+    google.script.run
+      .withSuccessHandler(cargarFormulario)
+      .withFailureHandler(onFatalError)
+      .apiGetCatalogosEquipo();
+  };
+
+  function cargarFormulario(data) {
+    llenarSelect('id_tipo', data.tipos, 'id_tipo', 'nombre');
+    llenarSelect('id_marca', data.marcas, 'id_marca', 'nombre');
+    llenarSelect('id_empresa', data.empresas, 'id_empresa', 'nombre');
+    llenarSelect('id_estado', data.estados, 'id_estado', 'nombre');
+    
+    const nextCode = 'EQ-' + String(data.nextId).padStart(4, '0');
+    document.getElementById('codigo_interno').value = nextCode;
+    
+    const selectEstado = document.getElementById('id_estado');
+    for (let i = 0; i < selectEstado.options.length; i++) {
+      if (selectEstado.options[i].text.includes('bodega')) {
+        selectEstado.selectedIndex = i;
+        break;
+      }
+    }
+  }
+
+  function llenarSelect(id, items, valueField, textField) {
+    const sel = document.getElementById(id);
+    items.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item[valueField];
+      opt.textContent = item[textField];
+      sel.appendChild(opt);
+    });
+  }
+
+  function guardar(e) {
+    e.preventDefault();
+    
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
+    hideMsg();
+
+    const data = {
+      id_tipo:        document.getElementById('id_tipo').value,
+      id_marca:       document.getElementById('id_marca').value,
+      modelo:         document.getElementById('modelo').value,
+      serial:         document.getElementById('serial').value,
+      id_empresa:     document.getElementById('id_empresa').value,
+      id_estado:      document.getElementById('id_estado').value,
+      fecha_compra:   document.getElementById('fecha_compra').value,
+      garantia_hasta: document.getElementById('garantia_hasta').value,
+      valor_compra:   document.getElementById('valor_compra').value,
+      link_factura:   document.getElementById('link_factura').value,
+      link_foto:      document.getElementById('link_foto').value,
+      observaciones:  document.getElementById('observaciones').value
+    };
+
+    google.script.run
+      .withSuccessHandler(onSuccess)
+      .withFailureHandler(onFailure)
+      .apiGuardarEquipo(data);
+  }
+
+  function onSuccess(res) {
+    const saveBtn = document.getElementById('saveBtn');
+    if (res.ok) {
+      showMsg('sap-message-strip-success', '✔ ' + res.mensaje);
+      setTimeout(() => {
+        google.script.host.close();
+      }, 1500);
+    } else {
+      showMsg('sap-message-strip-error', '⚠️ ' + res.errores.join('\n'));
+      saveBtn.disabled = false;
+      saveBtn.innerText = '💾 Guardar Equipo';
+    }
+  }
+
+  function onFailure(err) {
+    showMsg('sap-message-strip-error', '⚠️ Error del Sistema: ' + err.message);
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = false;
+    saveBtn.innerText = '💾 Guardar Equipo';
+  }
+
+  function onFatalError(err) {
+    showMsg('sap-message-strip-error', '⚠️ Error cargando catálogos: ' + err.message);
+  }
+
+  function showMsg(type, text) {
+    const el = document.getElementById('msg');
+    el.className = 'sap-message-strip ' + type;
+    el.innerText = text;
+    el.style.display = 'flex';
+  }
+
+  function hideMsg() {
+    document.getElementById('msg').style.display = 'none';
+  }
+</script>
+</body>
+</html>

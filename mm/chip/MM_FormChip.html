@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrar Chip SIM</title>
+  <?!= include('core/CORE_DesignSystem'); ?>
+</head>
+<body>
+
+<div class="sap-container">
+  <div class="sap-card">
+    <div class="sap-card-header">
+      <div>
+        <div class="sap-card-title">📱 Registrar Chip SIM (Línea)</div>
+        <div class="sap-card-subtitle">MM - Control de Líneas Telefónicas Corporativas</div>
+      </div>
+    </div>
+    
+    <div class="sap-card-content">
+      <div id="msg" class="sap-message-strip" style="display: none;"></div>
+      
+      <form id="chipForm" onsubmit="guardar(event)">
+        <div class="sap-form-grid">
+          
+          <!-- SECCIÓN: IDENTIFICACIÓN -->
+          <div class="sap-section-title">Identificación de la Línea</div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label">Código Interno</label>
+            <input type="text" id="codigo_interno" class="sap-input" style="background:#f1f5f9; cursor:not-allowed;" readonly placeholder="Cargando secuencial...">
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label required">Número de Teléfono</label>
+            <input type="tel" id="numero" class="sap-input" placeholder="Ej: 50255551234" required>
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label required">Operadora</label>
+            <select id="id_operadora" class="sap-select" required>
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label">Plan Contratado</label>
+            <input type="text" id="plan" class="sap-input" placeholder="Ej: Corporativo Sin Límites">
+          </div>
+    
+          <!-- SECCIÓN: PROPIEDAD Y COSTO -->
+          <div class="sap-section-title">Propiedad y Costos</div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label required">Empresa Propietaria</label>
+            <select id="id_empresa" class="sap-select" required>
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label required">Estado de la Línea</label>
+            <select id="id_estado" class="sap-select" required>
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label required">Costo Mensual (GTQ)</label>
+            <input type="number" id="costo_mensual" class="sap-input" placeholder="0.00" min="0" step="0.01" oninput="actualizarPreviewCosto()" required>
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label">Fecha de Activación</label>
+            <input type="date" id="fecha_activacion" class="sap-input">
+          </div>
+    
+          <div id="costo_preview" class="sap-message-strip sap-message-strip-warning full-width" style="display: none; grid-column: 1 / -1; margin-bottom: 0;"></div>
+    
+          <!-- SECCIÓN: OBSERVACIONES -->
+          <div class="sap-section-title">Observaciones</div>
+    
+          <div class="sap-form-group full-width">
+            <textarea id="observaciones" class="sap-textarea" rows="3" placeholder="Notas adicionales sobre la SIM card..."></textarea>
+          </div>
+    
+        </div>
+    
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--sap-border-light);">
+          <button type="button" class="sap-btn" onclick="google.script.host.close()">Cancelar</button>
+          <button type="submit" class="sap-btn sap-btn-emphasized" id="saveBtn">💾 Guardar Chip</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.onload = function() {
+    google.script.run
+      .withSuccessHandler(cargarFormulario)
+      .withFailureHandler(onFatalError)
+      .apiGetCatalogosChip();
+  };
+
+  function cargarFormulario(data) {
+    llenarSelect('id_operadora', data.operadoras, 'id_operadora', 'nombre');
+    llenarSelect('id_empresa', data.empresas, 'id_empresa', 'nombre');
+    llenarSelect('id_estado', data.estados, 'id_estado', 'nombre');
+    
+    const nextCode = 'SIM-' + String(data.nextId).padStart(4, '0');
+    document.getElementById('codigo_interno').value = nextCode;
+    
+    const selectEstado = document.getElementById('id_estado');
+    for (let i = 0; i < selectEstado.options.length; i++) {
+      if (selectEstado.options[i].text.includes('bodega')) {
+        selectEstado.selectedIndex = i;
+        break;
+      }
+    }
+  }
+
+  function llenarSelect(id, items, valueField, textField) {
+    const sel = document.getElementById(id);
+    items.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item[valueField];
+      opt.textContent = item[textField];
+      sel.appendChild(opt);
+    });
+  }
+
+  function actualizarPreviewCosto() {
+    const costo = parseFloat(document.getElementById('costo_mensual').value);
+    const preview = document.getElementById('costo_preview');
+    if (costo > 0) {
+      const anual = (costo * 12).toFixed(2);
+      preview.innerHTML = `💡 Gasto anual proyectado de la línea: <strong>GTQ ${anual}</strong>`;
+      preview.style.display = 'flex';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
+  function guardar(e) {
+    e.preventDefault();
+    
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
+    hideMsg();
+
+    const data = {
+      numero:           document.getElementById('numero').value,
+      id_operadora:     document.getElementById('id_operadora').value,
+      plan:             document.getElementById('plan').value,
+      id_empresa:       document.getElementById('id_empresa').value,
+      id_estado:        document.getElementById('id_estado').value,
+      costo_mensual:    document.getElementById('costo_mensual').value,
+      fecha_activacion: document.getElementById('fecha_activacion').value,
+      observaciones:    document.getElementById('observaciones').value
+    };
+
+    google.script.run
+      .withSuccessHandler(onSuccess)
+      .withFailureHandler(onFailure)
+      .apiGuardarChip(data);
+  }
+
+  function onSuccess(res) {
+    const saveBtn = document.getElementById('saveBtn');
+    if (res.ok) {
+      showMsg('sap-message-strip-success', '✔ ' + res.mensaje);
+      setTimeout(() => {
+        google.script.host.close();
+      }, 1500);
+    } else {
+      showMsg('sap-message-strip-error', '⚠️ ' + res.errores.join('\n'));
+      saveBtn.disabled = false;
+      saveBtn.innerText = '💾 Guardar Chip';
+    }
+  }
+
+  function onFailure(err) {
+    showMsg('sap-message-strip-error', '⚠️ Error del Sistema: ' + err.message);
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = false;
+    saveBtn.innerText = '💾 Guardar Chip';
+  }
+
+  function onFatalError(err) {
+    showMsg('sap-message-strip-error', '⚠️ Error cargando catálogos: ' + err.message);
+  }
+
+  function showMsg(type, text) {
+    const el = document.getElementById('msg');
+    el.className = 'sap-message-strip ' + type;
+    el.innerHTML = text;
+    el.style.display = 'flex';
+  }
+
+  function hideMsg() {
+    document.getElementById('msg').style.display = 'none';
+  }
+</script>
+</body>
+</html>

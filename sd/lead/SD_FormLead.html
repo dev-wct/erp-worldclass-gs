@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <title>Registrar Nuevo Lead</title>
+    <?!= include('core/CORE_DesignSystem'); ?>
+  </head>
+  <body>
+    <div class="sap-container">
+      <div class="sap-card">
+        <div class="sap-card-header">
+          <div>
+            <div class="sap-card-title">👤 Registrar Nuevo Lead</div>
+            <div class="sap-card-subtitle">SD - Clientes Potenciales de Call Center para Perfilamiento VIP</div>
+          </div>
+        </div>
+
+        <div class="sap-card-content">
+          <div id="error" class="sap-message-strip sap-message-strip-error" style="display: none;"></div>
+
+          <form id="leadForm" onsubmit="guardar(event)">
+            <div class="sap-form-grid">
+              
+              <div class="sap-form-group full-width">
+                <label class="sap-label required" for="nombre_completo">Nombre Completo</label>
+                <input type="text" class="sap-input" id="nombre_completo" placeholder="Ej. Carlos Mendoza" required>
+              </div>
+
+              <div class="sap-form-group">
+                <label class="sap-label required" for="telefono">Teléfono</label>
+                <input type="tel" class="sap-input" id="telefono" placeholder="Ej. 55554433" required>
+              </div>
+              
+              <div class="sap-form-group">
+                <label class="sap-label" for="email">Correo Electrónico</label>
+                <input type="email" class="sap-input" id="email" placeholder="Ej. carlos@mail.com">
+              </div>
+
+              <div class="sap-form-group">
+                <label class="sap-label required" for="tipo_tdc">Tarjeta de Crédito</label>
+                <select id="tipo_tdc" class="sap-select">
+                  <option value="NINGUNA" selected>Ninguna</option>
+                  <option value="VISA">Visa</option>
+                  <option value="MASTERCARD">Mastercard</option>
+                  <option value="AMERICAN EXPRESS">American Express</option>
+                  <option value="DISCOVER">Discover</option>
+                  <option value="DINERS CLUB">Diners Club</option>
+                </select>
+              </div>
+              
+              <div class="sap-form-group">
+                <label class="sap-label" for="banco_emisor">Banco Emisor</label>
+                <input type="text" class="sap-input" id="banco_emisor" placeholder="Ej. BAC / BI">
+              </div>
+
+              <div class="sap-form-group">
+                <label class="sap-label required" for="id_campana">Campaña de Origen</label>
+                <select id="id_campana" class="sap-select" required>
+                  <option value="">Cargando campañas...</option>
+                </select>
+              </div>
+              
+              <div class="sap-form-group">
+                <label class="sap-label required" for="fuente">Fuente del Lead</label>
+                <select id="fuente" class="sap-select">
+                  <option value="FACEBOOK" selected>Facebook</option>
+                  <option value="INSTAGRAM">Instagram</option>
+                  <option value="REFERIDO">Referido</option>
+                  <option value="LLAMADA EN FRIO">Llamada en Frío</option>
+                  <option value="WEB">Sitio Web</option>
+                  <option value="OTRO">Otro</option>
+                </select>
+              </div>
+
+              <div class="sap-form-group full-width">
+                <label class="sap-label" for="notas">Notas / Observaciones de Perfilamiento</label>
+                <textarea id="notas" class="sap-textarea" placeholder="Detalles de interés, comentarios del perfil..."></textarea>
+              </div>
+
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--sap-border-light);">
+              <button type="button" class="sap-btn" onclick="google.script.host.close()">Cancelar</button>
+              <button type="submit" id="btnGuardar" class="sap-btn sap-btn-emphasized">💾 Registrar Lead</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.onload = function() {
+        google.script.run
+          .withSuccessHandler(catalogos => {
+            const select = document.getElementById('id_campana');
+            select.innerHTML = '<option value="">-- Seleccionar Campaña --</option>';
+            
+            if (catalogos.campanas && catalogos.campanas.length > 0) {
+              catalogos.campanas.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nombre;
+                select.appendChild(opt);
+              });
+            } else {
+              select.innerHTML = '<option value="">No hay campañas activas</option>';
+            }
+          })
+          .withFailureHandler(err => {
+            document.getElementById('id_campana').innerHTML = '<option value="">Error cargando campañas</option>';
+          })
+          .apiGetCatalogosLead();
+      };
+
+      function guardar(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('btnGuardar');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
+
+        const data = {
+          nombre_completo: document.getElementById('nombre_completo').value,
+          telefono:        document.getElementById('telefono').value,
+          email:           document.getElementById('email').value,
+          tipo_tdc:        document.getElementById('tipo_tdc').value,
+          banco_emisor:    document.getElementById('banco_emisor').value,
+          id_campana:      document.getElementById('id_campana').value,
+          fuente:          document.getElementById('fuente').value,
+          notes:           document.getElementById('notas').value // Campo mapeado internamente
+        };
+
+        const errorDiv = document.getElementById('error');
+        errorDiv.style.display = 'none';
+
+        google.script.run
+          .withSuccessHandler(res => {
+            btn.disabled = false;
+            btn.innerText = '💾 Registrar Lead';
+
+            if (res.ok) {
+              google.script.host.close();
+            } else {
+              mostrarError(res.errores.join('\n'));
+            }
+          })
+          .withFailureHandler(err => {
+            btn.disabled = false;
+            btn.innerText = '💾 Registrar Lead';
+            mostrarError(err.message);
+          })
+          .apiGuardarLead(data);
+      }
+
+      function mostrarError(msg) {
+        const box = document.getElementById('error');
+        box.innerText = msg;
+        box.style.display = 'flex';
+      }
+    </script>
+  </body>
+</html>

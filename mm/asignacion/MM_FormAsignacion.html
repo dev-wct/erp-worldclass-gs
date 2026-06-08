@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nueva Asignación</title>
+  <?!= include('core/CORE_DesignSystem'); ?>
+</head>
+<body>
+
+<div class="sap-container">
+  <div class="sap-card">
+    <div class="sap-card-header">
+      <div>
+        <div class="sap-card-title">🔗 Nueva Asignación de Activos</div>
+        <div class="sap-card-subtitle">MM - Provisión de Hardware y Conectividad a Agentes</div>
+      </div>
+    </div>
+    
+    <div class="sap-card-content">
+      <div id="msg" class="sap-message-strip" style="display: none;"></div>
+      
+      <form id="asigForm" onsubmit="guardar(event)">
+        <div class="sap-form-grid">
+    
+          <!-- EMPLEADO -->
+          <div class="sap-section-title">Empleado Receptor</div>
+    
+          <div class="sap-form-group full-width">
+            <label class="sap-label required">Empleado Activo</label>
+            <select id="id_empleado" class="sap-select" required>
+              <option value="">— Seleccionar empleado —</option>
+            </select>
+          </div>
+    
+          <!-- EQUIPO -->
+          <div class="sap-section-title">Equipo (opcional si asigna solo chip)</div>
+    
+          <div class="sap-form-group full-width">
+            <label class="sap-label">Equipo Disponible (En Bodega)</label>
+            <select id="id_equipo" class="sap-select">
+              <option value="">— Sin equipo / Solo chip —</option>
+            </select>
+          </div>
+    
+          <!-- CHIP -->
+          <div class="sap-section-title">Chip SIM (opcional si asigna solo equipo)</div>
+    
+          <div class="sap-form-group full-width">
+            <label class="sap-label">Chip SIM Disponible (En Bodega)</label>
+            <select id="id_chip" class="sap-select">
+              <option value="">— Sin chip / Solo equipo —</option>
+            </select>
+          </div>
+    
+          <div class="sap-message-strip sap-message-strip-warning full-width" style="grid-column: 1 / -1; margin-bottom: 0;">
+            ⚠️ Regla: debe seleccionar al menos un equipo o un chip para crear la asignación.
+          </div>
+    
+          <!-- DATOS DE ASIGNACIÓN -->
+          <div class="sap-section-title">Datos de la Asignación</div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label required">Fecha de Asignación</label>
+            <input type="date" id="fecha_asignacion" class="sap-input" required>
+          </div>
+    
+          <div class="sap-form-group">
+            <label class="sap-label">Estado del Flujo</label>
+            <input type="text" id="estado_flujo" class="sap-input" style="background:#f1f5f9; cursor:not-allowed;" value="PENDIENTE" readonly>
+          </div>
+    
+          <div class="sap-form-group full-width">
+            <label class="sap-label">Enlace Acta de Entrega (Drive)</label>
+            <input type="url" id="link_acta" class="sap-input" placeholder="https://drive.google.com/...">
+          </div>
+    
+          <div class="sap-form-group full-width">
+            <label class="sap-label">Notas / Observaciones</label>
+            <textarea id="notas" class="sap-textarea" rows="3" placeholder="Motivo de la asignación, condiciones especiales..."></textarea>
+          </div>
+    
+        </div>
+    
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--sap-border-light);">
+          <button type="button" class="sap-btn" onclick="google.script.host.close()">Cancelar</button>
+          <button type="submit" class="sap-btn sap-btn-emphasized" id="saveBtn">📋 Crear Solicitud</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.onload = function() {
+    document.getElementById('fecha_asignacion').value = new Date().toISOString().split('T')[0];
+
+    google.script.run
+      .withSuccessHandler(cargarFormulario)
+      .withFailureHandler(onFatalError)
+      .apiGetCatalogosAsignacion();
+  };
+
+  function cargarFormulario(data) {
+    const selEmp = document.getElementById('id_empleado');
+    data.empleados.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.id_empleado;
+      opt.textContent = e.nombre_completo + ' — ' + (e.email || 'Sin email');
+      selEmp.appendChild(opt);
+    });
+
+    const selEq = document.getElementById('id_equipo');
+    data.equipos.forEach(eq => {
+      const opt = document.createElement('option');
+      opt.value = eq.id_equipo;
+      opt.textContent = eq.codigo_interno + ' — ' + (eq.marca || eq.id_marca) + ' ' + eq.modelo + ' (' + eq.serial + ')';
+      selEq.appendChild(opt);
+    });
+
+    const selCh = document.getElementById('id_chip');
+    data.chips.forEach(ch => {
+      const opt = document.createElement('option');
+      opt.value = ch.id_chip;
+      opt.textContent = ch.codigo_interno + ' — ' + ch.numero + ' (' + (ch.operadora || ch.id_operadora) + ') GTQ ' + ch.costo_mensual + '/mes';
+      selCh.appendChild(opt);
+    });
+  }
+
+  function guardar(e) {
+    e.preventDefault();
+
+    const idEquipo = document.getElementById('id_equipo').value;
+    const idChip = document.getElementById('id_chip').value;
+
+    if (!idEquipo && !idChip) {
+      showMsg('sap-message-strip-error', '⚠️ Debe seleccionar al menos un equipo o un chip.');
+      return;
+    }
+
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
+    hideMsg();
+
+    const data = {
+      id_empleado:      document.getElementById('id_empleado').value,
+      id_equipo:        idEquipo,
+      id_chip:          idChip,
+      fecha_asignacion: document.getElementById('fecha_asignacion').value,
+      link_acta:        document.getElementById('link_acta').value,
+      notas:            document.getElementById('notas').value
+    };
+
+    google.script.run
+      .withSuccessHandler(onSuccess)
+      .withFailureHandler(onFailure)
+      .apiGuardarAsignacion(data);
+  }
+
+  function onSuccess(res) {
+    const saveBtn = document.getElementById('saveBtn');
+    if (res.ok) {
+      showMsg('sap-message-strip-success', '✔ ' + res.mensaje);
+      setTimeout(() => google.script.host.close(), 2000);
+    } else {
+      showMsg('sap-message-strip-error', '⚠️ ' + res.errores.join('\n'));
+      saveBtn.disabled = false;
+      saveBtn.innerText = '📋 Crear Solicitud';
+    }
+  }
+
+  function onFailure(err) {
+    showMsg('sap-message-strip-error', '⚠️ Error del Sistema: ' + err.message);
+    document.getElementById('saveBtn').disabled = false;
+    document.getElementById('saveBtn').innerText = '📋 Crear Solicitud';
+  }
+
+  function onFatalError(err) {
+    showMsg('sap-message-strip-error', '⚠️ Error cargando datos: ' + err.message);
+  }
+
+  function showMsg(type, text) {
+    const el = document.getElementById('msg');
+    el.className = 'sap-message-strip ' + type;
+    el.innerText = text;
+    el.style.display = 'flex';
+  }
+
+  function hideMsg() {
+    document.getElementById('msg').style.display = 'none';
+  }
+</script>
+</body>
+</html>

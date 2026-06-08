@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include('core/CORE_DesignSystem'); ?>
+  </head>
+  <body>
+    <div class="sap-container">
+      <div class="sap-card">
+        <div class="sap-card-header">
+          <div>
+            <div class="sap-card-title">👤 Registro de Empleado</div>
+            <div class="sap-card-subtitle">HCM - Crear nuevo expediente de personal</div>
+          </div>
+        </div>
+        
+        <div class="sap-card-content">
+          <div id="error" class="sap-message-strip sap-message-strip-error" style="display: none;"></div>
+          
+          <form id="empForm" onsubmit="guardar(event)">
+            <div class="sap-form-grid">
+              <div class="sap-form-group">
+                <label class="sap-label required">Nombre Completo</label>
+                <input type="text" class="sap-input" id="nombre_completo" placeholder="Ej. Juan Pérez" required>
+              </div>
+              
+              <div class="sap-form-group">
+                <label class="sap-label required">DPI (Documento de Identificación)</label>
+                <input type="text" class="sap-input" id="dpi" placeholder="CUI de 13 dígitos" required>
+              </div>
+              
+              <div class="sap-form-group">
+                <label class="sap-label">Email Personal</label>
+                <input type="email" class="sap-input" id="email" placeholder="juan.perez@mail.com">
+              </div>
+              
+              <div class="sap-form-group">
+                <label class="sap-label">Teléfono Móvil</label>
+                <input type="text" class="sap-input" id="telefono" placeholder="Ej. 55551234">
+              </div>
+              
+              <div class="sap-form-group">
+                <label class="sap-label required">Empresa (ID)</label>
+                <input type="number" class="sap-input" id="id_empresa" value="1" required>
+              </div>
+              
+              <div class="sap-form-group">
+                <label class="sap-label required">Departamento (ID)</label>
+                <input type="number" class="sap-input" id="id_departamento" value="1" required>
+              </div>
+            </div>
+            
+            <button type="submit" id="btnGuardar" class="sap-btn sap-btn-emphasized" style="width: 100%;">
+              Contratar y Guardar
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function guardar(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('btnGuardar');
+        const errBox = document.getElementById('error');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
+        errBox.style.display = 'none';
+        
+        const data = {
+          nombre_completo: document.getElementById('nombre_completo').value,
+          dpi: document.getElementById('dpi').value,
+          email: document.getElementById('email').value,
+          telefono: document.getElementById('telefono').value,
+          id_empresa: document.getElementById('id_empresa').value,
+          id_departamento: document.getElementById('id_departamento').value
+        };
+        
+        google.script.run
+          .withSuccessHandler(res => {
+            btn.disabled = false;
+            btn.innerText = 'Contratar y Guardar';
+            if (res.ok) {
+              google.script.host.close();
+            } else {
+              mostrarError(res.errores.join('\n'));
+            }
+          })
+          .withFailureHandler(err => {
+            btn.disabled = false;
+            btn.innerText = 'Contratar y Guardar';
+            mostrarError(err.message);
+          })
+          .apiGuardarEmpleado(data);
+      }
+      
+      function mostrarError(msg) {
+        const box = document.getElementById('error');
+        box.innerText = msg;
+        box.style.display = 'flex';
+      }
+    </script>
+  </body>
+</html>
