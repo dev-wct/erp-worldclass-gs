@@ -14,10 +14,14 @@ function onOpen() {
     .addItem('📁 Organizar Carpetas en Drive', 'apiOrganizarDrive')
     .addItem('🧪 Poblar Datos de Prueba (20 registros)', 'apiSembrarDatosPrueba')
     .addSeparator()
+    .addItem('🔗 Instalar Trigger Google Form (Postulantes)', 'instalarTriggerPostulante')
+    .addSeparator()
     .addSubMenu(menuSync);
 
   // 3. Submenú RRHH / HCM
   const menuHCM = ui.createMenu('👥 HCM (Recursos Humanos)')
+    .addItem('📋 Registrar Postulante', 'abrirFormPostulante')
+    .addSeparator()
     .addItem('👤 Registrar Empleado', 'abrirFormEmpleado');
 
   // 4. Submenú MM (Logística y Activos IT)
