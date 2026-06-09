@@ -1,59 +1,72 @@
 /**
  * MM_Chip_Repository
- * Capa de Infraestructura: Repositorio para persistir Chips SIM en la base de datos de Sheets.
+ * Capa de Persistencia: Repositorio de Chips SIM.
+ * Extiende BaseRepository — solo define buildRecord y métodos específicos.
+ *
+ * Anti-Vendor Locking CRÍTICO:
+ *   Se eliminaron las fórmulas XLOOKUP inyectadas directamente en celdas de Sheets
+ *   (ej: `=IFERROR(XLOOKUP(D${nextRow}, CAT_Operadoras!A:A, ...))`)
+ *   que acoplaban el código a la estructura física de columnas de Google Sheets.
+ *
+ *   La resolución de catálogos (operadora, empresa, estado) ahora se hace
+ *   en memoria (JavaScript puro) dentro del método buildRecord,
+ *   manteniendo la base de datos limpia con valores planos y portables.
  */
-const ChipRepo = {
-  T: 'Chips',
+const ChipRepo = new class extends BaseRepository {
+  constructor() {
+    super('Chips', (raw) => ChipEntity.create(raw));
+  }
 
-  /** Inserta un nuevo chip SIM inyectando fórmulas dinámicas para resolución de catálogos */
-  insert: function(entity, user) {
-    const id = DataAdapter.getNextId(this.T);
-    const code = ChipService.generarCodigoInterno(id);
-    
-    // Obtener la fila física destino para inyectar fórmulas XLOOKUP dinámicas
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sh = ss.getSheetByName(this.T);
-    const nextRow = sh ? sh.getLastRow() + 1 : 2;
+  /**
+   * Construye el registro plano a persistir.
+   * Resuelve los nombres de catálogos en memoria (Anti-Vendor Locking).
+   */
+  buildRecord(id, entity, now, user) {
+    // Resolución de catálogos en memoria (sin XLOOKUP, sin acoplamiento a columnas físicas)
+    const operadora = entity.id_operadora
+      ? DataAdapter.findById('CAT_Operadoras', entity.id_operadora) : null;
+    const empresa = entity.id_empresa
+      ? DataAdapter.findById('CAT_Empresas', entity.id_empresa) : null;
+    const estado = entity.id_estado
+      ? DataAdapter.findById('CAT_Estados', entity.id_estado) : null;
 
-    const rec = {
+    return {
       id_chip:          id,
-      codigo_interno:   code,
+      codigo_interno:   ChipService.generarCodigoInterno(id),
       numero:           entity.numero,
       id_operadora:     entity.id_operadora,
-      operadora:        `=IFERROR(XLOOKUP(D${nextRow}, CAT_Operadoras!A:A, CAT_Operadoras!B:B, ""), "")`,
+      operadora:        operadora ? operadora.nombre : '',
       plan:             entity.plan,
       costo_mensual:    entity.costo_mensual,
       id_empresa:       entity.id_empresa,
-      empresa:          `=IFERROR(XLOOKUP(H${nextRow}, CAT_Empresas!A:A, CAT_Empresas!B:B, ""), "")`,
+      empresa:          empresa  ? empresa.nombre  : '',
       id_estado:        entity.id_estado,
-      estado:           `=IFERROR(XLOOKUP(J${nextRow}, CAT_Estados!A:A, CAT_Estados!B:B, ""), "")`,
+      estado:           estado   ? estado.nombre   : '',
       fecha_activacion: entity.fecha_activacion,
       observaciones:    entity.observaciones,
-      created_at:       DataAdapter.now(),
-      updated_at:       DataAdapter.now(),
+      created_at:       now,
+      updated_at:       now,
       created_by:       user
     };
+  }
 
-    DataAdapter.insert(this.T, rec);
-    return rec;
-  },
-
-  /** Busca un chip SIM por número telefónico */
-  findByNumero: function(numero) {
-    const results = DataAdapter.findByField(this.T, 'numero', String(numero).trim());
+  /** Busca un chip por número telefónico */
+  findByNumero(numero) {
+    const results = this.findByField('numero', String(numero).trim());
     return results.length > 0 ? results[0] : null;
-  },
+  }
 
-  /** Retorna todos los chips disponibles en bodega (id_estado = 2) */
-  findDisponiblesEnBodega: function() {
-    return DataAdapter.findByField(this.T, 'id_estado', 2);
-  },
+  /** Retorna chips disponibles en bodega (estado id=2) */
+  findDisponiblesEnBodega() {
+    return this.findByField('id_estado', 2);
+  }
 
-  /** Actualiza el estado de un chip SIM */
-  actualizarEstado: function(id, idEstado) {
-    return DataAdapter.update(this.T, id, {
+  /** Actualiza el estado de un chip */
+  actualizarEstado(id, idEstado) {
+    const estado = idEstado ? DataAdapter.findById('CAT_Estados', idEstado) : null;
+    return this.update(id, {
       id_estado: idEstado,
-      updated_at: DataAdapter.now()
+      estado:    estado ? estado.nombre : ''
     });
   }
-};
+}();

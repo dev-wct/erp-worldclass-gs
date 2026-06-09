@@ -1,6 +1,7 @@
 /**
  * SD_Lead_Controller
  * Capa de Adaptador: Controlador de interfaz para Leads.
+ * Usa safeExecute() para garantizar respuestas uniformes sin try/catch repetidos.
  */
 
 function abrirFormLead() {
@@ -12,29 +13,22 @@ function abrirFormLead() {
 }
 
 function apiGetCatalogosLead() {
-  try {
-    const campanas = CampanaRepo.findAll().filter(c => c.estado === 'ACTIVA');
+  return safeExecute(function() {
+    const campanas = CampanaRepo.findAll().filter(function(c) { return c.estado === 'ACTIVA'; });
     return {
-      campanas: campanas.map(c => ({ id: c.id_campana, nombre: c.nombre }))
+      campanas: campanas.map(function(c) { return { id: c.id_campana, nombre: c.nombre }; })
     };
-  } catch (err) {
-    return { campanas: [] };
-  }
+  }, 'SD.Lead.getCatalogos');
 }
 
 function apiGuardarLead(formData) {
-  try {
+  return safeExecute(function() {
     return LeadUseCases.registrar(formData);
-  } catch (err) {
-    return { ok: false, errores: [err.message] };
-  }
+  }, 'SD.Lead.guardar');
 }
 
 function apiGetLeads() {
-  try {
-    const list = LeadRepo.findAll();
-    return list.map(l => LeadDTO.toResponse(l));
-  } catch (err) {
-    return [];
-  }
+  return safeExecute(function() {
+    return LeadRepo.findAll().map(function(l) { return LeadDTO.toResponse(l); });
+  }, 'SD.Lead.getAll');
 }

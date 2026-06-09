@@ -1,16 +1,18 @@
 /**
  * SD_Cita_Repository
- * Capa de Persistencia: Gestión de datos de Citas en Sheets.
+ * Capa de Persistencia: Repositorio de Citas VIP.
+ * Extiende BaseRepository — solo define buildRecord y métodos específicos.
+ *
+ * Anti-Vendor Locking: Joins de Leads y Empleados resueltos en memoria.
  */
-const CitaRepo = {
-  TABLE: 'Citas',
+const CitaRepo = new class extends BaseRepository {
+  constructor() {
+    super('Citas', (raw) => CitaEntity.create(raw));
+  }
 
-  insert: function(entity, user) {
-    const nextId = DataAdapter.getNextId(this.TABLE);
-    const now = DataAdapter.now();
-
-    const record = {
-      id_cita:              nextId,
+  buildRecord(id, entity, now, user) {
+    return {
+      id_cita:              id,
       id_lead:              entity.id_lead,
       id_empleado_agendo:   entity.id_empleado_agendo,
       restaurante:          entity.restaurante,
@@ -25,43 +27,26 @@ const CitaRepo = {
       updated_at:           now,
       created_by:           user
     };
+  }
 
-    DataAdapter.insert(this.TABLE, record);
-    return record;
-  },
-
-  findById: function(id) {
-    const raw = DataAdapter.findById(this.TABLE, id);
-    if (!raw) return null;
-
-    if (raw.id_lead) {
-      const lead = DataAdapter.findById('Leads', raw.id_lead);
-      raw.lead = lead ? lead.nombre_completo : 'No encontrado';
-    }
-    if (raw.id_empleado_agendo) {
-      const emp = DataAdapter.findById('Empleados', raw.id_empleado_agendo);
-      raw.empleado_agendo = emp ? emp.nombre_completo : 'No encontrado';
-    }
-
-    return CitaEntity.create(raw);
-  },
-
-  findAll: function() {
-    const list = DataAdapter.findAll(this.TABLE);
-    
-    // Cache de nombres
-    const leads = DataAdapter.findAll('Leads');
-    const leadMap = {};
-    leads.forEach(l => { leadMap[l.id_lead] = l.nombre_completo; });
-
+  /** Retorna todas las citas resolviendo nombres de Lead y Empleado en memoria */
+  findAll() {
+    const list      = DataAdapter.findAll(this.tableName);
+    const leads     = DataAdapter.findAll('Leads');
     const empleados = DataAdapter.findAll('Empleados');
-    const empMap = {};
-    empleados.forEach(e => { empMap[e.id_empleado] = e.nombre_completo; });
-
-    return list.map(r => {
-      r.lead = leadMap[r.id_lead] || 'No encontrado';
+    const leadMap   = {};
+    const empMap    = {};
+    leads.forEach(function(l)    { leadMap[l.id_lead]       = l.nombre_completo; });
+    empleados.forEach(function(e){ empMap[e.id_empleado]    = e.nombre_completo; });
+    return list.map(function(r) {
+      r.lead           = leadMap[r.id_lead]           || 'No encontrado';
       r.empleado_agendo = empMap[r.id_empleado_agendo] || 'No encontrado';
       return CitaEntity.create(r);
     });
   }
-};
+
+  /** Actualiza el resultado de una cita (asistencia / venta) */
+  actualizarResultado(id, asistio, resultado) {
+    return this.update(id, { asistio: asistio, resultado_venta: resultado });
+  }
+}();

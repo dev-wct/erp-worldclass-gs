@@ -1,65 +1,76 @@
 /**
  * MM_Equipo_Repository
- * Capa de Infraestructura: Repositorio para persistir Equipos en la base de datos de Sheets.
+ * Capa de Persistencia: Repositorio de Equipos Informáticos.
+ * Extiende BaseRepository — solo define buildRecord y métodos específicos.
+ *
+ * Anti-Vendor Locking CRÍTICO:
+ *   Se eliminaron las fórmulas XLOOKUP inyectadas directamente en celdas de Sheets
+ *   (ej: `=IFERROR(XLOOKUP(C${nextRow}, CAT_TiposEquipo!A:A, ...))`)
+ *   que acoplaban el código a la estructura física de columnas de Google Sheets.
+ *
+ *   La resolución de catálogos (tipo, marca, empresa, estado) ahora se hace
+ *   en memoria (JavaScript puro) dentro del método buildRecord,
+ *   manteniendo la base de datos limpia con valores planos y portables.
  */
-const EquipoRepo = {
-  T: 'Equipos',
+const EquipoRepo = new class extends BaseRepository {
+  constructor() {
+    super('Equipos', (raw) => EquipoEntity.create(raw));
+  }
 
-  /** Inserta un nuevo equipo inyectando fórmulas dinámicas para resolución de catálogos */
-  insert: function(entity, user) {
-    const id = DataAdapter.getNextId(this.T);
-    const code = EquipoService.generarCodigoInterno(id);
-    
-    // Obtener la fila física destino para inyectar fórmulas XLOOKUP dinámicas
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sh = ss.getSheetByName(this.T);
-    const nextRow = sh ? sh.getLastRow() + 1 : 2;
+  /**
+   * Construye el registro plano a persistir.
+   * Resuelve los nombres de catálogos en memoria (Anti-Vendor Locking).
+   */
+  buildRecord(id, entity, now, user) {
+    // Resolución de catálogos en memoria (sin XLOOKUP, sin acoplamiento a columnas físicas)
+    const tipo    = entity.id_tipo    ? DataAdapter.findById('CAT_TiposEquipo', entity.id_tipo)    : null;
+    const marca   = entity.id_marca   ? DataAdapter.findById('CAT_Marcas',      entity.id_marca)   : null;
+    const empresa = entity.id_empresa ? DataAdapter.findById('CAT_Empresas',    entity.id_empresa) : null;
+    const estado  = entity.id_estado  ? DataAdapter.findById('CAT_Estados',     entity.id_estado)  : null;
 
-    const rec = {
+    return {
       id_equipo:      id,
-      codigo_interno: code,
+      codigo_interno: EquipoService.generarCodigoInterno(id),
       id_tipo:        entity.id_tipo,
-      tipo:           `=IFERROR(XLOOKUP(C${nextRow}, CAT_TiposEquipo!A:A, CAT_TiposEquipo!B:B, ""), "")`,
+      tipo:           tipo    ? tipo.nombre    : '',
       id_marca:       entity.id_marca,
-      marca:          `=IFERROR(XLOOKUP(E${nextRow}, CAT_Marcas!A:A, CAT_Marcas!B:B, ""), "")`,
+      marca:          marca   ? marca.nombre   : '',
       modelo:         entity.modelo,
-      serial:         entity.serial,
+      serial:         entity.serial ? String(entity.serial).trim().toUpperCase() : '',
       id_empresa:     entity.id_empresa,
-      empresa:        `=IFERROR(XLOOKUP(I${nextRow}, CAT_Empresas!A:A, CAT_Empresas!B:B, ""), "")`,
+      empresa:        empresa ? empresa.nombre  : '',
       id_estado:      entity.id_estado,
-      estado:         `=IFERROR(XLOOKUP(K${nextRow}, CAT_Estados!A:A, CAT_Estados!B:B, ""), "")`,
+      estado:         estado  ? estado.nombre   : '',
       fecha_compra:   entity.fecha_compra,
       garantia_hasta: entity.garantia_hasta,
       valor_compra:   entity.valor_compra,
-      link_factura:   entity.link_factura,
-      link_foto:      entity.link_foto,
-      observaciones:  entity.observaciones,
-      created_at:     DataAdapter.now(),
-      updated_at:     DataAdapter.now(),
+      link_factura:   entity.link_factura   || '',
+      link_foto:      entity.link_foto      || '',
+      observaciones:  entity.observaciones  || '',
+      created_at:     now,
+      updated_at:     now,
       created_by:     user
     };
+  }
 
-    DataAdapter.insert(this.T, rec);
-    return rec;
-  },
-
-  /** Busca un equipo por número de serie (serial) */
-  findBySerial: function(serial) {
-    const cleanSerial = String(serial).trim().toUpperCase();
-    const results = DataAdapter.findByField(this.T, 'serial', cleanSerial);
+  /** Busca un equipo por número de serie */
+  findBySerial(serial) {
+    const clean   = String(serial).trim().toUpperCase();
+    const results = this.findByField('serial', clean);
     return results.length > 0 ? results[0] : null;
-  },
+  }
 
-  /** Retorna todos los equipos disponibles en bodega (id_estado = 2) */
-  findDisponiblesEnBodega: function() {
-    return DataAdapter.findByField(this.T, 'id_estado', 2);
-  },
+  /** Retorna equipos disponibles en bodega (id_estado = 2) */
+  findDisponiblesEnBodega() {
+    return this.findByField('id_estado', 2);
+  }
 
   /** Actualiza el estado de un equipo */
-  actualizarEstado: function(id, idEstado) {
-    return DataAdapter.update(this.T, id, {
+  actualizarEstado(id, idEstado) {
+    const estado = idEstado ? DataAdapter.findById('CAT_Estados', idEstado) : null;
+    return this.update(id, {
       id_estado: idEstado,
-      updated_at: DataAdapter.now()
+      estado:    estado ? estado.nombre : ''
     });
   }
-};
+}();

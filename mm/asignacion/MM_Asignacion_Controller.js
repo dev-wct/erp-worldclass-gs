@@ -1,9 +1,9 @@
 /**
  * MM_Asignacion_Controller
- * Capa de Adaptadores: Controlador global para Asignaciones de Equipo/Chip.
+ * Capa de Adaptadores: Controlador para Asignaciones de Equipo/Chip.
+ * Usa safeExecute() para garantizar respuestas uniformes sin try/catch repetidos.
  */
 
-/** Abre el formulario modal de nueva asignación */
 function abrirFormAsignacion() {
   const html = HtmlService.createTemplateFromFile('mm/asignacion/MM_FormAsignacion')
     .evaluate()
@@ -12,41 +12,20 @@ function abrirFormAsignacion() {
   SpreadsheetApp.getUi().showModalDialog(html, '🔗 Nueva Asignación de Equipo / Chip');
 }
 
-/** Obtiene todos los catálogos necesarios para el formulario de asignación */
 function apiGetCatalogosAsignacion() {
-  try {
-    // Empleados activos
-    const empleados = DataAdapter.findAll('Empleados', { activo: true });
-
-    // Equipos en bodega (id_estado = 2) disponibles para asignar
-    const equiposBodega = DataAdapter.findAll('Equipos', { id_estado: 2 });
-    
-    // Chips en bodega (id_estado = 2) disponibles para asignar
-    const chipsBodega = DataAdapter.findAll('Chips', { id_estado: 2 });
-
-    // Departamentos y empresas para filtros cascada
-    const departamentos = DataAdapter.findAll('CAT_Departamentos', { activo: true });
-    const empresas = DataAdapter.findAll('CAT_Empresas', { activo: true });
-
+  return safeExecute(function() {
     return {
-      empleados:    empleados,
-      equipos:      equiposBodega,
-      chips:        chipsBodega,
-      departamentos: departamentos,
-      empresas:     empresas
+      empleados:     DataAdapter.findAll('Empleados',        { activo: true }),
+      equipos:       DataAdapter.findAll('Equipos',          { id_estado: 2 }),
+      chips:         DataAdapter.findAll('Chips',            { id_estado: 2 }),
+      departamentos: DataAdapter.findAll('CAT_Departamentos',{ activo: true }),
+      empresas:      DataAdapter.findAll('CAT_Empresas',     { activo: true })
     };
-  } catch (e) {
-    Logger.log("Error en apiGetCatalogosAsignacion: " + e.message);
-    return { empleados: [], equipos: [], chips: [], departamentos: [], empresas: [] };
-  }
+  }, 'MM.Asignacion.getCatalogos');
 }
 
-/** Recibe los datos del formulario y crea la solicitud de asignación */
 function apiGuardarAsignacion(formData) {
-  try {
+  return safeExecute(function() {
     return AsignacionUseCases.crearSolicitud(formData);
-  } catch (err) {
-    Logger.log("Error en apiGuardarAsignacion: " + err.message);
-    return { ok: false, errores: [err.message] };
-  }
+  }, 'MM.Asignacion.guardar');
 }

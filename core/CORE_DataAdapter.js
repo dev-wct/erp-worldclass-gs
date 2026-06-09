@@ -1,6 +1,7 @@
 const DataAdapter = (() => {
   function _sheet(t) {
-    return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(t);
+    const ss = Utils.getActiveSpreadsheet();
+    return ss ? ss.getSheetByName(t) : null;
   }
 
   function _headers(sh) {

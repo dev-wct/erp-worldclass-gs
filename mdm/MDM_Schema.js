@@ -1,8 +1,8 @@
 /**
- * CORE_Schema
+ * MDM_Schema
  * Contiene únicamente las tablas maestras compartidas por todo el holding.
  */
-const CORE_Schema = {
+const MDM_Schema = {
   CAT_Empresas: {
     pk: 'id_empresa',
     columns: ['id_empresa','nombre','codigo','activo','created_at','updated_at'],

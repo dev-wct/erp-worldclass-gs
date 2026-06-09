@@ -1,6 +1,7 @@
 /**
  * SD_Llamada_Controller
  * Capa de Adaptador: Controlador de interfaz para Llamadas.
+ * Usa safeExecute() para garantizar respuestas uniformes sin try/catch repetidos.
  */
 
 function abrirFormLlamada() {
@@ -12,35 +13,30 @@ function abrirFormLlamada() {
 }
 
 function apiGetCatalogosLlamada() {
-  try {
-    // Obtener Leads no cerrados (ej. Nuevos, Contactados, Interesados, Agendados)
-    const leads = LeadRepo.findAll().filter(l => l.estado !== 'INVALIDO' && l.estado !== 'NO_INTERESADO');
-    
-    // Obtener Empleados activos
+  return safeExecute(function() {
+    const leads = LeadRepo.findAll().filter(function(l) {
+      return l.estado !== 'INVALIDO' && l.estado !== 'NO_INTERESADO';
+    });
     const empleados = DataAdapter.findAll('Empleados', { activo: true });
-
     return {
-      leads: leads.map(l => ({ id: l.id_lead, nombre: l.nombre_completo + ' (' + l.telefono + ')' })),
-      empleados: empleados.map(e => ({ id: e.id_empleado, nombre: e.nombre_completo }))
+      leads:     leads.map(function(l) {
+        return { id: l.id_lead, nombre: l.nombre_completo + ' (' + l.telefono + ')' };
+      }),
+      empleados: empleados.map(function(e) {
+        return { id: e.id_empleado, nombre: e.nombre_completo };
+      })
     };
-  } catch (err) {
-    return { leads: [], empleados: [] };
-  }
+  }, 'SD.Llamada.getCatalogos');
 }
 
 function apiGuardarLlamada(formData) {
-  try {
+  return safeExecute(function() {
     return LlamadaUseCases.registrar(formData);
-  } catch (err) {
-    return { ok: false, errores: [err.message] };
-  }
+  }, 'SD.Llamada.guardar');
 }
 
 function apiGetLlamadas() {
-  try {
-    const list = LlamadaRepo.findAll();
-    return list.map(l => LlamadaDTO.toResponse(l));
-  } catch (err) {
-    return [];
-  }
+  return safeExecute(function() {
+    return LlamadaRepo.findAll().map(function(l) { return LlamadaDTO.toResponse(l); });
+  }, 'SD.Llamada.getAll');
 }

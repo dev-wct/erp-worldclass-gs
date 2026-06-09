@@ -48,17 +48,16 @@ const DriveOrganizer = {
     Logger.log("=== Iniciando Organización de Google Drive en Enfoque Cápsula ===");
 
     // 1. Obtener la Sheet activa y determinar el entorno
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ss = Utils.getActiveSpreadsheet();
+    if (!ss) throw new Error("No se pudo obtener la hoja de cálculo activa.");
     const ssName = ss.getName();
     
-    let envName, rootFolderName;
-    if (ssName.includes("PRODUCTION")) {
+    let envName = "DEV";
+    if (ssName.toUpperCase().includes("PRODUCTION") || ssName.toUpperCase().includes("PROD")) {
       envName = "PROD";
-      rootFolderName = "ERP_WorldClass_PROD";
-    } else {
-      envName = "DEV";
-      rootFolderName = "ERP_WorldClass_DEV";
     }
+    const baseFolderName = Config.ERP_NAME.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
+    const rootFolderName = baseFolderName + "_" + envName;
     
     Logger.log(`[*] Detectado Entorno: ${envName}`);
     Logger.log(`[*] Carpeta Raíz Destino: ${rootFolderName}`);

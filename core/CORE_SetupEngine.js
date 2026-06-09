@@ -8,7 +8,8 @@ const SetupEngine = {
 
   /** Sincroniza las pestañas físicas de la Sheet activa con el esquema inyectado */
   syncDatabase: function(moduleSchema) {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ss = Utils.getActiveSpreadsheet();
+    if (!ss) throw new Error("No se pudo obtener la hoja de cálculo activa para la sincronización.");
     Logger.log("=== Iniciando sincronización de Base de Datos ===");
 
     const tables = Object.keys(moduleSchema);

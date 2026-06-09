@@ -18,7 +18,7 @@ const EmpleadoUseCases = {
     const saved = EmpleadoRepo.insert(entity, user);
 
     try {
-      EmailService.send(saved.email, "¡Bienvenido a WorldClass!", `Hola ${saved.nombre_completo}, tu registro está completo.`);
+      EmailService.send(saved.email, "¡Bienvenido a " + Config.ERP_NAME + "!", `Hola ${saved.nombre_completo}, tu registro está completo.`);
       WhatsAppService.sendMessage(saved.telefono, `Hola ${saved.nombre_completo}, bienvenido! ID: ${saved.id_empleado}`);
     } catch(err) {
       Logger.log("Fallaron las notificaciones iniciales: " + err.message);

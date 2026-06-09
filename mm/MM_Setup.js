@@ -38,7 +38,8 @@ const MM_Setup = {
 
   /** Inserta los datos semilla si la hoja está recién creada (solo tiene cabecera) */
   seedCatalogs: function() {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ss = Utils.getActiveSpreadsheet();
+    if (!ss) return;
     Logger.log("=== Iniciando carga de datos semilla para Catálogos de MM ===");
     
     Object.keys(this.SEED_DATA).forEach(tableName => {

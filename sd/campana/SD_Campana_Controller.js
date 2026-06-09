@@ -1,6 +1,7 @@
 /**
  * SD_Campana_Controller
  * Capa de Adaptador: Controlador de interfaz para Campañas.
+ * Usa safeExecute() para garantizar respuestas uniformes sin try/catch repetidos.
  */
 
 function abrirFormCampana() {
@@ -12,18 +13,13 @@ function abrirFormCampana() {
 }
 
 function apiGuardarCampana(formData) {
-  try {
+  return safeExecute(function() {
     return CampanaUseCases.registrar(formData);
-  } catch (err) {
-    return { ok: false, errores: [err.message] };
-  }
+  }, 'SD.Campana.guardar');
 }
 
 function apiGetCampanas() {
-  try {
-    const list = CampanaRepo.findAll();
-    return list.map(c => CampanaDTO.toResponse(c));
-  } catch (err) {
-    return [];
-  }
+  return safeExecute(function() {
+    return CampanaRepo.findAll().map(function(c) { return CampanaDTO.toResponse(c); });
+  }, 'SD.Campana.getAll');
 }

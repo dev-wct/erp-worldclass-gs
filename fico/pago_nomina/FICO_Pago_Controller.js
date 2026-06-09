@@ -1,6 +1,9 @@
 /**
  * FICO_Pago_Controller
- * Capa de Adaptador: Controlador de interfaz para pagos de nómina.
+ * Capa de Adaptador: Punto de entrada para operaciones de dispersión de nómina.
+ *
+ * TODOS los endpoints usan safeExecute() del INFRA_ErrorHandler para garantizar
+ * respuestas uniformes al cliente sin bloques try/catch repetidos.
  */
 
 function abrirFormPagoNomina() {
@@ -12,37 +15,30 @@ function abrirFormPagoNomina() {
 }
 
 function apiGetCatalogosPagoNomina() {
-  try {
+  return safeExecute(function() {
     const empleados = DataAdapter.findAll('Empleados', { activo: true });
     return {
-      empleados: empleados.map(e => ({ id: e.id_empleado, nombre: e.nombre_completo }))
+      empleados: empleados.map(function(e) {
+        return { id: e.id_empleado, nombre: e.nombre_completo };
+      })
     };
-  } catch (err) {
-    return { empleados: [] };
-  }
+  }, 'FICO.getCatalogos');
 }
 
 function apiCalcularComisionAgente(idEmpleado, anio, mes, quincena) {
-  try {
-    return PagoUseCases.calcularComisiones(idEmpleado, anio, mes, quincena);
-  } catch (err) {
-    return { ok: false, total_comisiones: 0, ventas_concretadas: 0, errores: [err.message] };
-  }
+  return safeExecute(function() {
+    return NominaUseCases.calcularComisiones(idEmpleado, anio, mes, quincena);
+  }, 'FICO.calcularComision');
 }
 
 function apiGuardarPagoNomina(formData) {
-  try {
+  return safeExecute(function() {
     return PagoUseCases.registrar(formData);
-  } catch (err) {
-    return { ok: false, errores: [err.message] };
-  }
+  }, 'FICO.guardarPago');
 }
 
 function apiGetPagos() {
-  try {
-    const list = PagoRepo.findAll();
-    return list.map(p => PagoDTO.toResponse(p));
-  } catch (err) {
-    return [];
-  }
+  return safeExecute(function() {
+    return PagoRepo.findAll().map(function(p) { return PagoDTO.toResponse(p); });
+  }, 'FICO.getPagos');
 }

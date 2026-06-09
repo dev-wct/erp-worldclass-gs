@@ -1,16 +1,19 @@
 /**
  * SD_Lead_Repository
- * Capa de Persistencia: Gestión de datos de Leads en Sheets.
+ * Capa de Persistencia: Repositorio de Leads.
+ * Extiende BaseRepository — solo define buildRecord y métodos específicos.
+ *
+ * Anti-Vendor Locking: La resolución de la campaña asociada se hace en
+ * memoria (JavaScript), no con fórmulas de Sheets.
  */
-const LeadRepo = {
-  TABLE: 'Leads',
+const LeadRepo = new class extends BaseRepository {
+  constructor() {
+    super('Leads', (raw) => LeadEntity.create(raw));
+  }
 
-  insert: function(entity, user) {
-    const nextId = DataAdapter.getNextId(this.TABLE);
-    const now = DataAdapter.now();
-
-    const record = {
-      id_lead:         nextId,
+  buildRecord(id, entity, now, user) {
+    return {
+      id_lead:         id,
       nombre_completo: entity.nombre_completo,
       telefono:        entity.telefono,
       email:           entity.email,
@@ -24,52 +27,28 @@ const LeadRepo = {
       updated_at:      now,
       created_by:      user
     };
+  }
 
-    DataAdapter.insert(this.TABLE, record);
-    return record;
-  },
-
-  findById: function(id) {
-    const raw = DataAdapter.findById(this.TABLE, id);
-    if (!raw) return null;
-    
-    // Resolver nombre de la campaña
-    if (raw.id_campana) {
-      const camp = DataAdapter.findById('Campanas', raw.id_campana);
-      raw.campana = camp ? camp.nombre : 'No encontrada';
-    }
-    
-    return LeadEntity.create(raw);
-  },
-
-  findByTelefono: function(tel) {
-    const list = DataAdapter.findByField(this.TABLE, 'telefono', tel);
-    return list.map(r => {
-      if (r.id_campana) {
-        const camp = DataAdapter.findById('Campanas', r.id_campana);
-        r.campana = camp ? camp.nombre : 'No encontrada';
-      }
-      return LeadEntity.create(r);
-    });
-  },
-
-  findAll: function() {
-    const list = DataAdapter.findAll(this.TABLE);
-    // Resolver nombres de campaña en lote para eficiencia
+  /** Retorna todos los leads resolviendo el nombre de campaña en memoria */
+  findAll() {
+    const list     = DataAdapter.findAll(this.tableName);
     const campanas = DataAdapter.findAll('Campanas');
-    const campMap = {};
-    campanas.forEach(c => { campMap[c.id_campana] = c.nombre; });
-
-    return list.map(r => {
+    const campMap  = {};
+    campanas.forEach(function(c) { campMap[c.id_campana] = c.nombre; });
+    return list.map(function(r) {
       r.campana = campMap[r.id_campana] || 'No encontrada';
       return LeadEntity.create(r);
     });
-  },
-
-  actualizarEstado: function(idLead, nuevoEstado) {
-    return DataAdapter.update(this.TABLE, idLead, {
-      estado: nuevoEstado,
-      updated_at: DataAdapter.now()
-    });
   }
-};
+
+  /** Busca leads por número de teléfono */
+  findByTelefono(tel) {
+    return DataAdapter.findByField(this.tableName, 'telefono', String(tel).trim())
+      .map(this._toEntity);
+  }
+
+  /** Cambia el estado de un lead */
+  actualizarEstado(id, nuevoEstado) {
+    return this.update(id, { estado: nuevoEstado });
+  }
+}();

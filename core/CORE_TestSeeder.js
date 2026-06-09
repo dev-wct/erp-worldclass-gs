@@ -20,10 +20,21 @@ const CORE_TestSeeder = {
 
     try {
       // 1. Asegurar catálogos base inicializados
-      CORE_Setup.seedCatalogs();
+      MDM_Setup.seedCatalogs();
       MM_Setup.seedCatalogs();
       
       const user = DataAdapter.getCurrentUser();
+
+      // Resolver catálogos de empresas en memoria
+      const empresasList = DataAdapter.findAll("CAT_Empresas");
+      const companyMap = {};
+      empresasList.forEach(c => {
+        companyMap[c.id_empresa] = c.nombre;
+      });
+
+      // Si no hay empresas, usar un fallback default
+      const defaultCompanyId = empresasList.length > 0 ? empresasList[0].id_empresa : 1;
+      const defaultCompanyName = empresasList.length > 0 ? empresasList[0].nombre : "WorldClass Travel";
       
       // --- SEMBRAR 20 POSTULANTES ---
       Logger.log("Sembrando Postulantes...");
@@ -63,15 +74,19 @@ const CORE_TestSeeder = {
       for (let i = 0; i < 20; i++) {
         const idEmp = DataAdapter.getNextId("Empleados");
         const nombre = i < postulantesNombres.length ? postulantesNombres[i] : "Agente " + i;
+        const empIdEmpresa = empresas[i % empresas.length];
+        const empCompanyName = companyMap[empIdEmpresa] || "worldclasstravel";
+        const emailDomain = empCompanyName.toLowerCase().replace("erp", "").trim().replace(/\s+/g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "") + ".com";
+
         DataAdapter.insert("Empleados", {
           id_empleado: idEmp,
           id_postulante: i < 12 ? (i + 1) : "",
           nombre_completo: nombre,
           dpi: "2000" + String(20000 + i),
-          email: nombre.toLowerCase().replace(" ", ".").normalize("NFD").replace(/[\u0300-\u036f]/g, "") + "@worldclasstravel.com",
+          email: nombre.toLowerCase().replace(" ", ".").normalize("NFD").replace(/[\u0300-\u036f]/g, "") + "@" + emailDomain,
           telefono: "4444" + String(2000 + i),
           id_departamento: departamentos[i % departamentos.length],
-          id_empresa: empresas[i % empresas.length],
+          id_empresa: empIdEmpresa,
           id_rol: roles[i % roles.length],
           activo: i < 18, // 18 activos, 2 inactivos
           fecha_ingreso: new Date(Date.now() - (60 - i) * 24 * 60 * 60 * 1000),
@@ -100,8 +115,8 @@ const CORE_TestSeeder = {
           marca: ["Dell", "HP", "Lenovo", "Apple", "Samsung"][i % marcas.length],
           modelo: "ProBook " + i,
           serial: "SN-" + String(9999 + i),
-          id_empresa: 1, // WCT
-          empresa: "WorldClass Travel",
+          id_empresa: defaultCompanyId,
+          empresa: defaultCompanyName,
           id_estado: estadosEq[i % estadosEq.length],
           estado: ["Activo", "En bodega", "En reparación"][i % estadosEq.length],
           fecha_compra: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
@@ -130,8 +145,8 @@ const CORE_TestSeeder = {
           operadora: ["Claro", "Movistar", "Tigo"][i % operadoras.length],
           plan: "Plan Corporativo Ilimitado " + i,
           costo_mensual: 199.00 + (i * 10),
-          id_empresa: 1,
-          empresa: "WorldClass Travel",
+          id_empresa: defaultCompanyId,
+          empresa: defaultCompanyName,
           id_estado: i % 2 === 0 ? 1 : 2, // 1: Activo, 2: En Bodega
           estado: i % 2 === 0 ? "Activo" : "En bodega",
           fecha_activacion: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000),
@@ -154,8 +169,8 @@ const CORE_TestSeeder = {
           codigo_chip: "SIM-" + String(i + 1).padStart(4, '0'),
           id_empleado: i + 1,
           empleado: postulantesNombres[i],
-          id_empresa: 1,
-          empresa: "WorldClass Travel",
+          id_empresa: defaultCompanyId,
+          empresa: defaultCompanyName,
           id_departamento: 2, // Ventas
           departamento: "Ventas",
           estado_flujo: "APROBADO",
@@ -272,7 +287,7 @@ const CORE_TestSeeder = {
         const sueldo = 3500.00;
         
         // Calcular comisiones del empleado en Junio 2026, Quincena 1 (donde metimos las citas de arriba)
-        const comisionCalc = PagoUseCases.calcularComisiones(idEmp, 2026, new Date().getMonth(), 1);
+        const comisionCalc = NominaUseCases.calcularComisiones(idEmp, 2026, new Date().getMonth(), 1);
         const comisiones = comisionCalc.total_comisiones || 0;
         
         const bonos = 250.00;
@@ -315,7 +330,7 @@ const CORE_TestSeeder = {
 
       ui.alert(
         "Inicialización Exitosa",
-        "Se sembraron exitosamente los 20 registros cruzados y consistentes en todas las tablas del ERP WorldClass Travel. Ya puede realizar pruebas integrales.",
+        "Se sembraron exitosamente los 20 registros cruzados y consistentes en todas las tablas del " + Config.ERP_NAME + ". Ya puede realizar pruebas integrales.",
         ui.ButtonSet.OK
       );
       

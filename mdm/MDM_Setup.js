@@ -1,11 +1,11 @@
 /**
- * CORE_Setup
- * Carga de datos semilla para catálogos maestros del holding (CORE).
- * Se ejecuta automáticamente tras sincronizar el esquema CORE si las hojas están vacías.
+ * MDM_Setup
+ * Carga de datos semilla para catálogos maestros del holding (MDM).
+ * Se ejecuta automáticamente tras sincronizar el esquema MDM si las hojas están vacías.
  */
-const CORE_Setup = {
+const MDM_Setup = {
   
-  /** Datos semilla para catálogos del CORE */
+  /** Datos semilla para catálogos maestros del holding (MDM) */
   SEED_DATA: {
     CAT_Empresas: [
       [1, 'WorldClass Travel', 'WCT', true, new Date(), new Date()],
@@ -29,8 +29,9 @@ const CORE_Setup = {
 
   /** Inserta los datos semilla si la hoja está recién creada (solo tiene cabecera) */
   seedCatalogs: function() {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    Logger.log("=== Iniciando carga de datos semilla para Catálogos de CORE ===");
+    const ss = Utils.getActiveSpreadsheet();
+    if (!ss) return;
+    Logger.log("=== [MDM] Iniciando carga de datos semilla para Catálogos Maestros ===");
     
     Object.keys(this.SEED_DATA).forEach(tableName => {
       const sh = ss.getSheetByName(tableName);

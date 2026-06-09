@@ -1,6 +1,7 @@
 /**
  * SD_Cita_Controller
  * Capa de Adaptador: Controlador de interfaz para Citas.
+ * Usa safeExecute() para garantizar respuestas uniformes sin try/catch repetidos.
  */
 
 function abrirFormCita() {
@@ -12,35 +13,30 @@ function abrirFormCita() {
 }
 
 function apiGetCatalogosCita() {
-  try {
-    // Obtener Leads con estado CONTACTADO o INTERESADO o NUEVO
-    const leads = LeadRepo.findAll().filter(l => l.estado !== 'INVALIDO' && l.estado !== 'NO_INTERESADO' && l.estado !== 'CITA_AGENDADA');
-    
-    // Obtener Empleados activos
+  return safeExecute(function() {
+    const leads = LeadRepo.findAll().filter(function(l) {
+      return l.estado !== 'INVALIDO' && l.estado !== 'NO_INTERESADO' && l.estado !== 'CITA_AGENDADA';
+    });
     const empleados = DataAdapter.findAll('Empleados', { activo: true });
-
     return {
-      leads: leads.map(l => ({ id: l.id_lead, nombre: l.nombre_completo + ' (' + l.telefono + ')' })),
-      empleados: empleados.map(e => ({ id: e.id_empleado, nombre: e.nombre_completo }))
+      leads:     leads.map(function(l) {
+        return { id: l.id_lead, nombre: l.nombre_completo + ' (' + l.telefono + ')' };
+      }),
+      empleados: empleados.map(function(e) {
+        return { id: e.id_empleado, nombre: e.nombre_completo };
+      })
     };
-  } catch (err) {
-    return { leads: [], empleados: [] };
-  }
+  }, 'SD.Cita.getCatalogos');
 }
 
 function apiGuardarCita(formData) {
-  try {
+  return safeExecute(function() {
     return CitaUseCases.registrar(formData);
-  } catch (err) {
-    return { ok: false, errores: [err.message] };
-  }
+  }, 'SD.Cita.guardar');
 }
 
 function apiGetCitas() {
-  try {
-    const list = CitaRepo.findAll();
-    return list.map(c => CitaDTO.toResponse(c));
-  } catch (err) {
-    return [];
-  }
+  return safeExecute(function() {
+    return CitaRepo.findAll().map(function(c) { return CitaDTO.toResponse(c); });
+  }, 'SD.Cita.getAll');
 }

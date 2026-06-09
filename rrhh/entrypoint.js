@@ -38,7 +38,7 @@ function onOpen() {
     .addItem('💰 Registrar Pago de Nómina', 'abrirFormPagoNomina');
 
   // Menú Raíz del ERP
-  ui.createMenu('🏢 ERP WorldClass')
+  ui.createMenu('🏢 ' + Config.ERP_NAME)
     .addSubMenu(menuHCM)
     .addSubMenu(menuMM)
     .addSubMenu(menuSD)
@@ -54,8 +54,8 @@ function apiSembrarDatosPrueba() {
 
 function apiMigrarCORE() {
   try {
-    const res = SetupEngine.syncDatabase(CORE_Schema);
-    CORE_Setup.seedCatalogs();
+    const res = SetupEngine.syncDatabase(MDM_Schema);
+    MDM_Setup.seedCatalogs();
     SpreadsheetApp.getUi().alert("Sincronización Exitosa", "CORE: " + res.mensaje + " Catálogos inicializados con datos semilla.", SpreadsheetApp.getUi().ButtonSet.OK);
   } catch (e) {
     SpreadsheetApp.getUi().alert("Error de Integridad", e.message, SpreadsheetApp.getUi().ButtonSet.OK);
