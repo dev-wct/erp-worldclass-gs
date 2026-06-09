@@ -109,7 +109,41 @@ function apiAvanzarEstadoPostulante(id, nuevoEstado) {
  *   5. ¡Listo! Cada envío del formulario disparará onPostulanteFormSubmit().
  */
 function instalarTriggerPostulante() {
+  const ui = SpreadsheetApp.getUi();
   try {
+    const ss = Utils.getActiveSpreadsheet();
+    let formUrl = ss.getFormUrl();
+    let form;
+    let createdNew = false;
+
+    if (!formUrl) {
+      Logger.log('[*] No se detectó formulario vinculado. Creando uno nuevo...');
+      form = FormApp.create(Config.ERP_NAME + ' - Registro de Postulantes');
+      form.setDescription('Formulario oficial de postulaciones para candidatos al Call Center.');
+
+      // Crear las preguntas con los nombres exactos que espera el DTO
+      form.addTextItem().setTitle('Nombre Completo').setRequired(true);
+      form.addTextItem().setTitle('DPI / NIT').setRequired(true);
+      form.addTextItem().setTitle('Teléfono').setRequired(true);
+      form.addTextItem().setTitle('Correo Electrónico').setRequired(true);
+
+      const list = form.addListItem();
+      list.setTitle('¿Cómo nos conociste?');
+      list.setChoiceValues(['FACEBOOK', 'INSTAGRAM', 'REFERIDO', 'LINKEDIN', 'COMPUTRABAJO', 'OTRO']);
+      list.setRequired(true);
+
+      form.addParagraphTextItem().setTitle('Mensaje o Comentarios');
+
+      // Vincular el formulario a esta hoja de cálculo
+      form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
+      
+      formUrl = form.getPublishedUrl();
+      createdNew = true;
+      Logger.log('[✔] Google Form creado y vinculado: ' + formUrl);
+    } else {
+      Logger.log('[*] Ya existe un formulario vinculado: ' + formUrl);
+    }
+
     // Eliminar triggers previos del mismo nombre para evitar duplicados
     const triggers = ScriptApp.getProjectTriggers();
     triggers.forEach(function(t) {
@@ -119,21 +153,33 @@ function instalarTriggerPostulante() {
       }
     });
 
-    // Instalar el nuevo trigger vinculado a la hoja activa
+    // Instalar el nuevo trigger vinculado a la hoja activa (Spreadsheet Form Submit)
     ScriptApp.newTrigger('onPostulanteFormSubmit')
-      .forSpreadsheet(Utils.getActiveSpreadsheet())
+      .forSpreadsheet(ss)
       .onFormSubmit()
       .create();
 
     Logger.log('[✔] Trigger onPostulanteFormSubmit instalado exitosamente.');
-    SpreadsheetApp.getUi().alert(
-      'Trigger Instalado',
-      'El formulario público de postulantes quedó vinculado al ERP. ' +
-      'Cada envío del Google Form registrará automáticamente al candidato en la hoja Postulantes.',
-      SpreadsheetApp.getUi().ButtonSet.OK
-    );
+
+    if (createdNew) {
+      ui.alert(
+        '🚀 Google Form y Trigger Creados',
+        '¡Formulario de Reclutamiento creado y vinculado automáticamente!\n\n' +
+        '👉 Link PÚBLICO para candidatos:\n' + form.getPublishedUrl() + '\n\n' +
+        '🛠️ Link para EDITAR el formulario:\n' + form.getEditUrl() + '\n\n' +
+        'El trigger quedó configurado para registrar los envíos directamente en el ERP.',
+        ui.ButtonSet.OK
+      );
+    } else {
+      ui.alert(
+        'Trigger Instalado',
+        'El trigger se vinculó al formulario existente:\n' + formUrl + '\n\n' +
+        'Cada envío del formulario registrará automáticamente al candidato en la hoja Postulantes.',
+        ui.ButtonSet.OK
+      );
+    }
   } catch (err) {
     Logger.log('[ERROR] No se pudo instalar el trigger: ' + err.message);
-    SpreadsheetApp.getUi().alert('Error', err.message, SpreadsheetApp.getUi().ButtonSet.OK);
+    ui.alert('Error en Instalación', err.message, ui.ButtonSet.OK);
   }
 }

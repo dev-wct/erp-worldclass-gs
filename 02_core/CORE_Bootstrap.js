@@ -46,6 +46,10 @@ const Bootstrap = {
       Logger.log("5/5 Sincronizando FICO (Finanzas)...");
       SetupEngine.syncDatabase(FICO_Schema);
 
+      // 6. Configurar Formulario Público y Triggers (Reclutamiento)
+      Logger.log("Configurando Formulario de Postulantes y Trigger...");
+      instalarTriggerPostulante();
+
       Logger.log("=== BOOTSTRAP COMPLETADO CON ÉXITO ===");
       
       const seedResponse = ui.alert(
