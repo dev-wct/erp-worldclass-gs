@@ -11,6 +11,8 @@ function onOpen() {
 
   // 2. Submenú CORE (Administración y Sistema)
   const menuCore = ui.createMenu('⚙️ Administración y Sistema')
+    .addItem('🚀 Inicializar ERP Completo (Bootstrap)', 'apiInicializarERPCompleto')
+    .addSeparator()
     .addItem('📁 Organizar Carpetas en Drive', 'apiOrganizarDrive')
     .addItem('🧪 Poblar Datos de Prueba (20 registros)', 'apiSembrarDatosPrueba')
     .addSeparator()
@@ -50,6 +52,10 @@ function onOpen() {
     .addSeparator()
     .addSubMenu(menuCore)
     .addToUi();
+}
+
+function apiInicializarERPCompleto() {
+  Bootstrap.runERPSetup();
 }
 
 function apiSembrarDatosPrueba() {
