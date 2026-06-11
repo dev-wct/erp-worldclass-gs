@@ -3,8 +3,10 @@
   <head>
     <base target="_top">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrar Llamada</title>
     <?!= include('02_core/CORE_DesignSystem'); ?>
+    <?!= include('02_core/CORE_FormHandler'); ?>
     <style>
       /* Estilos específicos y complementarios del Timer con el Design System */
       .timer-widget {
@@ -99,64 +101,50 @@
     </div>
 
     <script>
-      let timerInterval = null;
-      let totalSeconds = 0;
+      var BTN_TEXT = '💾 Guardar Llamada';
+      var timerInterval = null;
+      var totalSeconds  = 0;
 
       window.onload = function() {
-        google.script.run
-          .withSuccessHandler(catalogos => {
-            const leadSel = document.getElementById('id_lead');
-            leadSel.innerHTML = '<option value="">-- Seleccionar Lead --</option>';
-            if (catalogos.leads && catalogos.leads.length > 0) {
-              catalogos.leads.forEach(l => {
-                const opt = document.createElement('option');
-                opt.value = l.id;
-                opt.textContent = l.nombre;
-                leadSel.appendChild(opt);
-              });
-            } else {
-              leadSel.innerHTML = '<option value="">No hay leads activos</option>';
-            }
-
-            const empSel = document.getElementById('id_empleado');
-            empSel.innerHTML = '<option value="">-- Seleccionar Agente --</option>';
-            if (catalogos.empleados && catalogos.empleados.length > 0) {
-              catalogos.empleados.forEach(e => {
-                const opt = document.createElement('option');
-                opt.value = e.id;
-                opt.textContent = e.nombre;
-                empSel.appendChild(opt);
-              });
-            } else {
-              empSel.innerHTML = '<option value="">No hay agentes activos</option>';
-            }
-          })
-          .withFailureHandler(err => {
-            mostrarError('Error cargando catálogos: ' + err.message);
-          })
-          .apiGetCatalogosLlamada();
+        ERP.Gateway.callArgs('apiGetCatalogosLlamada', [],
+          function(catalogos) {
+            ERP.Select.fill('id_lead', catalogos.leads || [], 'id', 'nombre',
+              catalogos.leads && catalogos.leads.length > 0
+                ? '-- Seleccionar Lead --'
+                : 'No hay leads activos'
+            );
+            ERP.Select.fill('id_empleado', catalogos.empleados || [], 'id', 'nombre',
+              catalogos.empleados && catalogos.empleados.length > 0
+                ? '-- Seleccionar Agente --'
+                : 'No hay agentes activos'
+            );
+          },
+          function(err) {
+            ERP.Msg.error('Error cargando catálogos: ' + err.message, 'error');
+          }
+        );
       };
 
       function toggleTimer() {
-        const btn = document.getElementById('btnTimer');
-        const input = document.getElementById('duracion_seg');
-        
+        var btn   = document.getElementById('btnTimer');
+        var input = document.getElementById('duracion_seg');
+
         if (timerInterval) {
           clearInterval(timerInterval);
           timerInterval = null;
-          btn.innerText = 'Iniciar Llamada';
-          btn.className = 'sap-btn sap-btn-accept';
-          input.value = totalSeconds;
+          btn.innerText  = 'Iniciar Llamada';
+          btn.className  = 'sap-btn sap-btn-accept';
+          input.value    = totalSeconds;
         } else {
           totalSeconds = 0;
           document.getElementById('timerLabel').innerText = '00:00';
-          btn.innerText = 'Finalizar Llamada';
-          btn.className = 'sap-btn sap-btn-reject';
-          timerInterval = setInterval(() => {
+          btn.innerText  = 'Finalizar Llamada';
+          btn.className  = 'sap-btn sap-btn-reject';
+          timerInterval = setInterval(function() {
             totalSeconds++;
-            const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-            const secs = String(totalSeconds % 60).padStart(2, '0');
-            document.getElementById('timerLabel').innerText = `${mins}:${secs}`;
+            var mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+            var secs = String(totalSeconds % 60).padStart(2, '0');
+            document.getElementById('timerLabel').innerText = mins + ':' + secs;
             input.value = totalSeconds;
           }, 1000);
         }
@@ -164,49 +152,29 @@
 
       function guardar(e) {
         e.preventDefault();
-        
-        if (timerInterval) {
-          toggleTimer();
-        }
+        if (timerInterval) toggleTimer();
 
-        const btn = document.getElementById('btnGuardar');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
+        ERP.Btn.loading('btnGuardar');
+        ERP.Msg.hide('error');
 
-        const data = {
-          id_lead:      document.getElementById('id_lead').value,
-          id_empleado:  document.getElementById('id_empleado').value,
-          duracion_seg: document.getElementById('duracion_seg').value,
-          resultado:    document.getElementById('resultado').value,
-          notas:        document.getElementById('notas').value
-        };
+        var data = ERP.Form.collect([
+          'id_lead', 'id_empleado', 'duracion_seg', 'resultado', 'notas'
+        ]);
 
-        const errorDiv = document.getElementById('error');
-        errorDiv.style.display = 'none';
-
-        google.script.run
-          .withSuccessHandler(res => {
-            btn.disabled = false;
-            btn.innerText = '💾 Guardar Llamada';
-
+        ERP.Gateway.call('apiGuardarLlamada', data,
+          function(res) {
             if (res.ok) {
               google.script.host.close();
             } else {
-              mostrarError(res.errores.join('\n'));
+              ERP.Msg.error(res.errores.join('\n'), 'error');
+              ERP.Btn.ready('btnGuardar', BTN_TEXT);
             }
-          })
-          .withFailureHandler(err => {
-            btn.disabled = false;
-            btn.innerText = '💾 Guardar Llamada';
-            mostrarError(err.message);
-          })
-          .apiGuardarLlamada(data);
-      }
-
-      function mostrarError(msg) {
-        const box = document.getElementById('error');
-        box.innerText = msg;
-        box.style.display = 'flex';
+          },
+          function(err) {
+            ERP.Msg.error(err.message, 'error');
+            ERP.Btn.ready('btnGuardar', BTN_TEXT);
+          }
+        );
       }
     </script>
   </body>

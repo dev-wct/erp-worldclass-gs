@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nueva Asignación</title>
   <?!= include('02_core/CORE_DesignSystem'); ?>
+  <?!= include('02_core/CORE_FormHandler'); ?>
 </head>
 <body>
 
@@ -92,103 +93,63 @@
 </div>
 
 <script>
+  var BTN_TEXT = '📋 Crear Solicitud';
+
   window.onload = function() {
     document.getElementById('fecha_asignacion').value = new Date().toISOString().split('T')[0];
-
-    google.script.run
-      .withSuccessHandler(cargarFormulario)
-      .withFailureHandler(onFatalError)
-      .apiGetCatalogosAsignacion();
+    ERP.Gateway.callArgs('apiGetCatalogosAsignacion', [], cargarFormulario, function(err) {
+      ERP.Msg.error('⚠️ Error cargando datos: ' + err.message);
+    });
   };
 
   function cargarFormulario(data) {
-    const selEmp = document.getElementById('id_empleado');
-    data.empleados.forEach(e => {
-      const opt = document.createElement('option');
-      opt.value = e.id_empleado;
-      opt.textContent = e.nombre_completo + ' — ' + (e.email || 'Sin email');
-      selEmp.appendChild(opt);
-    });
-
-    const selEq = document.getElementById('id_equipo');
-    data.equipos.forEach(eq => {
-      const opt = document.createElement('option');
-      opt.value = eq.id_equipo;
-      opt.textContent = eq.codigo_interno + ' — ' + (eq.marca || eq.id_marca) + ' ' + eq.modelo + ' (' + eq.serial + ')';
-      selEq.appendChild(opt);
-    });
-
-    const selCh = document.getElementById('id_chip');
-    data.chips.forEach(ch => {
-      const opt = document.createElement('option');
-      opt.value = ch.id_chip;
-      opt.textContent = ch.codigo_interno + ' — ' + ch.numero + ' (' + (ch.operadora || ch.id_operadora) + ') GTQ ' + ch.costo_mensual + '/mes';
-      selCh.appendChild(opt);
-    });
+    ERP.Select.fill('id_empleado', data.empleados, 'id_empleado',
+      function(e) { return e.nombre_completo + ' — ' + (e.email || 'Sin email'); },
+      '— Seleccionar empleado —'
+    );
+    ERP.Select.fill('id_equipo', data.equipos, 'id_equipo',
+      function(eq) { return eq.codigo_interno + ' — ' + (eq.marca || eq.id_marca) + ' ' + eq.modelo + ' (' + eq.serial + ')'; },
+      '— Sin equipo / Solo chip —'
+    );
+    ERP.Select.fill('id_chip', data.chips, 'id_chip',
+      function(ch) { return ch.codigo_interno + ' — ' + ch.numero + ' (' + (ch.operadora || ch.id_operadora) + ') GTQ ' + ch.costo_mensual + '/mes'; },
+      '— Sin chip / Solo equipo —'
+    );
   }
 
   function guardar(e) {
     e.preventDefault();
 
-    const idEquipo = document.getElementById('id_equipo').value;
-    const idChip = document.getElementById('id_chip').value;
+    var idEquipo = document.getElementById('id_equipo').value;
+    var idChip   = document.getElementById('id_chip').value;
 
     if (!idEquipo && !idChip) {
-      showMsg('sap-message-strip-error', '⚠️ Debe seleccionar al menos un equipo o un chip.');
+      ERP.Msg.warning('⚠️ Debe seleccionar al menos un equipo o un chip.');
       return;
     }
 
-    const saveBtn = document.getElementById('saveBtn');
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
-    hideMsg();
+    ERP.Btn.loading('saveBtn');
+    ERP.Msg.hide();
 
-    const data = {
-      id_empleado:      document.getElementById('id_empleado').value,
-      id_equipo:        idEquipo,
-      id_chip:          idChip,
-      fecha_asignacion: document.getElementById('fecha_asignacion').value,
-      link_acta:        document.getElementById('link_acta').value,
-      notas:            document.getElementById('notas').value
-    };
+    var data = ERP.Form.collect([
+      'id_empleado', 'id_equipo', 'id_chip', 'fecha_asignacion', 'link_acta', 'notas'
+    ]);
 
-    google.script.run
-      .withSuccessHandler(onSuccess)
-      .withFailureHandler(onFailure)
-      .apiGuardarAsignacion(data);
-  }
-
-  function onSuccess(res) {
-    const saveBtn = document.getElementById('saveBtn');
-    if (res.ok) {
-      showMsg('sap-message-strip-success', '✔ ' + res.mensaje);
-      setTimeout(() => google.script.host.close(), 2000);
-    } else {
-      showMsg('sap-message-strip-error', '⚠️ ' + res.errores.join('\n'));
-      saveBtn.disabled = false;
-      saveBtn.innerText = '📋 Crear Solicitud';
-    }
-  }
-
-  function onFailure(err) {
-    showMsg('sap-message-strip-error', '⚠️ Error del Sistema: ' + err.message);
-    document.getElementById('saveBtn').disabled = false;
-    document.getElementById('saveBtn').innerText = '📋 Crear Solicitud';
-  }
-
-  function onFatalError(err) {
-    showMsg('sap-message-strip-error', '⚠️ Error cargando datos: ' + err.message);
-  }
-
-  function showMsg(type, text) {
-    const el = document.getElementById('msg');
-    el.className = 'sap-message-strip ' + type;
-    el.innerText = text;
-    el.style.display = 'flex';
-  }
-
-  function hideMsg() {
-    document.getElementById('msg').style.display = 'none';
+    ERP.Gateway.call('apiGuardarAsignacion', data,
+      function(res) {
+        if (res.ok) {
+          ERP.Msg.success('✔ ' + res.mensaje);
+          setTimeout(function() { google.script.host.close(); }, 2000);
+        } else {
+          ERP.Msg.error('⚠️ ' + res.errores.join('\n'));
+          ERP.Btn.ready('saveBtn', BTN_TEXT);
+        }
+      },
+      function(err) {
+        ERP.Msg.error('⚠️ Error del Sistema: ' + err.message);
+        ERP.Btn.ready('saveBtn', BTN_TEXT);
+      }
+    );
   }
 </script>
 </body>

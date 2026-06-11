@@ -3,8 +3,10 @@
   <head>
     <base target="_top">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrar Nueva Campaña</title>
     <?!= include('02_core/CORE_DesignSystem'); ?>
+    <?!= include('02_core/CORE_FormHandler'); ?>
   </head>
   <body>
     <div class="sap-container">
@@ -63,47 +65,31 @@
     </div>
 
     <script>
+      var BTN_TEXT = '💾 Registrar Campaña';
+
       function guardar(e) {
         e.preventDefault();
-        
-        const btn = document.getElementById('btnGuardar');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
+        ERP.Btn.loading('btnGuardar');
+        ERP.Msg.hide('error');
 
-        const data = {
-          nombre:         document.getElementById('nombre').value,
-          fecha_inicio:   document.getElementById('fecha_inicio').value,
-          fecha_fin:      document.getElementById('fecha_fin').value,
-          objetivo_citas: document.getElementById('objetivo_citas').value,
-          estado:         document.getElementById('estado').value
-        };
+        var data = ERP.Form.collect([
+          'nombre', 'fecha_inicio', 'fecha_fin', 'objetivo_citas', 'estado'
+        ]);
 
-        const errorDiv = document.getElementById('error');
-        errorDiv.style.display = 'none';
-
-        google.script.run
-          .withSuccessHandler(res => {
-            btn.disabled = false;
-            btn.innerText = '💾 Registrar Campaña';
-
+        ERP.Gateway.call('apiGuardarCampana', data,
+          function(res) {
             if (res.ok) {
               google.script.host.close();
             } else {
-              mostrarError(res.errores.join('\n'));
+              ERP.Msg.error(res.errores.join('\n'), 'error');
+              ERP.Btn.ready('btnGuardar', BTN_TEXT);
             }
-          })
-          .withFailureHandler(err => {
-            btn.disabled = false;
-            btn.innerText = '💾 Registrar Campaña';
-            mostrarError(err.message);
-          })
-          .apiGuardarCampana(data);
-      }
-
-      function mostrarError(msg) {
-        const box = document.getElementById('error');
-        box.innerText = msg;
-        box.style.display = 'flex';
+          },
+          function(err) {
+            ERP.Msg.error(err.message, 'error');
+            ERP.Btn.ready('btnGuardar', BTN_TEXT);
+          }
+        );
       }
     </script>
   </body>

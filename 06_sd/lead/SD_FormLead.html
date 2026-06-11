@@ -3,8 +3,10 @@
   <head>
     <base target="_top">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrar Nuevo Lead</title>
     <?!= include('02_core/CORE_DesignSystem'); ?>
+    <?!= include('02_core/CORE_FormHandler'); ?>
   </head>
   <body>
     <div class="sap-container">
@@ -90,73 +92,48 @@
     </div>
 
     <script>
+      var BTN_TEXT = '💾 Registrar Lead';
+
       window.onload = function() {
-        google.script.run
-          .withSuccessHandler(catalogos => {
-            const select = document.getElementById('id_campana');
-            select.innerHTML = '<option value="">-- Seleccionar Campaña --</option>';
-            
-            if (catalogos.campanas && catalogos.campanas.length > 0) {
-              catalogos.campanas.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = c.nombre;
-                select.appendChild(opt);
-              });
-            } else {
-              select.innerHTML = '<option value="">No hay campañas activas</option>';
-            }
-          })
-          .withFailureHandler(err => {
+        ERP.Gateway.callArgs('apiGetCatalogosLead', [],
+          function(catalogos) {
+            ERP.Select.fill('id_campana', catalogos.campanas || [], 'id', 'nombre',
+              catalogos.campanas && catalogos.campanas.length > 0
+                ? '-- Seleccionar Campaña --'
+                : 'No hay campañas activas'
+            );
+          },
+          function() {
             document.getElementById('id_campana').innerHTML = '<option value="">Error cargando campañas</option>';
-          })
-          .apiGetCatalogosLead();
+          }
+        );
       };
 
       function guardar(e) {
         e.preventDefault();
-        
-        const btn = document.getElementById('btnGuardar');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
+        ERP.Btn.loading('btnGuardar');
+        ERP.Msg.hide('error');
 
-        const data = {
-          nombre_completo: document.getElementById('nombre_completo').value,
-          telefono:        document.getElementById('telefono').value,
-          email:           document.getElementById('email').value,
-          tipo_tdc:        document.getElementById('tipo_tdc').value,
-          banco_emisor:    document.getElementById('banco_emisor').value,
-          id_campana:      document.getElementById('id_campana').value,
-          fuente:          document.getElementById('fuente').value,
-          notes:           document.getElementById('notas').value // Campo mapeado internamente
-        };
+        var data = ERP.Form.collect([
+          'nombre_completo', 'telefono', 'email', 'tipo_tdc',
+          'banco_emisor', 'id_campana', 'fuente', 'notas'
+        ]);
+        data.notes = data.notas; // alias interno del backend
 
-        const errorDiv = document.getElementById('error');
-        errorDiv.style.display = 'none';
-
-        google.script.run
-          .withSuccessHandler(res => {
-            btn.disabled = false;
-            btn.innerText = '💾 Registrar Lead';
-
+        ERP.Gateway.call('apiGuardarLead', data,
+          function(res) {
             if (res.ok) {
               google.script.host.close();
             } else {
-              mostrarError(res.errores.join('\n'));
+              ERP.Msg.error(res.errores.join('\n'), 'error');
+              ERP.Btn.ready('btnGuardar', BTN_TEXT);
             }
-          })
-          .withFailureHandler(err => {
-            btn.disabled = false;
-            btn.innerText = '💾 Registrar Lead';
-            mostrarError(err.message);
-          })
-          .apiGuardarLead(data);
-      }
-
-      function mostrarError(msg) {
-        const box = document.getElementById('error');
-        box.innerText = msg;
-        box.style.display = 'flex';
+          },
+          function(err) {
+            ERP.Msg.error(err.message, 'error');
+            ERP.Btn.ready('btnGuardar', BTN_TEXT);
+          }
+        );
       }
     </script>
   </body>

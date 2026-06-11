@@ -3,8 +3,10 @@
   <head>
     <base target="_top">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nueva Cita Agendada</title>
     <?!= include('02_core/CORE_DesignSystem'); ?>
+    <?!= include('02_core/CORE_FormHandler'); ?>
   </head>
   <body>
     <div class="sap-container">
@@ -73,84 +75,52 @@
     </div>
 
     <script>
-      window.onload = function() {
-        google.script.run
-          .withSuccessHandler(catalogos => {
-            const leadSel = document.getElementById('id_lead');
-            leadSel.innerHTML = '<option value="">-- Seleccionar Lead --</option>';
-            if (catalogos.leads && catalogos.leads.length > 0) {
-              catalogos.leads.forEach(l => {
-                const opt = document.createElement('option');
-                opt.value = l.id;
-                opt.textContent = l.nombre;
-                leadSel.appendChild(opt);
-              });
-            } else {
-              leadSel.innerHTML = '<option value="">No hay leads elegibles (debe contactar o perfilar primero)</option>';
-            }
+      var BTN_TEXT = '💾 Agendar Cita';
 
-            const empSel = document.getElementById('id_empleado_agendo');
-            empSel.innerHTML = '<option value="">-- Seleccionar Agente --</option>';
-            if (catalogos.empleados && catalogos.empleados.length > 0) {
-              catalogos.empleados.forEach(e => {
-                const opt = document.createElement('option');
-                opt.value = e.id;
-                opt.textContent = e.nombre;
-                empSel.appendChild(opt);
-              });
-            } else {
-              empSel.innerHTML = '<option value="">No hay agentes activos</option>';
-            }
-          })
-          .withFailureHandler(err => {
-            mostrarError('Error cargando catálogos: ' + err.message);
-          })
-          .apiGetCatalogosCita();
+      window.onload = function() {
+        ERP.Gateway.callArgs('apiGetCatalogosCita', [],
+          function(catalogos) {
+            ERP.Select.fill('id_lead', catalogos.leads || [], 'id', 'nombre',
+              catalogos.leads && catalogos.leads.length > 0
+                ? '-- Seleccionar Lead --'
+                : 'No hay leads elegibles (debe contactar o perfilar primero)'
+            );
+            ERP.Select.fill('id_empleado_agendo', catalogos.empleados || [], 'id', 'nombre',
+              catalogos.empleados && catalogos.empleados.length > 0
+                ? '-- Seleccionar Agente --'
+                : 'No hay agentes activos'
+            );
+          },
+          function(err) {
+            ERP.Msg.error('Error cargando catálogos: ' + err.message, 'error');
+          }
+        );
       };
 
       function guardar(e) {
         e.preventDefault();
-        
-        const btn = document.getElementById('btnGuardar');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
+        ERP.Btn.loading('btnGuardar');
+        ERP.Msg.hide('error');
 
-        const data = {
-          id_lead:            document.getElementById('id_lead').value,
-          id_empleado_agendo: document.getElementById('id_empleado_agendo').value,
-          restaurante:        document.getElementById('restaurante').value,
-          fecha_cita:         document.getElementById('fecha_cita').value,
-          hora_cita:          document.getElementById('hora_cita').value,
-          num_acompanantes:   document.getElementById('num_acompanantes').value,
-          notas:              document.getElementById('notas').value
-        };
+        var data = ERP.Form.collect([
+          'id_lead', 'id_empleado_agendo', 'restaurante',
+          'fecha_cita', 'hora_cita', 'num_acompanantes', 'notas'
+        ]);
 
-        const errorDiv = document.getElementById('error');
-        errorDiv.style.display = 'none';
-
-        google.script.run
-          .withSuccessHandler(res => {
-            btn.disabled = false;
-            btn.innerText = '💾 Agendar Cita';
-
+        ERP.Gateway.call('apiGuardarCita', data,
+          function(res) {
             if (res.ok) {
               google.script.host.close();
             } else {
-              mostrarError(res.errores.join('\n'));
+              ERP.Msg.error(res.errores.join('\n'), 'error');
+              ERP.Btn.ready('btnGuardar', BTN_TEXT);
             }
-          })
-          .withFailureHandler(err => {
-            btn.disabled = false;
-            btn.innerText = '💾 Agendar Cita';
-            mostrarError(err.message);
-          })
-          .apiGuardarCita(data);
-      }
-
-      function mostrarError(msg) {
-        const box = document.getElementById('error');
-        box.innerText = msg;
-        box.style.display = 'flex';
+          },
+          function(err) {
+            ERP.Msg.error(err.message, 'error');
+            ERP.Btn.ready('btnGuardar', BTN_TEXT);
+          }
+        );
       }
     </script>
   </body>

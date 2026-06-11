@@ -2,8 +2,27 @@ const RRHH_Schema = {
   Postulantes: {
     pk: 'id_postulante',
     columns: ['id_postulante','nombre_completo','dpi','telefono','email',
-              'fuente','fecha_postulacion','estado','notas',
-              'created_at','created_by'],
+              'fuente','id_campana','fecha_postulacion','estado','notas',
+              'link_cv','created_at','created_by'],
+    // id_campana es una referencia suave a SD.Campanas — no se declara como FK
+    // para evitar que el migrador de RRHH exija que SD esté inicializado primero.
+  },
+  PostulantesTokens: {
+    pk: 'id_token',
+    columns: [
+      'id_token',
+      'token',
+      'link_postulacion',
+      'modo',            // INDIVIDUAL (token personal) | PUBLICO (link abierto)
+      'id_campana',      // Campaña asociada al link (opcional)
+      'email_destino',
+      'nombre_destino',
+      'creado_por',
+      'creado_at',
+      'expira_at',
+      'estado',          // PENDIENTE | USADO | EXPIRADO
+      'usado_at',
+    ],
   },
   Empleados: {
     pk: 'id_empleado',

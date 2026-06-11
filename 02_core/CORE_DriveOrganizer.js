@@ -62,21 +62,37 @@ const DriveOrganizer = {
     Logger.log(`[*] Detectado Entorno: ${envName}`);
     Logger.log(`[*] Carpeta Raíz Destino: ${rootFolderName}`);
 
-    // 2. Definir la estructura de carpetas aislada para este entorno
+    // 2. Definir la estructura de carpetas por módulo SAP
+    //    Cada módulo es dueño de sus propios archivos — igual que en las tablas.
     const structure = {};
     structure[rootFolderName] = {
-      'Documentos': {
-        'Contratos': {},
-        'Actas_Entrega': {},
-        'Reportes': {},
-        'Facturas': {},
+      // ── RRHH — Recursos Humanos ──────────────────────────────────────────
+      'RRHH': {
+        'Postulantes': {},   // CVs y documentos de candidatos (subcarpetas por candidato)
+        'Empleados':   {},   // Contratos, expedientes firmados
+        'Onboarding':  {},   // Documentos del proceso de incorporación
       },
-      'Uploads': {
-        'Fotos_Empleados': {},
-        'Hojas_Vida': {},
-        'Fotos_Equipos': {},
+      // ── MM — Materials Management ────────────────────────────────────────
+      'MM': {
+        'Equipos':     {},   // Fotos y facturas de equipos
+        'Chips':       {},   // Documentos de líneas telefónicas
+        'Asignaciones':{},   // Actas de entrega firmadas
       },
-      'Plantillas': {},
+      // ── SD — Sales & Distribution ────────────────────────────────────────
+      'SD': {
+        'Campanas':    {},   // Materiales de campaña
+      },
+      // ── FICO — Finance & Controlling ─────────────────────────────────────
+      'FICO': {
+        'Nomina':      {},   // Comprobantes de pago
+        'Facturas':    {},   // Facturas de proveedores
+      },
+      // ── CORE — Transversal ───────────────────────────────────────────────
+      'CORE': {
+        'Reportes':    {},   // Reportes generados por el ERP
+        'Plantillas':  {},   // Plantillas de documentos
+        'Backups':     {},   // Respaldos de datos
+      },
     };
 
     // 3. Crear estructura de carpetas en la raíz del Drive

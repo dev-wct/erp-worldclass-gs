@@ -44,30 +44,73 @@ const SetupEngine = {
       let sh = ss.getSheetByName(tableName);
 
       if (!sh) {
-        // Crear hoja si no existe
+        // Crear hoja nueva desde cero
         sh = ss.insertSheet(tableName);
         sh.appendRow(tableDef.columns);
         this.formatHeader(sh);
         Logger.log(`[+] Creada nueva tabla: ${tableName}`);
-      } else {
-        // Verificar que no falten columnas agregadas en el esquema local
-        const currentHeaders = sh.getRange(1, 1, 1, Math.max(1, sh.getLastColumn()))
-                                 .getValues()[0]
-                                 .map(h => String(h).trim());
-
-        const missingColumns = tableDef.columns.filter(c => !currentHeaders.includes(c));
-
-        if (missingColumns.length > 0) {
-          missingColumns.forEach(colName => {
-            const nextColIdx = sh.getLastColumn() + 1;
-            sh.getRange(1, nextColIdx).setValue(colName);
-            Logger.log(`  [+] Agregado campo faltante '${colName}' a la tabla '${tableName}'`);
-          });
-          this.formatHeader(sh);
-        } else {
-          Logger.log(`[✔] Tabla '${tableName}' al día.`);
-        }
+        return;
       }
+
+      // ── Tabla existente: verificar columnas ──
+      const lastCol = Math.max(1, sh.getLastColumn());
+      const currentHeaders = sh.getRange(1, 1, 1, lastCol)
+                               .getValues()[0]
+                               .map(h => String(h).trim());
+
+      const expectedColumns = tableDef.columns;
+      const missingColumns  = expectedColumns.filter(c => !currentHeaders.includes(c));
+      const outOfOrder      = expectedColumns.some((col, idx) => currentHeaders[idx] !== col);
+
+      if (missingColumns.length === 0 && !outOfOrder) {
+        Logger.log(`[✔] Tabla '${tableName}' al día.`);
+        return;
+      }
+
+      if (missingColumns.length > 0 && !outOfOrder) {
+        // Solo faltan columnas nuevas al final — agregar sin tocar datos
+        missingColumns.forEach(colName => {
+          const nextColIdx = sh.getLastColumn() + 1;
+          sh.getRange(1, nextColIdx).setValue(colName);
+          Logger.log(`  [+] Columna agregada: '${colName}' en '${tableName}'`);
+        });
+        this.formatHeader(sh);
+        return;
+      }
+
+      // ── Columnas fuera de orden o renombradas: reconstruir preservando datos ──
+      Logger.log(`[~] Reconstruyendo '${tableName}' por columnas fuera de orden...`);
+
+      const lastRow    = sh.getLastRow();
+      const allData    = lastRow > 1
+        ? sh.getRange(2, 1, lastRow - 1, lastCol).getValues()
+        : [];
+
+      // Mapear datos viejos: { nombreColumna: [valor fila1, valor fila2, ...] }
+      const colMap = {};
+      currentHeaders.forEach((header, i) => {
+        if (header) colMap[header] = allData.map(row => row[i] !== undefined ? row[i] : '');
+      });
+
+      // Limpiar hoja completamente
+      sh.clearContents();
+
+      // Escribir encabezados en el orden correcto del schema
+      sh.getRange(1, 1, 1, expectedColumns.length).setValues([expectedColumns]);
+      this.formatHeader(sh);
+
+      // Reescribir datos en el orden correcto
+      if (allData.length > 0) {
+        const newData = allData.map((_, rowIdx) =>
+          expectedColumns.map(col => {
+            const colData = colMap[col];
+            return colData ? (colData[rowIdx] !== undefined ? colData[rowIdx] : '') : '';
+          })
+        );
+        sh.getRange(2, 1, newData.length, expectedColumns.length).setValues(newData);
+      }
+
+      Logger.log(`[✔] Tabla '${tableName}' reconstruida con ${allData.length} filas de datos preservados.`);
     });
 
     Logger.log("=== Sincronización de Base de Datos completada exitosamente ===");

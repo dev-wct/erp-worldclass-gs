@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registrar Equipo</title>
   <?!= include('02_core/CORE_DesignSystem'); ?>
+  <?!= include('02_core/CORE_FormHandler'); ?>
 </head>
 <body>
 
@@ -119,104 +120,48 @@
 </div>
 
 <script>
+  var BTN_TEXT = '💾 Guardar Equipo';
+
   window.onload = function() {
-    google.script.run
-      .withSuccessHandler(cargarFormulario)
-      .withFailureHandler(onFatalError)
-      .apiGetCatalogosEquipo();
+    ERP.Gateway.callArgs('apiGetCatalogosEquipo', [], cargarFormulario, function(err) {
+      ERP.Msg.error('⚠️ Error cargando catálogos: ' + err.message);
+    });
   };
 
   function cargarFormulario(data) {
-    llenarSelect('id_tipo', data.tipos, 'id_tipo', 'nombre');
-    llenarSelect('id_marca', data.marcas, 'id_marca', 'nombre');
-    llenarSelect('id_empresa', data.empresas, 'id_empresa', 'nombre');
-    llenarSelect('id_estado', data.estados, 'id_estado', 'nombre');
-    
-    const nextCode = 'EQ-' + String(data.nextId).padStart(4, '0');
-    document.getElementById('codigo_interno').value = nextCode;
-    
-    const selectEstado = document.getElementById('id_estado');
-    for (let i = 0; i < selectEstado.options.length; i++) {
-      if (selectEstado.options[i].text.includes('bodega')) {
-        selectEstado.selectedIndex = i;
-        break;
-      }
-    }
-  }
-
-  function llenarSelect(id, items, valueField, textField) {
-    const sel = document.getElementById(id);
-    items.forEach(item => {
-      const opt = document.createElement('option');
-      opt.value = item[valueField];
-      opt.textContent = item[textField];
-      sel.appendChild(opt);
-    });
+    ERP.Select.fill('id_tipo',    data.tipos,    'id_tipo',    'nombre', '— Seleccionar —');
+    ERP.Select.fill('id_marca',   data.marcas,   'id_marca',   'nombre', '— Seleccionar —');
+    ERP.Select.fill('id_empresa', data.empresas, 'id_empresa', 'nombre', '— Seleccionar —');
+    ERP.Select.fill('id_estado',  data.estados,  'id_estado',  'nombre', '— Seleccionar —');
+    ERP.Select.autoSelect('id_estado', 'bodega');
+    document.getElementById('codigo_interno').value = 'EQ-' + String(data.nextId).padStart(4, '0');
   }
 
   function guardar(e) {
     e.preventDefault();
-    
-    const saveBtn = document.getElementById('saveBtn');
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
-    hideMsg();
+    var original = ERP.Btn.loading('saveBtn');
+    ERP.Msg.hide();
 
-    const data = {
-      id_tipo:        document.getElementById('id_tipo').value,
-      id_marca:       document.getElementById('id_marca').value,
-      modelo:         document.getElementById('modelo').value,
-      serial:         document.getElementById('serial').value,
-      id_empresa:     document.getElementById('id_empresa').value,
-      id_estado:      document.getElementById('id_estado').value,
-      fecha_compra:   document.getElementById('fecha_compra').value,
-      garantia_hasta: document.getElementById('garantia_hasta').value,
-      valor_compra:   document.getElementById('valor_compra').value,
-      link_factura:   document.getElementById('link_factura').value,
-      link_foto:      document.getElementById('link_foto').value,
-      observaciones:  document.getElementById('observaciones').value
-    };
+    var data = ERP.Form.collect([
+      'id_tipo', 'id_marca', 'modelo', 'serial', 'id_empresa', 'id_estado',
+      'fecha_compra', 'garantia_hasta', 'valor_compra', 'link_factura', 'link_foto', 'observaciones'
+    ]);
 
-    google.script.run
-      .withSuccessHandler(onSuccess)
-      .withFailureHandler(onFailure)
-      .apiGuardarEquipo(data);
-  }
-
-  function onSuccess(res) {
-    const saveBtn = document.getElementById('saveBtn');
-    if (res.ok) {
-      showMsg('sap-message-strip-success', '✔ ' + res.mensaje);
-      setTimeout(() => {
-        google.script.host.close();
-      }, 1500);
-    } else {
-      showMsg('sap-message-strip-error', '⚠️ ' + res.errores.join('\n'));
-      saveBtn.disabled = false;
-      saveBtn.innerText = '💾 Guardar Equipo';
-    }
-  }
-
-  function onFailure(err) {
-    showMsg('sap-message-strip-error', '⚠️ Error del Sistema: ' + err.message);
-    const saveBtn = document.getElementById('saveBtn');
-    saveBtn.disabled = false;
-    saveBtn.innerText = '💾 Guardar Equipo';
-  }
-
-  function onFatalError(err) {
-    showMsg('sap-message-strip-error', '⚠️ Error cargando catálogos: ' + err.message);
-  }
-
-  function showMsg(type, text) {
-    const el = document.getElementById('msg');
-    el.className = 'sap-message-strip ' + type;
-    el.innerText = text;
-    el.style.display = 'flex';
-  }
-
-  function hideMsg() {
-    document.getElementById('msg').style.display = 'none';
+    ERP.Gateway.call('apiGuardarEquipo', data,
+      function(res) {
+        if (res.ok) {
+          ERP.Msg.success('✔ ' + res.mensaje);
+          setTimeout(function() { google.script.host.close(); }, 1500);
+        } else {
+          ERP.Msg.error('⚠️ ' + res.errores.join('\n'));
+          ERP.Btn.ready('saveBtn', BTN_TEXT);
+        }
+      },
+      function(err) {
+        ERP.Msg.error('⚠️ Error del Sistema: ' + err.message);
+        ERP.Btn.ready('saveBtn', BTN_TEXT);
+      }
+    );
   }
 </script>
 </body>

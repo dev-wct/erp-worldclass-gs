@@ -16,9 +16,11 @@ const PostulanteRepo = new class extends BaseRepository {
       telefono:          entity.telefono,
       email:             entity.email             || '',
       fuente:            entity.fuente            || 'FORMULARIO_PUBLICO',
+      id_campana:        entity.id_campana        || '',
       fecha_postulacion: now,
       estado:            entity.estado            || 'POSTULADO',
-      notas:             entity.notes             || '',
+      notas:             entity.notes || entity.notas || '',
+      link_cv:           entity.link_cv           || '',
       created_at:        now,
       created_by:        user,
     };

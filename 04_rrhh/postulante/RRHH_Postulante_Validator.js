@@ -20,7 +20,8 @@ const PostulanteValidator = {
 
     const fuentesValidas = [
       'FACEBOOK', 'INSTAGRAM', 'REFERIDO', 'LINKEDIN',
-      'COMPUTRABAJO', 'GOOGLE_FORM', 'FORMULARIO_INTERNO', 'OTRO'
+      'COMPUTRABAJO', 'GOOGLE_FORM', 'FORMULARIO_INTERNO',
+      'WEB_APP_TOKEN', 'WEB_APP_PUBLICO', 'OTRO'
     ];
     if (dto.fuente && !fuentesValidas.includes(dto.fuente.toUpperCase()))
       e.push('La fuente de reclutamiento no es válida.');

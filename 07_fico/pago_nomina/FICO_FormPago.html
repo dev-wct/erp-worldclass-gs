@@ -3,8 +3,10 @@
   <head>
     <base target="_top">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Pago de Nómina</title>
     <?!= include('02_core/CORE_DesignSystem'); ?>
+    <?!= include('02_core/CORE_FormHandler'); ?>
     <style>
       /* Estilos complementarios para FICO */
       .checkbox-container {
@@ -90,22 +92,22 @@
               
               <div class="sap-form-group">
                 <label class="sap-label required" for="sueldo_base">Sueldo Base</label>
-                <input type="number" class="sap-input" id="sueldo_base" min="0" step="0.01" value="3500" oninput="calcularTotalNeto()" required>
+                <input type="number" class="sap-input" id="sueldo_base" min="0" step="0.01" value="3500" oninput="previewTotalNeto()" required>
               </div>
 
               <div class="sap-form-group">
                 <label class="sap-label required" for="comisiones">Comisiones (Citas VIP)</label>
-                <input type="number" class="sap-input" id="comisiones" min="0" step="0.01" value="0" oninput="calcularTotalNeto()" required>
+                <input type="number" class="sap-input" id="comisiones" min="0" step="0.01" value="0" oninput="previewTotalNeto()" required>
               </div>
               
               <div class="sap-form-group">
                 <label class="sap-label required" for="bonos">Bonos Adicionales</label>
-                <input type="number" class="sap-input" id="bonos" min="0" step="0.01" value="0" oninput="calcularTotalNeto()" required>
+                <input type="number" class="sap-input" id="bonos" min="0" step="0.01" value="0" oninput="previewTotalNeto()" required>
               </div>
 
               <div class="sap-form-group">
                 <label class="sap-label required" for="deducciones">Deducciones (Anticipos/IGSS)</label>
-                <input type="number" class="sap-input" id="deducciones" min="0" step="0.01" value="0" oninput="calcularTotalNeto()" required>
+                <input type="number" class="sap-input" id="deducciones" min="0" step="0.01" value="0" oninput="previewTotalNeto()" required>
               </div>
               
               <div class="sap-form-group">
@@ -128,7 +130,7 @@
               </div>
 
               <div class="total-neto-card" id="totalNetoLabel">
-                Total Neto a Pagar: Q3,500.00
+                Estimado (preview): Q3,500.00
               </div>
 
             </div>
@@ -143,125 +145,103 @@
     </div>
 
     <script>
+      var BTN_TEXT = '💾 Registrar Pago';
+
       window.onload = function() {
-        const hoy = new Date();
-        document.getElementById('anio').value = hoy.getFullYear();
-        document.getElementById('mes').value = hoy.getMonth();
+        var hoy = new Date();
+        document.getElementById('anio').value      = hoy.getFullYear();
+        document.getElementById('mes').value       = hoy.getMonth();
         document.getElementById('fecha_pago').value = hoy.toISOString().split('T')[0];
 
-        google.script.run
-          .withSuccessHandler(catalogos => {
-            const select = document.getElementById('id_empleado');
-            select.innerHTML = '<option value="">-- Seleccionar Empleado --</option>';
-            if (catalogos.empleados && catalogos.empleados.length > 0) {
-              catalogos.empleados.forEach(e => {
-                const opt = document.createElement('option');
-                opt.value = e.id;
-                opt.textContent = e.nombre;
-                select.appendChild(opt);
-              });
-            } else {
-              select.innerHTML = '<option value="">No hay empleados activos</option>';
-            }
-          })
-          .withFailureHandler(err => {
-            mostrarError('Error cargando empleados: ' + err.message);
-          })
-          .apiGetCatalogosPagoNomina();
+        ERP.Gateway.callArgs('apiGetCatalogosPagoNomina', [],
+          function(catalogos) {
+            ERP.Select.fill('id_empleado', catalogos.empleados || [], 'id', 'nombre',
+              catalogos.empleados && catalogos.empleados.length > 0
+                ? '-- Seleccionar Empleado --'
+                : 'No hay empleados activos'
+            );
+          },
+          function(err) {
+            ERP.Msg.error('Error cargando empleados: ' + err.message, 'error');
+          }
+        );
       };
 
       function togglePagadoFields() {
-        const pagado = document.getElementById('pagado').checked;
+        var pagado = document.getElementById('pagado').checked;
         document.getElementById('fechaPagoGroup').style.display = pagado ? 'block' : 'none';
       }
 
       function actualizarComisiones() {
-        const idEmp = document.getElementById('id_empleado').value;
-        const anio = document.getElementById('anio').value;
-        const mes = document.getElementById('mes').value;
-        const quincena = document.getElementById('quincena').value;
+        var idEmp    = document.getElementById('id_empleado').value;
+        var anio     = document.getElementById('anio').value;
+        var mes      = document.getElementById('mes').value;
+        var quincena = document.getElementById('quincena').value;
 
         if (!idEmp || !anio || !quincena) return;
 
-        const infoDiv = document.getElementById('info');
-        infoDiv.style.display = 'none';
+        ERP.Msg.hide('info');
 
-        google.script.run
-          .withSuccessHandler(res => {
+        ERP.Gateway.callArgs('apiCalcularComisionAgente', [idEmp, anio, mes, quincena],
+          function(res) {
             if (res.ok) {
               document.getElementById('comisiones').value = res.total_comisiones;
-              calcularTotalNeto();
-              
+              previewTotalNeto(); // solo actualiza display
               if (res.ventas_concretadas > 0) {
-                infoDiv.innerHTML = `<strong>¡Comisiones VIP Aplicadas!</strong> Se encontraron ${res.ventas_concretadas} ventas de citas en esta quincena.`;
-                infoDiv.style.display = 'flex';
+                ERP.Msg.success(
+                  '<strong>¡Comisiones VIP Aplicadas!</strong> Se encontraron ' + res.ventas_concretadas + ' ventas de citas en esta quincena.',
+                  'info'
+                );
               }
             }
-          })
-          .withFailureHandler(err => {
-            console.error('Error calculando comisiones:', err);
-          })
-          .apiCalcularComisionAgente(idEmp, anio, mes, quincena);
+          },
+          function(err) { console.error('Error calculando comisiones:', err); }
+        );
       }
 
-      function calcularTotalNeto() {
-        const sueldo = parseFloat(document.getElementById('sueldo_base').value) || 0;
-        const comisiones = parseFloat(document.getElementById('comisiones').value) || 0;
-        const bonos = parseFloat(document.getElementById('bonos').value) || 0;
-        const deducciones = parseFloat(document.getElementById('deducciones').value) || 0;
+      /**
+       * Preview optimista del total neto — SOLO DISPLAY.
+       * El número real lo calcula y valida NominaUseCases en el servidor.
+       * Esta función NUNCA envía datos al backend ni toma decisiones de negocio.
+       */
+      function previewTotalNeto() {
+        var sueldo     = parseFloat(document.getElementById('sueldo_base').value)  || 0;
+        var comisiones = parseFloat(document.getElementById('comisiones').value)   || 0;
+        var bonos      = parseFloat(document.getElementById('bonos').value)        || 0;
+        var deducciones= parseFloat(document.getElementById('deducciones').value)  || 0;
 
-        const total = sueldo + comisiones + bonos - deducciones;
-        
-        const formatted = new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(total);
-        document.getElementById('totalNetoLabel').innerText = 'Total Neto a Pagar: ' + formatted;
+        var estimado = sueldo + comisiones + bonos - deducciones;
+        document.getElementById('totalNetoLabel').innerText =
+          'Estimado (preview): ' + ERP.Form.formatGTQ(estimado);
       }
 
       function guardar(e) {
         e.preventDefault();
-        
-        const btn = document.getElementById('btnGuardar');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
+        ERP.Btn.loading('btnGuardar');
+        ERP.Msg.hide('error');
 
-        const data = {
-          id_empleado:  document.getElementById('id_empleado').value,
-          anio:         document.getElementById('anio').value,
-          quincena:     document.getElementById('quincena').value,
-          sueldo_base:  document.getElementById('sueldo_base').value,
-          comisiones:   document.getElementById('comisiones').value,
-          bonos:        document.getElementById('bonos').value,
-          deducciones:  document.getElementById('deducciones').value,
-          pagado:       document.getElementById('pagado').checked,
-          fecha_pago:   document.getElementById('pagado').checked ? document.getElementById('fecha_pago').value : '',
-          metodo_pago:  document.getElementById('metodo_pago').value
-        };
+        var data = ERP.Form.collect([
+          'id_empleado', 'anio', 'quincena', 'sueldo_base',
+          'comisiones', 'bonos', 'deducciones', 'pagado',
+          'fecha_pago', 'metodo_pago'
+        ]);
+        // fecha_pago solo si pagado
+        if (!data.pagado) data.fecha_pago = '';
 
-        const errorDiv = document.getElementById('error');
-        errorDiv.style.display = 'none';
-
-        google.script.run
-          .withSuccessHandler(res => {
-            btn.disabled = false;
-            btn.innerText = '💾 Registrar Pago';
-
+        ERP.Gateway.call('apiGuardarPagoNomina', data,
+          function(res) {
             if (res.ok) {
               google.script.host.close();
             } else {
-              mostrarError(res.errores.join('\n'));
+              ERP.Msg.error(res.errores.join('\n'), 'error');
+              ERP.Btn.ready('btnGuardar', BTN_TEXT);
             }
-          })
-          .withFailureHandler(err => {
-            btn.disabled = false;
-            btn.innerText = '💾 Registrar Pago';
-            mostrarError(err.message);
-          })
-          .apiGuardarPagoNomina(data);
-      }
-
-      function mostrarError(msg) {
-        const box = document.getElementById('error');
-        box.innerText = msg;
-        box.style.display = 'flex';
+          },
+          function(err) {
+            ERP.Msg.error(err.message, 'error');
+            ERP.Btn.ready('btnGuardar', BTN_TEXT);
+          }
+        );
       }
     </script>
   </body>

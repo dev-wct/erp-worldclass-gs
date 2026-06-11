@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registrar Chip SIM</title>
   <?!= include('02_core/CORE_DesignSystem'); ?>
+  <?!= include('02_core/CORE_FormHandler'); ?>
 </head>
 <body>
 
@@ -96,46 +97,28 @@
 </div>
 
 <script>
+  var BTN_TEXT = '💾 Guardar Chip';
+
   window.onload = function() {
-    google.script.run
-      .withSuccessHandler(cargarFormulario)
-      .withFailureHandler(onFatalError)
-      .apiGetCatalogosChip();
+    ERP.Gateway.callArgs('apiGetCatalogosChip', [], cargarFormulario, function(err) {
+      ERP.Msg.error('⚠️ Error cargando catálogos: ' + err.message);
+    });
   };
 
   function cargarFormulario(data) {
-    llenarSelect('id_operadora', data.operadoras, 'id_operadora', 'nombre');
-    llenarSelect('id_empresa', data.empresas, 'id_empresa', 'nombre');
-    llenarSelect('id_estado', data.estados, 'id_estado', 'nombre');
-    
-    const nextCode = 'SIM-' + String(data.nextId).padStart(4, '0');
-    document.getElementById('codigo_interno').value = nextCode;
-    
-    const selectEstado = document.getElementById('id_estado');
-    for (let i = 0; i < selectEstado.options.length; i++) {
-      if (selectEstado.options[i].text.includes('bodega')) {
-        selectEstado.selectedIndex = i;
-        break;
-      }
-    }
+    ERP.Select.fill('id_operadora', data.operadoras, 'id_operadora', 'nombre', '— Seleccionar —');
+    ERP.Select.fill('id_empresa',   data.empresas,   'id_empresa',   'nombre', '— Seleccionar —');
+    ERP.Select.fill('id_estado',    data.estados,    'id_estado',    'nombre', '— Seleccionar —');
+    ERP.Select.autoSelect('id_estado', 'bodega');
+    document.getElementById('codigo_interno').value = 'SIM-' + String(data.nextId).padStart(4, '0');
   }
 
-  function llenarSelect(id, items, valueField, textField) {
-    const sel = document.getElementById(id);
-    items.forEach(item => {
-      const opt = document.createElement('option');
-      opt.value = item[valueField];
-      opt.textContent = item[textField];
-      sel.appendChild(opt);
-    });
-  }
-
+  // Preview de costo anual — lógica de display puro (no negocio)
   function actualizarPreviewCosto() {
-    const costo = parseFloat(document.getElementById('costo_mensual').value);
-    const preview = document.getElementById('costo_preview');
+    var costo   = parseFloat(document.getElementById('costo_mensual').value);
+    var preview = document.getElementById('costo_preview');
     if (costo > 0) {
-      const anual = (costo * 12).toFixed(2);
-      preview.innerHTML = `💡 Gasto anual proyectado de la línea: <strong>GTQ ${anual}</strong>`;
+      preview.innerHTML  = '💡 Gasto anual proyectado de la línea: <strong>GTQ ' + (costo * 12).toFixed(2) + '</strong>';
       preview.style.display = 'flex';
     } else {
       preview.style.display = 'none';
@@ -144,63 +127,29 @@
 
   function guardar(e) {
     e.preventDefault();
-    
-    const saveBtn = document.getElementById('saveBtn');
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<span class="sap-spinner"></span> Guardando...';
-    hideMsg();
+    var original = ERP.Btn.loading('saveBtn');
+    ERP.Msg.hide();
 
-    const data = {
-      numero:           document.getElementById('numero').value,
-      id_operadora:     document.getElementById('id_operadora').value,
-      plan:             document.getElementById('plan').value,
-      id_empresa:       document.getElementById('id_empresa').value,
-      id_estado:        document.getElementById('id_estado').value,
-      costo_mensual:    document.getElementById('costo_mensual').value,
-      fecha_activacion: document.getElementById('fecha_activacion').value,
-      observaciones:    document.getElementById('observaciones').value
-    };
+    var data = ERP.Form.collect([
+      'numero', 'id_operadora', 'plan', 'id_empresa', 'id_estado',
+      'costo_mensual', 'fecha_activacion', 'observaciones'
+    ]);
 
-    google.script.run
-      .withSuccessHandler(onSuccess)
-      .withFailureHandler(onFailure)
-      .apiGuardarChip(data);
-  }
-
-  function onSuccess(res) {
-    const saveBtn = document.getElementById('saveBtn');
-    if (res.ok) {
-      showMsg('sap-message-strip-success', '✔ ' + res.mensaje);
-      setTimeout(() => {
-        google.script.host.close();
-      }, 1500);
-    } else {
-      showMsg('sap-message-strip-error', '⚠️ ' + res.errores.join('\n'));
-      saveBtn.disabled = false;
-      saveBtn.innerText = '💾 Guardar Chip';
-    }
-  }
-
-  function onFailure(err) {
-    showMsg('sap-message-strip-error', '⚠️ Error del Sistema: ' + err.message);
-    const saveBtn = document.getElementById('saveBtn');
-    saveBtn.disabled = false;
-    saveBtn.innerText = '💾 Guardar Chip';
-  }
-
-  function onFatalError(err) {
-    showMsg('sap-message-strip-error', '⚠️ Error cargando catálogos: ' + err.message);
-  }
-
-  function showMsg(type, text) {
-    const el = document.getElementById('msg');
-    el.className = 'sap-message-strip ' + type;
-    el.innerHTML = text;
-    el.style.display = 'flex';
-  }
-
-  function hideMsg() {
-    document.getElementById('msg').style.display = 'none';
+    ERP.Gateway.call('apiGuardarChip', data,
+      function(res) {
+        if (res.ok) {
+          ERP.Msg.success('✔ ' + res.mensaje);
+          setTimeout(function() { google.script.host.close(); }, 1500);
+        } else {
+          ERP.Msg.error('⚠️ ' + res.errores.join('\n'));
+          ERP.Btn.ready('saveBtn', BTN_TEXT);
+        }
+      },
+      function(err) {
+        ERP.Msg.error('⚠️ Error del Sistema: ' + err.message);
+        ERP.Btn.ready('saveBtn', BTN_TEXT);
+      }
+    );
   }
 </script>
 </body>

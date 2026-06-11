@@ -61,6 +61,27 @@ const PostulanteDTO = {
   },
 
   /**
+   * Construye un DTO desde el formulario público Web App (doPost).
+   * Los datos llegan como e.parameter (application/x-www-form-urlencoded).
+   *
+   * @param {object} params - e.parameter del doPost de la Web App.
+   * @param {string} token  - Token validado (para auditoría).
+   */
+  fromWebApp: function(params, token) {
+    return {
+      nombre_completo: String(params.nombre_completo || '').trim(),
+      dpi:             String(params.dpi             || '').trim(),
+      telefono:        String(params.telefono        || '').trim(),
+      email:           String(params.email           || '').trim().toLowerCase(),
+      fuente:          'WEB_APP_TOKEN',
+      id_campana:      String(params.id_campana      || '').trim(),
+      notas:           String(params.notas           || '').trim(),
+      link_cv:         String(params.link_cv         || '').trim(),
+      _token:          token,
+    };
+  },
+
+  /**
    * Construye la respuesta pública que se devuelve al cliente (AppSheet / formulario).
    * @param {object} entity - Entidad de dominio ya persistida.
    */
