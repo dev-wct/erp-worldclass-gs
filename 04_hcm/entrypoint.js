@@ -3,12 +3,12 @@ function onOpen() {
   
   // 1. Submenú de Sincronización de Base de Datos
   const menuSync = ui.createMenu('🔄 Sincronizar Bases de Datos')
-    .addItem('Base de Datos: CORE (Catálogos)', 'apiMigrarCORE')
-    .addItem('Base de Datos: RRHH (Empleados)', 'apiMigrarRRHH')
-    .addItem('Base de Datos: MM (Inventario)',  'apiMigrarMM')
-    .addItem('Base de Datos: SD (Call Center)', 'apiMigrarSD')
-    .addItem('Base de Datos: FICO (Finanzas)',  'apiMigrarFICO')
-    .addItem('Base de Datos: EREC (Reclutamiento)', 'apiMigrarEREC');
+    .addItem('Base de Datos: CORE (Catálogos)',       'apiMigrarCORE')
+    .addItem('Base de Datos: HCM (Empleados)',        'apiMigrarHCM')
+    .addItem('Base de Datos: MM (Materiales)',        'apiMigrarMM')
+    .addItem('Base de Datos: SD (Ventas)',            'apiMigrarSD')
+    .addItem('Base de Datos: FICO (Finanzas)',        'apiMigrarFICO')
+    .addItem('Base de Datos: EREC (Reclutamiento)',   'apiMigrarEREC');
 
   // 2. Submenú CORE (Administración y Sistema)
   const menuCore = ui.createMenu('⚙️ Administración y Sistema')
@@ -76,10 +76,10 @@ function apiMigrarCORE() {
   }
 }
 
-function apiMigrarRRHH() {
+function apiMigrarHCM() {
   try {
     const res = SetupEngine.syncDatabase(RRHH_Schema);
-    SpreadsheetApp.getUi().alert("Sincronización Exitosa", "RRHH: " + res.mensaje, SpreadsheetApp.getUi().ButtonSet.OK);
+    SpreadsheetApp.getUi().alert("Sincronización Exitosa", "HCM: " + res.mensaje, SpreadsheetApp.getUi().ButtonSet.OK);
   } catch (e) {
     SpreadsheetApp.getUi().alert("Error de Integridad", e.message, SpreadsheetApp.getUi().ButtonSet.OK);
   }

@@ -5,7 +5,7 @@
  */
 
 function abrirFormCampana() {
-  const html = HtmlService.createTemplateFromFile('sd/campana/SD_FormCampana')
+  const html = HtmlService.createTemplateFromFile('07_sd/campana/SD_FormCampana')
     .evaluate()
     .setWidth(500)
     .setHeight(480);

@@ -7,7 +7,7 @@
  */
 
 function abrirFormPagoNomina() {
-  const html = HtmlService.createTemplateFromFile('fico/pago_nomina/FICO_FormPago')
+  const html = HtmlService.createTemplateFromFile('08_fico/pago_nomina/FICO_FormPago')
     .evaluate()
     .setWidth(520)
     .setHeight(600);

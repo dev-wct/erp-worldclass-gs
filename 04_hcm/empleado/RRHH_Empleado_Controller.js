@@ -5,7 +5,7 @@
  */
 
 function abrirFormEmpleado() {
-  const html = HtmlService.createTemplateFromFile('rrhh/empleado/RRHH_FormEmpleado')
+  const html = HtmlService.createTemplateFromFile('04_hcm/empleado/RRHH_FormEmpleado')
     .evaluate()
     .setWidth(520)
     .setHeight(520);

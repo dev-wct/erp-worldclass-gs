@@ -48,7 +48,7 @@ function doGet(e) {
   // Resolver label del documento según el país de la empresa
   var labelDoc = Customizing.getLabelDocumento(vacante.id_empresa);
 
-  var tpl = HtmlService.createTemplateFromFile('08_erec/vacante/EREC_FormPostulante');
+  var tpl = HtmlService.createTemplateFromFile('09_erec/vacante/EREC_FormPostulante');
   tpl.erpName         = Config.ERP_NAME;
   tpl.token           = token;
   tpl.modo            = token ? 'INDIVIDUAL' : 'PUBLICO';
@@ -136,7 +136,7 @@ function doPost(e) {
 // ─── APIs INTERNAS (menú del ERP) ────────────────────────────────────────────
 
 function abrirFormVacante() {
-  var html = HtmlService.createTemplateFromFile('08_erec/vacante/EREC_FormVacante')
+  var html = HtmlService.createTemplateFromFile('09_erec/vacante/EREC_FormVacante')
     .evaluate()
     .setWidth(620)
     .setHeight(680);

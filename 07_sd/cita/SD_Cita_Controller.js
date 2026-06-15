@@ -5,7 +5,7 @@
  */
 
 function abrirFormCita() {
-  const html = HtmlService.createTemplateFromFile('sd/cita/SD_FormCita')
+  const html = HtmlService.createTemplateFromFile('07_sd/cita/SD_FormCita')
     .evaluate()
     .setWidth(500)
     .setHeight(560);

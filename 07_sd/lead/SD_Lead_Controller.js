@@ -5,7 +5,7 @@
  */
 
 function abrirFormLead() {
-  const html = HtmlService.createTemplateFromFile('sd/lead/SD_FormLead')
+  const html = HtmlService.createTemplateFromFile('07_sd/lead/SD_FormLead')
     .evaluate()
     .setWidth(520)
     .setHeight(560);

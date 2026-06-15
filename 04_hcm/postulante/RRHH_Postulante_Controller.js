@@ -477,7 +477,7 @@ function abrirFormPostulante() {
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
 function _renderForm(ctx) {
-  var tpl = HtmlService.createTemplateFromFile('04_rrhh/postulante/RRHH_FormPostulante');
+  var tpl = HtmlService.createTemplateFromFile('04_hcm/postulante/RRHH_FormPostulante');
   tpl.token           = ctx.token           || '';
   tpl.modo            = ctx.modo            || 'PUBLICO';
   tpl.idCampana       = ctx.idCampana       || '';
