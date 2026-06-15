@@ -24,37 +24,50 @@ const Bootstrap = {
     try {
       Logger.log("=== INICIANDO BOOTSTRAP DEL ERP ===");
       
-      // 1. Sincronizar MDM (Esquema base de empresas, departamentos, roles)
-      Logger.log("1/5 Sincronizando MDM (Datos Maestros)...");
+      // 1. MDM
+      Logger.log("1/6 Sincronizando MDM (Datos Maestros)...");
       SetupEngine.syncDatabase(MDM_Schema);
       MDM_Setup.seedCatalogs();
 
-      // 2. Sincronizar RRHH (Empleados, postulantes, onboarding, bajas)
-      Logger.log("2/5 Sincronizando RRHH...");
+      // 2. RRHH
+      Logger.log("2/6 Sincronizando RRHH...");
       SetupEngine.syncDatabase(RRHH_Schema);
 
-      // 3. Sincronizar MM (Inventario, equipos, chips, asignaciones)
-      Logger.log("3/5 Sincronizando MM (Materiales)...");
+      // 3. MM
+      Logger.log("3/6 Sincronizando MM (Materiales)...");
       SetupEngine.syncDatabase(MM_Schema);
       MM_Setup.seedCatalogs();
 
-      // 4. Sincronizar SD (Ventas y Call Center)
-      Logger.log("4/5 Sincronizando SD (Ventas)...");
+      // 4. SD
+      Logger.log("4/6 Sincronizando SD (Ventas)...");
       SetupEngine.syncDatabase(SD_Schema);
 
-      // 5. Sincronizar FICO (Finanzas)
-      Logger.log("5/5 Sincronizando FICO (Finanzas)...");
+      // 5. FICO
+      Logger.log("5/6 Sincronizando FICO (Finanzas)...");
       SetupEngine.syncDatabase(FICO_Schema);
 
-      // 6. Configurar Formulario Público y Triggers (Reclutamiento)
-      Logger.log("Configurando Formulario de Postulantes y Trigger...");
-      instalarTriggerPostulante();
+      // 6. EREC — debe ir después de RRHH (referencia suave a Empleados)
+      Logger.log("6/6 Sincronizando EREC (E-Recruiting)...");
+      EREC_Setup.syncAndSeed();
+
+      // 7. Organizar Drive con estructura por módulo
+      Logger.log("Organizando estructura de Drive...");
+      try { DriveOrganizer.run(); } catch(driveErr) {
+        Logger.log("Drive ya organizado o sin permisos: " + driveErr.message);
+      }
 
       Logger.log("=== BOOTSTRAP COMPLETADO CON ÉXITO ===");
-      
+
       const seedResponse = ui.alert(
-        "¡Inicialización Exitosa!",
-        "La base de datos del ERP ha sido configurada y los catálogos base están listos.\n\n¿Desea cargar los 20 registros de prueba (Postulantes, Empleados, Leads, Llamadas, etc.) para simular el sistema?",
+        "¡ERP Inicializado!",
+        "✔ Todos los módulos están listos:\n" +
+        "  • MDM — Datos Maestros\n" +
+        "  • RRHH — Recursos Humanos\n" +
+        "  • MM — Materiales\n" +
+        "  • SD — Ventas y Call Center\n" +
+        "  • FICO — Finanzas\n" +
+        "  • EREC — E-Recruiting\n\n" +
+        "¿Desea cargar los registros de prueba para simular el sistema?",
         ui.ButtonSet.YES_NO
       );
 

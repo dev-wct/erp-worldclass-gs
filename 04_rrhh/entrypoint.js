@@ -5,9 +5,10 @@ function onOpen() {
   const menuSync = ui.createMenu('🔄 Sincronizar Bases de Datos')
     .addItem('Base de Datos: CORE (Catálogos)', 'apiMigrarCORE')
     .addItem('Base de Datos: RRHH (Empleados)', 'apiMigrarRRHH')
-    .addItem('Base de Datos: MM (Inventario)', 'apiMigrarMM')
+    .addItem('Base de Datos: MM (Inventario)',  'apiMigrarMM')
     .addItem('Base de Datos: SD (Call Center)', 'apiMigrarSD')
-    .addItem('Base de Datos: FICO (Finanzas)', 'apiMigrarFICO');
+    .addItem('Base de Datos: FICO (Finanzas)',  'apiMigrarFICO')
+    .addItem('Base de Datos: EREC (Reclutamiento)', 'apiMigrarEREC');
 
   // 2. Submenú CORE (Administración y Sistema)
   const menuCore = ui.createMenu('⚙️ Administración y Sistema')
@@ -18,32 +19,37 @@ function onOpen() {
     .addSeparator()
     .addSubMenu(menuSync);
 
-  // 3. Submenú RRHH / HCM
+  // 3. Submenú RRHH / HCM — solo gestión de empleados activos
   const menuHCM = ui.createMenu('👥 HCM (Recursos Humanos)')
-    .addItem('🔗 Generar Link de Postulación', 'abrirDialogoGenerarLink')
-    .addItem('📋 Ver Links Generados', 'abrirDialogoLinksActivos')
-    .addSeparator()
     .addItem('👤 Registrar Empleado', 'abrirFormEmpleado');
-  // 4. Submenú MM (Logística y Activos IT)
+
+  // 4. Submenú EREC — E-Recruiting
+  const menuEREC = ui.createMenu('🎯 E-Recruiting (Reclutamiento)')
+    .addItem('📋 Nueva Vacante',              'abrirFormVacante')
+    .addItem('🔗 Generar Link de Postulación','abrirDialogoLinksVacante')
+    .addSeparator()
+    .addItem('📋 Ver Links Generados',         'abrirDialogoVerLinksEREC');
+  // 5. Submenú MM (Logística y Activos IT)
   const menuMM = ui.createMenu('📦 MM (Logística y Materiales)')
     .addItem('💻 Registrar Equipo Informático', 'abrirFormEquipo')
     .addItem('📱 Registrar Chip SIM (Línea)', 'abrirFormChip')
     .addItem('🔗 Asignación de Activos', 'abrirFormAsignacion');
 
-  // 5. Submenú SD (Ventas & Call Center)
+  // 6. Submenú SD (Ventas & Call Center)
   const menuSD = ui.createMenu('📞 SD (Ventas y Call Center)')
     .addItem('📢 Registrar Campaña', 'abrirFormCampana')
     .addItem('👤 Registrar Lead', 'abrirFormLead')
     .addItem('📞 Registrar Llamada', 'abrirFormLlamada')
     .addItem('📅 Agendar Cita VIP', 'abrirFormCita');
 
-  // 6. Submenú FICO (Finanzas y Controlling)
+  // 7. Submenú FICO (Finanzas y Controlling)
   const menuFICO = ui.createMenu('💵 FICO (Finanzas y Control)')
     .addItem('💰 Registrar Pago de Nómina', 'abrirFormPagoNomina');
 
   // Menú Raíz del ERP
   ui.createMenu('🏢 ' + Config.ERP_NAME)
     .addSubMenu(menuHCM)
+    .addSubMenu(menuEREC)
     .addSubMenu(menuMM)
     .addSubMenu(menuSD)
     .addSubMenu(menuFICO)

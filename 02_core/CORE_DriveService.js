@@ -46,30 +46,35 @@ const DriveService = {
   },
 
   /**
-   * Sube el CV de un postulante.
-   * Resuelve automáticamente la ruta RRHH/Postulantes/{nombre}_{labelDoc}_{dpi}/
+   * Sube el CV de un postulante EREC.
+   * Ruta: ERP/EREC/Vacantes/{codigoVacante}/{Nombre_LABEL_Doc}/cv.pdf
    *
    * @param {string} base64Data
    * @param {string} fileName
    * @param {string} mimeType
-   * @param {string} nombreCandidato  — Para construir el nombre de la subcarpeta
-   * @param {string} dpi              — Número de documento de identidad
-   * @param {string} labelDocumento   — Ej: "DPI", "DUI", "Cédula" (viene de Customizing)
+   * @param {string} nombreCandidato
+   * @param {string} documentoIdentidad
+   * @param {string} labelDocumento     — "DPI", "DUI", "Cédula"… (desde Customizing)
+   * @param {string} [codigoVacante]    — "EREC-0001" para organizar por vacante
    * @returns {string} URL del archivo
    */
-  subirCVPostulante: function(base64Data, fileName, mimeType, nombreCandidato, dpi, labelDocumento) {
-    // Sanitizar el nombre para usarlo como nombre de carpeta
+  subirCVPostulante: function(base64Data, fileName, mimeType, nombreCandidato, documentoIdentidad, labelDocumento, codigoVacante) {
     var nombreSanitizado = this._sanitizarNombre(nombreCandidato);
-    var dpiSanitizado    = this._sanitizarNombre(String(dpi || 'SIN_DOC'));
+    var docSanitizado    = this._sanitizarNombre(String(documentoIdentidad || 'SIN_DOC'));
     var labelSanitizado  = this._sanitizarNombre(String(labelDocumento || 'ID'));
 
-    // Subcarpeta: Juan_Perez_DPI_1234567890123
-    var subCarpeta = nombreSanitizado + '_' + labelSanitizado + '_' + dpiSanitizado;
+    // Subcarpeta del candidato: Juan_Perez_DPI_1234567890123
+    var subCarpetaCandidato = nombreSanitizado + '_' + labelSanitizado + '_' + docSanitizado;
+
+    // Ruta: EREC / Vacantes / [EREC-0001] / Juan_Perez_DPI_123...
+    var ruta = codigoVacante
+      ? ['EREC', 'Vacantes', this._sanitizarNombre(codigoVacante)]
+      : ['EREC', 'Vacantes'];
 
     return this.subirArchivoBase64(
       base64Data, fileName, mimeType,
-      ['RRHH', 'Postulantes'],
-      subCarpeta
+      ruta,
+      subCarpetaCandidato
     );
   },
 
@@ -101,24 +106,13 @@ const DriveService = {
 
   /**
    * Obtiene la carpeta raíz del ERP en Drive.
-   * Busca por el nombre derivado de Config.ERP_NAME + entorno.
-   * Si no existe (DriveOrganizer no se ejecutó aún), la crea en la raíz de Drive.
+   * Delega en DriveOrganizer que persiste el ID en Script Properties
+   * y garantiza que nunca se cree una carpeta duplicada.
    *
    * @returns {Folder}
    */
   _getRaizERP: function() {
-    var ss = Utils.getActiveSpreadsheet();
-    var ssName = ss ? ss.getName() : '';
-    var envName = (ssName.toUpperCase().includes('PROD')) ? 'PROD' : 'DEV';
-    var baseName = Config.ERP_NAME.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
-    var rootName = baseName + '_' + envName;
-
-    var it = DriveApp.getFoldersByName(rootName);
-    if (it.hasNext()) return it.next();
-
-    // No existe → crear carpeta raíz (DriveOrganizer no se ejecutó aún)
-    Logger.log('[DriveService] Carpeta raíz no encontrada. Creando: ' + rootName);
-    return DriveApp.createFolder(rootName);
+    return DriveOrganizer.getRootFolder();
   },
 
   /**

@@ -51,25 +51,26 @@ const MDM_Setup = {
     const ss = Utils.getActiveSpreadsheet();
     if (!ss) return;
     Logger.log("=== [MDM] Iniciando carga de datos semilla para Catálogos Maestros ===");
-    
-    Object.keys(this.SEED_DATA).forEach(tableName => {
+
+    // Orden explícito — CAT_Paises debe existir antes de CAT_Empresas (FK id_pais)
+    const ORDER = ['CAT_Paises', 'CAT_Empresas', 'CAT_Departamentos', 'CAT_Roles'];
+
+    ORDER.forEach(tableName => {
       const sh = ss.getSheetByName(tableName);
-      if (sh) {
-        const lastRow = sh.getLastRow();
-        if (lastRow <= 1) { // Solo inserta si está vacía o tiene solo el header
-          const rows = this.SEED_DATA[tableName];
-          rows.forEach(row => {
-            sh.appendRow(row);
-          });
-          Logger.log(`[✔] Datos semilla insertados en la tabla: ${tableName}`);
-        } else {
-          Logger.log(`[*] La tabla '${tableName}' ya contiene datos. Omitiendo semilla.`);
-        }
-      } else {
-        Logger.log(`[!] La tabla '${tableName}' no existe físicamente en el Sheet.`);
+      if (!sh) {
+        Logger.log(`[!] Tabla '${tableName}' no existe físicamente. Ejecuta Sincronizar CORE primero.`);
+        return;
       }
+      if (sh.getLastRow() > 1) {
+        Logger.log(`[*] '${tableName}' ya tiene datos. Omitiendo semilla.`);
+        return;
+      }
+      const rows = this.SEED_DATA[tableName];
+      if (!rows || rows.length === 0) return;
+      rows.forEach(row => sh.appendRow(row));
+      Logger.log(`[✔] Semilla insertada en: ${tableName} (${rows.length} filas)`);
     });
-    
-    Logger.log("=== Carga de datos semilla completada ===");
+
+    Logger.log("=== [MDM] Semilla completada ===");
   }
 };

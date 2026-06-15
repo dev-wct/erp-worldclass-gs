@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <? var vd = JSON.parse(vacanteData); ?>
+  <title><?= vd.titulo ?> — <?= erpName ?></title>
+  <?!= include('02_core/CORE_DesignSystem'); ?>
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--sap-spacing-xl) var(--sap-spacing-md);
+    }
+    .sap-container { width: 100%; max-width: 640px; }
+
+    .erec-brand { text-align: center; margin-bottom: var(--sap-spacing-lg); }
+    .erec-brand-title { font-size: 22px; font-weight: 700; color: var(--sap-text-main); }
+    .erec-brand-badge {
+      display: inline-block; margin-top: 6px;
+      font-size: var(--sap-font-size-sm); color: var(--sap-text-secondary);
+      background: var(--sap-bg-hover); padding: 3px 12px; border-radius: 20px;
+    }
+
+    /* Tarjeta de la vacante */
+    .vacante-card {
+      background: linear-gradient(135deg, #0a6ed1 0%, #0854a0 100%);
+      border-radius: var(--sap-border-radius-md);
+      padding: var(--sap-spacing-lg);
+      color: white;
+      margin-bottom: var(--sap-spacing-lg);
+    }
+    .vacante-titulo   { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .vacante-desc     { font-size: 13px; opacity: 0.9; line-height: 1.6; margin-bottom: var(--sap-spacing-sm); }
+    .vacante-requisitos { font-size: 12px; opacity: 0.8; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px; margin-top: 10px; }
+    .vacante-meta     { display: flex; gap: var(--sap-spacing-md); margin-top: 10px; flex-wrap: wrap; }
+    .vacante-badge    { background: rgba(255,255,255,0.2); border-radius: 12px; padding: 3px 10px; font-size: 11px; }
+
+    /* Zona de archivo */
+    .file-drop-zone {
+      border: 2px dashed var(--sap-border-color);
+      border-radius: var(--sap-border-radius-md);
+      padding: var(--sap-spacing-lg);
+      text-align: center;
+      cursor: pointer;
+      transition: var(--sap-transition);
+      background: var(--sap-bg-body);
+    }
+    .file-drop-zone:hover, .file-drop-zone.dragover {
+      border-color: var(--sap-primary);
+      background: var(--sap-primary-light);
+    }
+    .file-drop-zone input[type="file"] { display: none; }
+    .file-drop-icon   { font-size: 32px; margin-bottom: 8px; }
+    .file-drop-label  { font-size: var(--sap-font-size-base); color: var(--sap-text-secondary); }
+    .file-drop-hint   { font-size: var(--sap-font-size-sm); color: var(--sap-text-secondary); margin-top: 4px; }
+    .file-selected    { font-size: var(--sap-font-size-sm); color: var(--sap-success); margin-top: 8px; font-weight: 500; }
+    .progress-bar-wrap { width:100%; height:6px; background:var(--sap-border-light); border-radius:3px; margin-top:8px; display:none; }
+    .progress-bar      { height:100%; background:var(--sap-primary); border-radius:3px; width:0%; transition:width 0.3s; }
+
+    /* Pantalla de éxito */
+    .success-screen { display:none; text-align:center; padding:var(--sap-spacing-xl); }
+    .success-icon   { font-size:56px; margin-bottom:var(--sap-spacing-md); }
+    .success-title  { font-size:20px; font-weight:700; color:var(--sap-success); margin-bottom:var(--sap-spacing-sm); }
+    .success-msg    { color:var(--sap-text-secondary); line-height:1.7; }
+  </style>
+</head>
+<body>
+  <div class="sap-container">
+
+    <div class="erec-brand">
+      <div class="erec-brand-title">🏢 <?= erpName ?></div>
+      <div class="erec-brand-badge">Proceso de Selección</div>
+    </div>
+
+    <!-- Tarjeta de la vacante -->
+    <div class="vacante-card">
+      <div class="vacante-titulo"><?= vd.titulo ?></div>
+      <? if (vd.descripcion) { ?>
+        <div class="vacante-desc"><?= vd.descripcion ?></div>
+      <? } ?>
+      <? if (vd.requisitos) { ?>
+        <div class="vacante-requisitos">
+          <strong>Requisitos:</strong> <?= vd.requisitos ?>
+        </div>
+      <? } ?>
+      <div class="vacante-meta">
+        <span class="vacante-badge">📋 <?= vd.codigo ?></span>
+        <? if (vd.plazas_disponibles) { ?>
+          <span class="vacante-badge">👥 <?= vd.plazas_disponibles ?> plaza(s)</span>
+        <? } ?>
+        <? if (vd.fecha_cierre) { ?>
+          <span class="vacante-badge">📅 Cierre: <?= vd.fecha_cierre ?></span>
+        <? } ?>
+      </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="sap-card" id="formCard">
+      <div class="sap-card-header">
+        <div>
+          <div class="sap-card-title">👤 Tu Postulación</div>
+          <div class="sap-card-subtitle">
+            <? if (nombreCandidato) { ?>
+              Hola <strong><?= nombreCandidato ?></strong>, completa tu información.
+            <? } else { ?>
+              Completa el formulario para postularte a esta posición.
+            <? } ?>
+          </div>
+        </div>
+      </div>
+
+      <div class="sap-card-content">
+        <div id="msg" class="sap-message-strip sap-message-strip-error" style="display:none;"></div>
+
+        <form id="posForm">
+          <input type="hidden" id="token"               value="<?= token ?>">
+          <input type="hidden" id="modo"                value="<?= modo ?>">
+          <input type="hidden" id="id_vacante"          value="<?= idVacante ?>">
+          <input type="hidden" id="cv_base64"           value="">
+          <input type="hidden" id="cv_nombre"           value="">
+          <input type="hidden" id="cv_mime"             value="">
+
+          <div class="sap-form-grid">
+
+            <div class="sap-section-title">Datos Personales</div>
+
+            <div class="sap-form-group full-width">
+              <label class="sap-label required" for="nombre_completo">Nombre Completo</label>
+              <input type="text" class="sap-input" id="nombre_completo"
+                     value="<?= nombreCandidato ?>"
+                     placeholder="Ej. Juan Carlos Pérez García"
+                     autocomplete="name" required>
+            </div>
+
+            <div class="sap-form-group">
+              <label class="sap-label required" for="documento_identidad">
+                <?= labelDocumento ?>
+              </label>
+              <input type="text" class="sap-input" id="documento_identidad"
+                     placeholder="Número de tu <?= labelDocumento ?>"
+                     inputmode="numeric" required>
+            </div>
+
+            <div class="sap-form-group">
+              <label class="sap-label required" for="telefono">Teléfono Móvil</label>
+              <input type="tel" class="sap-input" id="telefono"
+                     placeholder="Ej. 55551234" inputmode="tel" required>
+            </div>
+
+            <div class="sap-form-group full-width">
+              <label class="sap-label required" for="email">Correo Electrónico</label>
+              <input type="email" class="sap-input" id="email"
+                     placeholder="tucorreo@mail.com" inputmode="email" required>
+            </div>
+
+            <div class="sap-section-title">Documentos</div>
+
+            <div class="sap-form-group full-width">
+              <label class="sap-label required">
+                Hoja de Vida / CV
+                <span style="font-weight:400;color:var(--sap-text-secondary);"> (PDF, Word o imagen — máx. 5 MB)</span>
+              </label>
+              <div class="file-drop-zone" id="dropZone"
+                   onclick="document.getElementById('cvFile').click()"
+                   ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+                <input type="file" id="cvFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                       onchange="procesarArchivo(this.files[0])">
+                <div class="file-drop-icon">📄</div>
+                <div class="file-drop-label">Haz clic o arrastra tu CV aquí</div>
+                <div class="file-drop-hint">PDF, Word o imagen • Máximo 5 MB</div>
+                <div class="file-selected" id="fileSelectedLabel" style="display:none;"></div>
+              </div>
+              <div class="progress-bar-wrap" id="progressWrap">
+                <div class="progress-bar" id="progressBar"></div>
+              </div>
+            </div>
+
+            <div class="sap-section-title">Sobre Ti</div>
+
+            <div class="sap-form-group full-width">
+              <label class="sap-label" for="notas">¿Por qué te interesa esta posición?</label>
+              <textarea class="sap-textarea" id="notas" rows="3"
+                        placeholder="Cuéntanos sobre tu experiencia o motivación para este puesto..."></textarea>
+            </div>
+
+          </div>
+
+          <div style="margin-top:var(--sap-spacing-lg);">
+            <button type="button" id="btnEnviar" onclick="enviar()"
+                    class="sap-btn sap-btn-emphasized" style="width:100%;padding:14px;">
+              Enviar Postulación
+            </button>
+          </div>
+          <p style="text-align:center;font-size:11px;color:var(--sap-text-secondary);margin-top:var(--sap-spacing-md);">
+            Al enviar, aceptas que tus datos sean procesados para este proceso de selección.
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Éxito -->
+    <div class="sap-card success-screen" id="successCard">
+      <div class="sap-card-content">
+        <div class="success-icon">🎉</div>
+        <div class="success-title">¡Postulación Enviada!</div>
+        <p class="success-msg" id="successMsg">
+          Hemos recibido tu postulación para <strong><?= vd.titulo ?></strong>.<br>
+          Nos pondremos en contacto contigo pronto.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    var BTN_TEXT = 'Enviar Postulación';
+    var MAX_BYTES = 5 * 1024 * 1024;
+
+    function onDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
+    function onDragLeave() { document.getElementById('dropZone').classList.remove('dragover'); }
+    function onDrop(e) { e.preventDefault(); onDragLeave(); procesarArchivo(e.dataTransfer.files[0]); }
+
+    function procesarArchivo(file) {
+      if (!file) return;
+      if (file.size > MAX_BYTES) {
+        mostrarError('El archivo excede 5 MB. Usa un formato más liviano.');
+        return;
+      }
+      var pw = document.getElementById('progressWrap');
+      var pb = document.getElementById('progressBar');
+      pw.style.display = 'block'; pb.style.width = '30%';
+
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        pb.style.width = '100%';
+        setTimeout(function() { pw.style.display = 'none'; pb.style.width = '0%'; }, 600);
+        var result    = ev.target.result;
+        var b64       = result.split(',')[1];
+        var mimeMatch = result.match(/^data:([^;]+);base64,/);
+        document.getElementById('cv_base64').value = b64;
+        document.getElementById('cv_nombre').value = file.name;
+        document.getElementById('cv_mime').value   = mimeMatch ? mimeMatch[1] : file.type;
+        var lbl = document.getElementById('fileSelectedLabel');
+        lbl.textContent = '✔ ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
+        lbl.style.display = 'block';
+        ocultarError();
+      };
+      reader.onerror = function() { mostrarError('No se pudo leer el archivo.'); pw.style.display = 'none'; };
+      reader.readAsDataURL(file);
+    }
+
+    function enviar() {
+      var btn    = document.getElementById('btnEnviar');
+      var nombre = document.getElementById('nombre_completo').value.trim();
+      var doc    = document.getElementById('documento_identidad').value.trim();
+      var tel    = document.getElementById('telefono').value.trim();
+      var email  = document.getElementById('email').value.trim();
+      var cvB64  = document.getElementById('cv_base64').value;
+
+      if (!nombre || !doc || !tel || !email) {
+        mostrarError('Por favor completa todos los campos obligatorios (*).');
+        return;
+      }
+      if (!cvB64) {
+        mostrarError('Por favor adjunta tu hoja de vida antes de enviar.');
+        return;
+      }
+
+      btn.disabled  = true;
+      btn.innerHTML = '<span class="sap-spinner"></span> Enviando...';
+      ocultarError();
+
+      var payload = JSON.stringify({
+        token:               document.getElementById('token').value,
+        modo:                document.getElementById('modo').value,
+        id_vacante:          document.getElementById('id_vacante').value,
+        nombre_completo:     nombre,
+        documento_identidad: doc,
+        telefono:            tel,
+        email:               email,
+        notas:               document.getElementById('notas').value.trim(),
+        cv_base64:           cvB64,
+        cv_nombre:           document.getElementById('cv_nombre').value,
+        cv_mime:             document.getElementById('cv_mime').value,
+      });
+
+      var url = window.location.href.split('?')[0];
+
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+        redirect: 'follow',
+      })
+      .then(function(r) { return r.text(); })
+      .then(function(text) {
+        var data;
+        try { var i = text.indexOf('{'); data = JSON.parse(i >= 0 ? text.substring(i) : text); }
+        catch(e) { data = { ok: true, mensaje: '¡Postulación recibida!' }; }
+        if (data.ok) {
+          mostrarExito(data.mensaje || '¡Postulación recibida! Nos contactaremos pronto.');
+        } else {
+          var errs = data.errores ? data.errores.join('\n') : (data.error || 'Error desconocido.');
+          mostrarError(errs);
+          btn.disabled = false; btn.innerText = BTN_TEXT;
+        }
+      })
+      .catch(function() {
+        mostrarError('Error de conexión. Intenta de nuevo en unos segundos.');
+        btn.disabled = false; btn.innerText = BTN_TEXT;
+      });
+    }
+
+    function mostrarExito(msg) {
+      document.getElementById('formCard').style.display = 'none';
+      document.getElementById('successMsg').innerHTML   = msg.replace(/\n/g, '<br>');
+      document.getElementById('successCard').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function mostrarError(msg) {
+      var el = document.getElementById('msg');
+      el.innerText = msg; el.style.display = 'flex';
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function ocultarError() { document.getElementById('msg').style.display = 'none'; }
+  </script>
+</body>
+</html>

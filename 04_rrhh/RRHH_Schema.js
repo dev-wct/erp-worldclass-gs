@@ -26,12 +26,12 @@ const RRHH_Schema = {
   },
   Empleados: {
     pk: 'id_empleado',
-    columns: ['id_empleado','id_postulante','nombre_completo','dpi',
+    columns: ['id_empleado','id_postulante_erec','nombre_completo','dpi',
               'email','telefono','id_departamento','id_empresa','id_rol',
               'activo','fecha_ingreso','fecha_salida','tipo_contrato',
               'created_at','updated_at','created_by'],
     fk: {
-      id_postulante:   'Postulantes',
+      // id_postulante_erec → EREC_Postulantes: referencia suave (EREC es módulo separado)
       id_departamento: 'CAT_Departamentos',
       id_empresa:      'CAT_Empresas',
       id_rol:          'CAT_Roles',

@@ -328,9 +328,101 @@ const CORE_TestSeeder = {
         });
       }
 
+      // --- SEMBRAR MÓDULO EREC (E-Recruiting) ---
+      // Orden: Vacantes → PostulantesEREC → Entrevistas
+      Logger.log("Sembrando E-Recruiting (Vacantes, Postulantes, Entrevistas)...");
+
+      const vacantesTitulos = [
+        { titulo: 'Agente de Call Center',   dept: 2, rol: 3 },
+        { titulo: 'Ejecutivo de Ventas VIP', dept: 2, rol: 2 },
+        { titulo: 'Analista de Tecnología',  dept: 1, rol: 2 },
+      ];
+      const idsVacantes = [];
+
+      vacantesTitulos.forEach(function(v, i) {
+        const idVac = DataAdapter.getNextId('EREC_Vacantes');
+        idsVacantes.push(idVac);
+        DataAdapter.insert('EREC_Vacantes', {
+          id_vacante:         idVac,
+          codigo:             'EREC-' + String(idVac).padStart(4, '0'),
+          titulo:             v.titulo,
+          descripcion:        'Buscamos un profesional para ' + v.titulo + ' con experiencia en atención al cliente.',
+          requisitos:         'Mínimo 1 año de experiencia. Disponibilidad inmediata.',
+          id_empresa:         defaultCompanyId,
+          id_departamento:    v.dept,
+          id_rol_destino:     v.rol,
+          plazas_disponibles: 3 - i,
+          plazas_cubiertas:   i,
+          fecha_apertura:     new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
+          fecha_cierre:       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          estado:             i === 2 ? 'ABIERTA' : 'EN_PROCESO',
+          created_at:         new Date(),
+          updated_at:         new Date(),
+          created_by:         user,
+        });
+      });
+
+      // 3 postulantes por vacante = 9 postulantes EREC
+      const erecNombres = [
+        'Ana López', 'Bruno Morales', 'Carmen Vega',
+        'David Ríos', 'Elena Campos', 'Felipe Torres',
+        'Gloria Núñez', 'Hernán Ibarra', 'Iris Peña',
+      ];
+      const idsErecPostulantes = [];
+
+      erecNombres.forEach(function(nombre, i) {
+        const idErecP = DataAdapter.getNextId('EREC_Postulantes');
+        idsErecPostulantes.push(idErecP);
+        const idVac  = idsVacantes[i % idsVacantes.length];
+        const etapa  = i < 3 ? 'POSTULADO' : (i < 6 ? 'ENTREVISTA' : 'PRUEBA');
+        DataAdapter.insert('EREC_Postulantes', {
+          id_postulante_erec:  idErecP,
+          id_vacante:          idVac,
+          nombre_completo:     nombre,
+          documento_identidad: '3000' + String(5000 + i),
+          telefono:            '6666' + String(1000 + i),
+          email:               nombre.toLowerCase().replace(' ', '.') + '@candidato.com',
+          link_cv:             '',
+          fuente:              i % 2 === 0 ? 'TOKEN_INDIVIDUAL' : 'LINK_PUBLICO',
+          etapa_actual:        etapa,
+          puntaje:             etapa === 'POSTULADO' ? 0 : 60 + (i * 5),
+          notas_candidato:     'Me interesa el puesto, tengo experiencia en el área.',
+          fecha_postulacion:   new Date(Date.now() - (15 - i) * 24 * 60 * 60 * 1000),
+          created_at:          new Date(),
+          updated_at:          new Date(),
+          created_by:          user,
+        });
+      });
+
+      // Entrevistas para los postulantes en etapa ENTREVISTA (índices 3, 4, 5)
+      [3, 4, 5].forEach(function(idx, j) {
+        const idEnt   = DataAdapter.getNextId('EREC_EntrevistasNotas');
+        const idErecP = idsErecPostulantes[idx];
+        const idVac   = idsVacantes[idx % idsVacantes.length];
+        DataAdapter.insert('EREC_EntrevistasNotas', {
+          id_entrevista:      idEnt,
+          id_postulante_erec: idErecP,
+          id_vacante:         idVac,
+          id_entrevistador:   1,
+          fecha_entrevista:   new Date(Date.now() - (10 - j) * 24 * 60 * 60 * 1000),
+          tipo:               ['TELEFONICA', 'PRESENCIAL', 'VIDEO'][j],
+          resultado:          j < 2 ? 'APROBADO' : 'PENDIENTE',
+          puntaje:            70 + (j * 10),
+          notas:              j < 2
+            ? 'Candidato muestra buenas habilidades. Se recomienda avanzar.'
+            : 'Pendiente segunda instancia de evaluación.',
+          created_at:         new Date(),
+          created_by:         user,
+        });
+      });
+      Logger.log("Semilla EREC completada: 3 vacantes, 9 postulantes, 3 entrevistas.");
+
       ui.alert(
         "Inicialización Exitosa",
-        "Se sembraron exitosamente los 20 registros cruzados y consistentes en todas las tablas del " + Config.ERP_NAME + ". Ya puede realizar pruebas integrales.",
+        "Se sembraron exitosamente los registros de prueba en todas las tablas del " + Config.ERP_NAME + ":\n\n" +
+        "• 20 Postulantes\n• 20 Empleados\n• 20 Equipos\n• 20 Chips\n• 10 Asignaciones\n" +
+        "• 3 Campañas\n• 20 Leads\n• 20 Llamadas\n• 10 Citas\n• 15 Nóminas\n• 15 Costos de Chips\n" +
+        "• 3 Vacantes EREC\n• 9 Postulantes EREC\n• 3 Entrevistas EREC",
         ui.ButtonSet.OK
       );
       

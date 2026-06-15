@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <?!= include('02_core/CORE_DesignSystem'); ?>
+  <?!= include('02_core/CORE_FormHandler'); ?>
+</head>
+<body>
+<div class="sap-container">
+  <div class="sap-card">
+    <div class="sap-card-header">
+      <div>
+        <div class="sap-card-title">📋 Nueva Vacante de Reclutamiento</div>
+        <div class="sap-card-subtitle">E-Recruiting — Abrir posición para proceso de selección</div>
+      </div>
+    </div>
+
+    <div class="sap-card-content">
+      <div id="msg" class="sap-message-strip" style="display:none;"></div>
+
+      <form id="vacanteForm" onsubmit="guardar(event)">
+        <div class="sap-form-grid">
+
+          <div class="sap-section-title">Información de la Posición</div>
+
+          <div class="sap-form-group full-width">
+            <label class="sap-label required">Título del Puesto</label>
+            <input type="text" class="sap-input" id="titulo"
+                   placeholder="Ej. Agente de Call Center, Ejecutivo de Ventas VIP" required>
+          </div>
+
+          <div class="sap-form-group full-width">
+            <label class="sap-label required">Descripción del Puesto</label>
+            <textarea class="sap-textarea" id="descripcion" rows="3"
+                      placeholder="Describe las responsabilidades principales del puesto..." required></textarea>
+          </div>
+
+          <div class="sap-form-group full-width">
+            <label class="sap-label">Requisitos Mínimos</label>
+            <textarea class="sap-textarea" id="requisitos" rows="3"
+                      placeholder="Experiencia, habilidades, educación requerida..."></textarea>
+          </div>
+
+          <div class="sap-section-title">Organización</div>
+
+          <div class="sap-form-group">
+            <label class="sap-label required">Empresa</label>
+            <select id="id_empresa" class="sap-select" required onchange="filtrarDepartamentos()">
+              <option value="">Cargando...</option>
+            </select>
+          </div>
+
+          <div class="sap-form-group">
+            <label class="sap-label required">Departamento</label>
+            <select id="id_departamento" class="sap-select" required>
+              <option value="">— Seleccionar empresa primero —</option>
+            </select>
+          </div>
+
+          <div class="sap-form-group">
+            <label class="sap-label">Rol Destino</label>
+            <select id="id_rol_destino" class="sap-select">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+
+          <div class="sap-form-group">
+            <label class="sap-label required">Plazas Disponibles</label>
+            <input type="number" class="sap-input" id="plazas_disponibles"
+                   min="1" value="1" required>
+          </div>
+
+          <div class="sap-section-title">Fechas y Estado</div>
+
+          <div class="sap-form-group">
+            <label class="sap-label required">Fecha de Apertura</label>
+            <input type="date" class="sap-input" id="fecha_apertura" required>
+          </div>
+
+          <div class="sap-form-group">
+            <label class="sap-label">Fecha de Cierre</label>
+            <input type="date" class="sap-input" id="fecha_cierre">
+          </div>
+
+          <div class="sap-form-group">
+            <label class="sap-label required">Estado Inicial</label>
+            <select id="estado" class="sap-select">
+              <option value="BORRADOR">Borrador (no visible)</option>
+              <option value="ABIERTA" selected>Abierta (recibiendo postulaciones)</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;
+                    padding-top:16px;border-top:1px solid var(--sap-border-light);">
+          <button type="button" class="sap-btn" onclick="google.script.host.close()">Cancelar</button>
+          <button type="submit" id="saveBtn" class="sap-btn sap-btn-emphasized">📋 Crear Vacante</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  var BTN_TEXT = '📋 Crear Vacante';
+  var _deptos  = [];
+
+  window.onload = function() {
+    document.getElementById('fecha_apertura').value = new Date().toISOString().split('T')[0];
+
+    ERP.Gateway.callArgs('apiGetCatalogosVacante', [],
+      function(data) {
+        ERP.Select.fill('id_empresa',     data.empresas,      'id_empresa',    'nombre', '— Seleccionar —');
+        ERP.Select.fill('id_rol_destino', data.roles,         'id_rol',        'nombre', '— Sin rol específico —');
+        _deptos = data.departamentos || [];
+      },
+      function(err) { ERP.Msg.error('Error cargando catálogos: ' + err.message); }
+    );
+  };
+
+  function filtrarDepartamentos() {
+    var idEmp = document.getElementById('id_empresa').value;
+    var filtrados = _deptos.filter(function(d) {
+      return String(d.id_empresa) === String(idEmp);
+    });
+    ERP.Select.fill('id_departamento', filtrados, 'id_departamento', 'nombre',
+      filtrados.length > 0 ? '— Seleccionar departamento —' : 'Sin departamentos para esta empresa'
+    );
+  }
+
+  function guardar(e) {
+    e.preventDefault();
+    ERP.Btn.loading('saveBtn');
+    ERP.Msg.hide();
+
+    var data = ERP.Form.collect([
+      'titulo', 'descripcion', 'requisitos',
+      'id_empresa', 'id_departamento', 'id_rol_destino',
+      'plazas_disponibles', 'fecha_apertura', 'fecha_cierre', 'estado'
+    ]);
+
+    ERP.Gateway.call('apiCrearVacante', data,
+      function(res) {
+        if (res.ok) {
+          ERP.Msg.success('✔ ' + res.mensaje);
+          setTimeout(function() { google.script.host.close(); }, 1800);
+        } else {
+          ERP.Msg.error((res.errores || [res.error || 'Error']).join('\n'));
+          ERP.Btn.ready('saveBtn', BTN_TEXT);
+        }
+      },
+      function(err) {
+        ERP.Msg.error(err.message);
+        ERP.Btn.ready('saveBtn', BTN_TEXT);
+      }
+    );
+  }
+</script>
+</body>
+</html>
