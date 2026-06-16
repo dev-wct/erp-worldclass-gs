@@ -5,7 +5,7 @@ function onOpen() {
   const menuSync = ui.createMenu('🔄 Sincronizar Bases de Datos')
     .addItem('Base de Datos: CORE (Catálogos)',       'apiMigrarCORE')
     .addItem('Base de Datos: HCM (Empleados)',        'apiMigrarHCM')
-    .addItem('Base de Datos: MM (Materiales)',        'apiMigrarMM')
+    .addItem('Base de Datos: EAM (Activos)',         'apiMigrarEAM')
     .addItem('Base de Datos: SD (Ventas)',            'apiMigrarSD')
     .addItem('Base de Datos: FICO (Finanzas)',        'apiMigrarFICO')
     .addItem('Base de Datos: EREC (Reclutamiento)',   'apiMigrarEREC');
@@ -29,11 +29,11 @@ function onOpen() {
     .addItem('🔗 Generar Link de Postulación','abrirDialogoLinksVacante')
     .addSeparator()
     .addItem('📋 Ver Links Generados',         'abrirDialogoVerLinksEREC');
-  // 5. Submenú MM (Logística y Activos IT)
-  const menuMM = ui.createMenu('📦 MM (Logística y Materiales)')
-    .addItem('💻 Registrar Equipo Informático', 'abrirFormEquipo')
-    .addItem('📱 Registrar Chip SIM (Línea)', 'abrirFormChip')
-    .addItem('🔗 Asignación de Activos', 'abrirFormAsignacion');
+  // 5. Submenú EAM (Activos Corporativos)
+  const menuEAM = ui.createMenu('🖥️ EAM (Activos Corporativos)')
+    .addItem('💻 Registrar Equipo',        'abrirFormEquipo')
+    .addItem('📱 Registrar Chip SIM',      'abrirFormChip')
+    .addItem('🔗 Asignación de Activos',   'abrirFormAsignacion');
 
   // 6. Submenú SD (Ventas & Call Center)
   const menuSD = ui.createMenu('📞 SD (Ventas y Call Center)')
@@ -50,7 +50,7 @@ function onOpen() {
   ui.createMenu('🏢 ' + Config.ERP_NAME)
     .addSubMenu(menuHCM)
     .addSubMenu(menuEREC)
-    .addSubMenu(menuMM)
+    .addSubMenu(menuEAM)
     .addSubMenu(menuSD)
     .addSubMenu(menuFICO)
     .addSeparator()
@@ -85,11 +85,10 @@ function apiMigrarHCM() {
   }
 }
 
-function apiMigrarMM() {
+function apiMigrarEAM() {
   try {
-    const res = SetupEngine.syncDatabase(MM_Schema);
-    MM_Setup.seedCatalogs();
-    SpreadsheetApp.getUi().alert("Sincronización Exitosa", "MM: " + res.mensaje + " Catálogos de Inventario inicializados con datos semilla.", SpreadsheetApp.getUi().ButtonSet.OK);
+    EAM_Setup.syncAndSeed();
+    SpreadsheetApp.getUi().alert("Sincronización Exitosa", "EAM: Activos corporativos sincronizados y catálogos listos.", SpreadsheetApp.getUi().ButtonSet.OK);
   } catch (e) {
     SpreadsheetApp.getUi().alert("Error de Integridad", e.message, SpreadsheetApp.getUi().ButtonSet.OK);
   }

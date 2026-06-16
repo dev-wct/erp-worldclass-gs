@@ -25,29 +25,31 @@ const Bootstrap = {
       Logger.log("=== INICIANDO BOOTSTRAP DEL ERP ===");
       
       // 1. MDM
-      Logger.log("1/6 Sincronizando MDM (Datos Maestros)...");
+      Logger.log("1/7 Sincronizando MDM (Datos Maestros)...");
       SetupEngine.syncDatabase(MDM_Schema);
       MDM_Setup.seedCatalogs();
 
-      // 2. RRHH
-      Logger.log("2/6 Sincronizando RRHH...");
+      // 2. HCM
+      Logger.log("2/7 Sincronizando HCM (Human Capital Management)...");
       SetupEngine.syncDatabase(RRHH_Schema);
 
-      // 3. MM
-      Logger.log("3/6 Sincronizando MM (Materiales)...");
-      SetupEngine.syncDatabase(MM_Schema);
-      MM_Setup.seedCatalogs();
+      // 3. MM — placeholder, sin tablas aún
+      Logger.log("3/7 MM reservado (Procure-to-Pay — pendiente de implementación).");
 
-      // 4. SD
-      Logger.log("4/6 Sincronizando SD (Ventas)...");
+      // 4. EAM — activos corporativos (antes vivía en MM)
+      Logger.log("4/7 Sincronizando EAM (Enterprise Asset Management)...");
+      EAM_Setup.syncAndSeed();
+
+      // 5. SD
+      Logger.log("5/7 Sincronizando SD (Ventas y Call Center)...");
       SetupEngine.syncDatabase(SD_Schema);
 
-      // 5. FICO
-      Logger.log("5/6 Sincronizando FICO (Finanzas)...");
+      // 6. FICO
+      Logger.log("6/7 Sincronizando FICO (Finanzas)...");
       SetupEngine.syncDatabase(FICO_Schema);
 
-      // 6. EREC — debe ir después de RRHH (referencia suave a Empleados)
-      Logger.log("6/6 Sincronizando EREC (E-Recruiting)...");
+      // 7. EREC — debe ir después de HCM (referencia suave a Empleados)
+      Logger.log("7/7 Sincronizando EREC (E-Recruiting)...");
       EREC_Setup.syncAndSeed();
 
       // 7. Organizar Drive con estructura por módulo
@@ -61,10 +63,11 @@ const Bootstrap = {
       const seedResponse = ui.alert(
         "¡ERP Inicializado!",
         "✔ Todos los módulos están listos:\n" +
-        "  • MDM — Datos Maestros\n" +
-        "  • RRHH — Recursos Humanos\n" +
-        "  • MM — Materiales\n" +
-        "  • SD — Ventas y Call Center\n" +
+        "  • MDM  — Datos Maestros\n" +
+        "  • HCM  — Human Capital Management\n" +
+        "  • MM   — Materials Management (reservado)\n" +
+        "  • EAM  — Enterprise Asset Management\n" +
+        "  • SD   — Ventas y Call Center\n" +
         "  • FICO — Finanzas\n" +
         "  • EREC — E-Recruiting\n\n" +
         "¿Desea cargar los registros de prueba para simular el sistema?",

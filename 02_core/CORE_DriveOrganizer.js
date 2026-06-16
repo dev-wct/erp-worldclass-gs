@@ -138,14 +138,18 @@ const DriveOrganizer = {
       'EREC': {
         'Vacantes': {},        // CVs por vacante → candidato
       },
-      'RRHH': {
+      'HCM': {
         'Empleados':  {},      // Contratos y expedientes
         'Onboarding': {},      // Documentos de incorporación
       },
       'MM': {
-        'Equipos':      {},    // Fotos y facturas
-        'Chips':        {},    // Documentos de líneas
-        'Asignaciones': {},    // Actas de entrega
+        'Proveedores':   {},   // Documentos de proveedores (futuro)
+        'OrdenesCompra': {},   // Órdenes de compra (futuro)
+      },
+      'EAM': {
+        'Equipos':      {},    // Fotos y facturas de equipos
+        'Chips':        {},    // Documentos de líneas SIM
+        'Asignaciones': {},    // Actas de entrega firmadas
       },
       'SD': {
         'Campanas': {},        // Materiales de campaña

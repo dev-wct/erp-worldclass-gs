@@ -5,7 +5,7 @@
  */
 
 function abrirFormAsignacion() {
-  const html = HtmlService.createTemplateFromFile('05_mm/asignacion/MM_FormAsignacion')
+  const html = HtmlService.createTemplateFromFile('06_eam/asignacion/EAM_FormAsignacion')
     .evaluate()
     .setWidth(560)
     .setHeight(580);

@@ -17,15 +17,17 @@
 
 ---
 
-## Fase 1 — Renombrar módulos ⏳ PENDIENTE
+## Fase 1 — Renombrar módulos ✅ COMPLETADA
 
 | Ítem | Estado |
 |---|---|
-| Renombrar `04_rrhh/` → `04_hcm/` | ⏳ |
-| Ajustar numeración de módulos (SD, FICO, EREC) | ⏳ |
-| Actualizar referencias internas | ⏳ |
-| Verificar orden de carga GAS | ⏳ |
-| `clasp push` + smoke test | ⏳ |
+| Renombrar `04_rrhh/` → `04_hcm/` | ✅ |
+| Ajustar numeración (SD→07, FICO→08, EREC→09) | ✅ |
+| Slot `06` reservado para `06_eam` (Fase 2) | ✅ |
+| Corregir todas las rutas `createTemplateFromFile()` | ✅ |
+| Renombrar `apiMigrarRRHH` → `apiMigrarHCM` | ✅ |
+| Actualizar labels del menú de sincronización | ✅ |
+| `git commit` con historial de renombres preservado | ✅ |
 
 ---
 

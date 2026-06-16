@@ -5,9 +5,16 @@
  *
  * ESTRUCTURA DE CARPETAS (creada por DriveOrganizer):
  *   ERP_WorldClass_DEV/
- *   ├── RRHH/
- *   │   └── Postulantes/
- *   │       └── Juan_Perez_DPI_1234567890123/   ← subcarpeta por candidato
+ *   ├── HCM/
+ *   │   └── Empleados/
+ *   ├── EAM/
+ *   │   ├── Equipos/
+ *   │   ├── Chips/
+ *   │   └── Asignaciones/
+ *   ├── EREC/
+ *   │   └── Vacantes/
+ *   │       └── EREC-0001/
+ *   │           └── Juan_Perez_DPI_1234567890123/   ← subcarpeta por candidato
  *   │           ├── cv_juan_perez.pdf
  *   │           └── cedula_juan_perez.jpg
  *   ├── MM/

@@ -21,7 +21,7 @@ const CORE_TestSeeder = {
     try {
       // 1. Asegurar catálogos base inicializados
       MDM_Setup.seedCatalogs();
-      MM_Setup.seedCatalogs();
+      EAM_Setup.seedCatalogs();
       
       const user = DataAdapter.getCurrentUser();
 

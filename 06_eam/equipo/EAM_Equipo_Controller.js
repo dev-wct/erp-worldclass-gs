@@ -5,7 +5,7 @@
  */
 
 function abrirFormEquipo() {
-  const html = HtmlService.createTemplateFromFile('05_mm/equipo/MM_FormEquipo')
+  const html = HtmlService.createTemplateFromFile('06_eam/equipo/EAM_FormEquipo')
     .evaluate()
     .setWidth(520)
     .setHeight(560)
