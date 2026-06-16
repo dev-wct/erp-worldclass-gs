@@ -29,7 +29,16 @@ const DataAdapter = (() => {
       let res = rows.map(r => _rowToObj(h, r));
       if (filters) {
         Object.keys(filters).forEach(k => {
-          res = res.filter(r => r[k] === filters[k]);
+          const filterVal = filters[k];
+          res = res.filter(r => {
+            const cellVal = r[k];
+            // Normalizar booleanos: Sheets puede guardar TRUE/FALSE como string o boolean
+            if (typeof filterVal === 'boolean') {
+              return cellVal === filterVal ||
+                     String(cellVal).toUpperCase() === String(filterVal).toUpperCase();
+            }
+            return cellVal === filterVal;
+          });
         });
       }
       return res;

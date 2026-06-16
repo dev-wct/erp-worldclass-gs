@@ -69,14 +69,20 @@ function doGet(e) {
  * Retorna una página HTML de resultado — el browser la muestra directamente.
  */
 function doPost(e) {
-  var params = (e && e.parameter) ? e.parameter : {};
+  var params = {};
 
-  // Fallback: si viene como JSON (llamadas programáticas)
-  if ((!params.nombre_completo) && e && e.postData && e.postData.contents) {
+  // e.parameter funciona para form nativo urlencoded
+  if (e && e.parameter && Object.keys(e.parameter).length > 0) {
+    params = e.parameter;
+  }
+  // Fallback: JSON body (llamadas programáticas / fetch)
+  else if (e && e.postData && e.postData.contents) {
     try { params = JSON.parse(e.postData.contents); } catch(err) {}
   }
 
   Logger.log('[EREC doPost] params recibidos: ' + JSON.stringify(Object.keys(params)));
+  Logger.log('[EREC doPost] postData type: ' + (e && e.postData ? e.postData.type : 'none'));
+  Logger.log('[EREC doPost] raw e.parameter: ' + JSON.stringify(e ? e.parameter : null));
 
   var token     = String(params.token      || '').trim();
   var modo      = String(params.modo       || 'PUBLICO').trim();
@@ -153,6 +159,64 @@ function abrirFormVacante() {
     .setWidth(620)
     .setHeight(680);
   SpreadsheetApp.getUi().showModalDialog(html, '📋 Nueva Vacante de Reclutamiento');
+}
+
+function apiRegistrarPostulante(payload) {
+  return safeExecute(function() {
+    var token     = String(payload.token      || '').trim();
+    var modo      = String(payload.modo       || 'PUBLICO').trim();
+    var idVacante = String(payload.id_vacante || '').trim();
+
+    // Validar token en modo individual
+    if (modo === 'INDIVIDUAL' && token) {
+      var link = ErecLinkRepo.findByToken(token);
+      if (!link || link.estado === 'USADO' || new Date() > new Date(link.expira_at)) {
+        return { ok: false, errores: ['Token inválido o expirado.'] };
+      }
+    }
+
+    // Subir CV si viene adjunto como Base64
+    var linkCv = '';
+    if (payload.cv_base64 && payload.cv_nombre) {
+      try {
+        var vacante    = VacanteRepo.findById(idVacante);
+        var labelDoc   = vacante ? Customizing.getLabelDocumento(vacante.id_empresa) : 'ID';
+        var codVacante = vacante ? vacante.codigo : '';
+        linkCv = DriveService.subirCVPostulante(
+          payload.cv_base64,
+          payload.cv_nombre,
+          payload.cv_mime || 'application/octet-stream',
+          payload.nombre_completo,
+          payload.documento_identidad,
+          labelDoc,
+          codVacante
+        );
+        Logger.log('[EREC apiRegistrarPostulante] CV subido: ' + linkCv);
+      } catch(driveErr) {
+        Logger.log('[EREC apiRegistrarPostulante] CV falló (no bloquea): ' + driveErr.message);
+      }
+    }
+
+    var dto = {
+      id_vacante:          idVacante,
+      nombre_completo:     String(payload.nombre_completo      || '').trim(),
+      documento_identidad: String(payload.documento_identidad  || '').trim(),
+      telefono:            String(payload.telefono             || '').trim(),
+      email:               String(payload.email                || '').trim().toLowerCase(),
+      notas:               String(payload.notas                || '').trim(),
+      link_cv:             linkCv,
+      fuente:              modo === 'INDIVIDUAL' ? 'TOKEN_INDIVIDUAL' : 'LINK_PUBLICO',
+    };
+
+    var resultado = ErecPostulanteUseCases.registrar(dto);
+
+    if (resultado.ok && modo === 'INDIVIDUAL' && token) {
+      ErecLinkRepo.marcarUsado(token);
+    }
+
+    Logger.log('[EREC apiRegistrarPostulante] ' + JSON.stringify(resultado));
+    return resultado;
+  }, 'EREC.registrarPostulante');
 }
 
 function apiGetCatalogosVacante() {

@@ -278,10 +278,41 @@
       btn.innerHTML = '<span class="sap-spinner"></span> Enviando...';
       ocultarError();
 
-      // Usar form nativo — GAS Web App maneja application/x-www-form-urlencoded
-      // de forma nativa y confiable a través de e.parameter en doPost.
-      // fetch con JSON pierde el body al seguir el redirect de GAS.
-      document.getElementById('posForm').submit();
+      // GAS Web App: el form nativo no funciona dentro del sandbox.
+      // Usamos google.script.run para enviar datos al servidor de forma confiable.
+      var payload = {
+        token:               document.getElementById('token').value,
+        modo:                document.getElementById('modo').value,
+        id_vacante:          document.getElementById('id_vacante').value,
+        nombre_completo:     nombre,
+        documento_identidad: doc,
+        telefono:            tel,
+        email:               email,
+        notas:               document.getElementById('notas').value.trim(),
+        cv_base64:           cvB64,
+        cv_nombre:           document.getElementById('cv_nombre').value,
+        cv_mime:             document.getElementById('cv_mime').value,
+      };
+
+      google.script.run
+        .withSuccessHandler(function(resultado) {
+          if (resultado && resultado.ok) {
+            mostrarExito(resultado.mensaje || '¡Postulación recibida! Nos contactaremos pronto.');
+          } else {
+            var errs = resultado && resultado.errores
+              ? resultado.errores.join('\n')
+              : 'Error al procesar tu postulación.';
+            mostrarError(errs);
+            btn.disabled  = false;
+            btn.innerText = BTN_TEXT;
+          }
+        })
+        .withFailureHandler(function(err) {
+          mostrarError('Error del servidor: ' + (err.message || 'intenta de nuevo.'));
+          btn.disabled  = false;
+          btn.innerText = BTN_TEXT;
+        })
+        .apiRegistrarPostulante(payload);
     }
 
     function mostrarExito(msg) {
