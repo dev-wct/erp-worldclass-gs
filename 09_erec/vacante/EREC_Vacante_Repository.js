@@ -61,21 +61,22 @@ const ErecPostulanteRepo = new class extends BaseRepository {
 
   buildRecord(id, entity, now, user) {
     return {
-      id_postulante_erec: id,
-      id_vacante:         entity.id_vacante          || '',
-      nombre_completo:    entity.nombre_completo,
-      documento_identidad:entity.documento_identidad || '',
-      telefono:           entity.telefono            || '',
-      email:              entity.email               || '',
-      link_cv:            entity.link_cv             || '',
-      fuente:             entity.fuente              || 'LINK_PUBLICO',
-      etapa_actual:       'POSTULADO',
-      puntaje:            0,
-      notas_candidato:    entity.notas               || '',
-      fecha_postulacion:  now,
-      created_at:         now,
-      updated_at:         now,
-      created_by:         user,
+      id_postulante_erec:  id,
+      id_bp:               entity.id_bp              || '',  // llenado por BPService después del insert
+      id_vacante:          entity.id_vacante          || '',
+      nombre_completo:     entity.nombre_completo,
+      documento_identidad: entity.documento_identidad || '',
+      telefono:            entity.telefono            || '',
+      email:               entity.email               || '',
+      link_cv:             entity.link_cv             || '',
+      fuente:              entity.fuente              || 'LINK_PUBLICO',
+      etapa_actual:        'POSTULADO',
+      puntaje:             0,
+      notas_candidato:     entity.notas               || '',
+      fecha_postulacion:   now,
+      created_at:          now,
+      updated_at:          now,
+      created_by:          user,
     };
   }
 
