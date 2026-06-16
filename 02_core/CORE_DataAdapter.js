@@ -48,7 +48,6 @@ const DataAdapter = (() => {
       const all = this.findAll(table);
       if (!all.length) return null;
       const pk = Object.keys(all[0])[0];
-      Logger.log('[DataAdapter.findById] table=' + table + ' pk=' + pk + ' id=' + id);
       return all.find(r => r[pk] == id) || null;
     },
 

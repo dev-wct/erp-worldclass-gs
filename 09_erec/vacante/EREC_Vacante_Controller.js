@@ -221,23 +221,11 @@ function apiRegistrarPostulante(payload) {
 
 function apiGetCatalogosVacante() {
   return safeExecute(function() {
-    const empresas      = DataAdapter.findAll('CAT_Empresas',      { activo: true });
-    const departamentos = DataAdapter.findAll('CAT_Departamentos', { activo: true });
-    const roles         = DataAdapter.findAll('CAT_Roles',         { activo: true });
-
-    Logger.log('[apiGetCatalogosVacante] empresas: '      + empresas.length);
-    Logger.log('[apiGetCatalogosVacante] departamentos: ' + departamentos.length);
-    Logger.log('[apiGetCatalogosVacante] roles: '         + roles.length);
-
-    // Si activo=true no devuelve nada, intentar sin filtro como diagnóstico
-    const todasEmpresas = DataAdapter.findAll('CAT_Empresas');
-    Logger.log('[apiGetCatalogosVacante] CAT_Empresas sin filtro: ' + todasEmpresas.length);
-    if (todasEmpresas.length > 0) {
-      Logger.log('[apiGetCatalogosVacante] primera empresa keys: ' + JSON.stringify(Object.keys(todasEmpresas[0])));
-      Logger.log('[apiGetCatalogosVacante] activo value: ' + JSON.stringify(todasEmpresas[0].activo) + ' type: ' + typeof todasEmpresas[0].activo);
-    }
-
-    return { empresas, departamentos, roles };
+    return {
+      empresas:      DataAdapter.findAll('CAT_Empresas',      { activo: true }),
+      departamentos: DataAdapter.findAll('CAT_Departamentos', { activo: true }),
+      roles:         DataAdapter.findAll('CAT_Roles',         { activo: true }),
+    };
   }, 'EREC.getCatalogos');
 }
 
