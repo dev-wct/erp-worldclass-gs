@@ -65,16 +65,18 @@ function doGet(e) {
 
 /**
  * POST — Candidato envía el formulario completado.
+ * Usa form nativo (application/x-www-form-urlencoded) via e.parameter.
+ * Retorna una página HTML de resultado — el browser la muestra directamente.
  */
 function doPost(e) {
-  var params = {};
-  try {
-    if (e && e.postData && e.postData.contents) {
-      params = JSON.parse(e.postData.contents);
-    }
-  } catch(err) {
-    params = (e && e.parameter) ? e.parameter : {};
+  var params = (e && e.parameter) ? e.parameter : {};
+
+  // Fallback: si viene como JSON (llamadas programáticas)
+  if ((!params.nombre_completo) && e && e.postData && e.postData.contents) {
+    try { params = JSON.parse(e.postData.contents); } catch(err) {}
   }
+
+  Logger.log('[EREC doPost] params recibidos: ' + JSON.stringify(Object.keys(params)));
 
   var token     = String(params.token      || '').trim();
   var modo      = String(params.modo       || 'PUBLICO').trim();
@@ -84,11 +86,11 @@ function doPost(e) {
   if (modo === 'INDIVIDUAL' && token) {
     var link = ErecLinkRepo.findByToken(token);
     if (!link || link.estado === 'USADO' || new Date() > new Date(link.expira_at)) {
-      return _erecJsonResponse({ ok: false, errores: ['Token inválido o expirado.'] });
+      return _erecPaginaError('Token inválido o expirado', 'Este link ya no es válido. Contacta al reclutador.');
     }
   }
 
-  // Subir CV si viene adjunto
+  // Subir CV si viene adjunto como Base64
   var linkCv = '';
   if (params.cv_base64 && params.cv_nombre) {
     try {
@@ -104,12 +106,13 @@ function doPost(e) {
         labelDoc,
         codVacante
       );
+      Logger.log('[EREC doPost] CV subido a Drive: ' + linkCv);
     } catch(driveErr) {
-      Logger.log('[EREC doPost] Falló subida de CV: ' + driveErr.message);
+      Logger.log('[EREC doPost] Falló subida de CV (no bloquea): ' + driveErr.message);
     }
   }
 
-  // Registrar postulante
+  // Construir DTO y registrar postulante
   var dto = {
     id_vacante:          idVacante,
     nombre_completo:     String(params.nombre_completo      || '').trim(),
@@ -122,14 +125,23 @@ function doPost(e) {
   };
 
   var resultado = ErecPostulanteUseCases.registrar(dto);
+  Logger.log('[EREC doPost] resultado: ' + JSON.stringify(resultado));
 
-  // Marcar token como usado solo si fue exitoso
+  // Marcar token como usado si fue exitoso
   if (resultado.ok && modo === 'INDIVIDUAL' && token) {
     ErecLinkRepo.marcarUsado(token);
   }
 
-  Logger.log('[EREC doPost] ' + JSON.stringify(resultado));
-  return _erecJsonResponse(resultado);
+  // Retornar página HTML de resultado (form nativo no puede recibir JSON)
+  if (resultado.ok) {
+    return _erecPaginaExito(
+      resultado.mensaje || '¡Postulación recibida!',
+      dto.nombre_completo
+    );
+  } else {
+    var errMsg = resultado.errores ? resultado.errores.join(' ') : 'Error al procesar tu postulación.';
+    return _erecPaginaError('No pudimos procesar tu postulación', errMsg);
+  }
 }
 
 
@@ -256,6 +268,25 @@ function abrirDialogoLinksVacante() {
 
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+function _erecPaginaExito(mensaje, nombre) {
+  return HtmlService.createHtmlOutput(
+    '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;' +
+    'min-height:100vh;margin:0;background:#f5f6f7;}' +
+    '.card{background:#fff;border-radius:8px;padding:40px;max-width:440px;text-align:center;' +
+    'box-shadow:0 4px 12px rgba(0,0,0,.08);}' +
+    '.icon{font-size:56px;margin-bottom:16px;}' +
+    'h2{color:#107e3e;margin:0 0 12px;}p{color:#515f6e;line-height:1.6;}</style></head>' +
+    '<body><div class="card">' +
+    '<div class="icon">🎉</div>' +
+    '<h2>¡Postulación Recibida!</h2>' +
+    '<p>' + (mensaje || 'Hemos recibido tu información correctamente.') + '</p>' +
+    '<p style="margin-top:16px;font-size:13px;">Pronto nos pondremos en contacto contigo.</p>' +
+    '</div></body></html>'
+  ).setTitle('Postulación Enviada — ' + Config.ERP_NAME);
+}
 
 function _erecPaginaError(titulo, mensaje) {
   return HtmlService.createHtmlOutput(

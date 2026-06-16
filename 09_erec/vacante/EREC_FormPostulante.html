@@ -115,13 +115,13 @@
       <div class="sap-card-content">
         <div id="msg" class="sap-message-strip sap-message-strip-error" style="display:none;"></div>
 
-        <form id="posForm">
-          <input type="hidden" id="token"               value="<?= token ?>">
-          <input type="hidden" id="modo"                value="<?= modo ?>">
-          <input type="hidden" id="id_vacante"          value="<?= idVacante ?>">
-          <input type="hidden" id="cv_base64"           value="">
-          <input type="hidden" id="cv_nombre"           value="">
-          <input type="hidden" id="cv_mime"             value="">
+        <form id="posForm" method="POST">
+          <input type="hidden" id="token"               name="token"               value="<?= token ?>">
+          <input type="hidden" id="modo"                name="modo"                value="<?= modo ?>">
+          <input type="hidden" id="id_vacante"          name="id_vacante"          value="<?= idVacante ?>">
+          <input type="hidden" id="cv_base64"           name="cv_base64"           value="">
+          <input type="hidden" id="cv_nombre"           name="cv_nombre"           value="">
+          <input type="hidden" id="cv_mime"             name="cv_mime"             value="">
 
           <div class="sap-form-grid">
 
@@ -130,6 +130,7 @@
             <div class="sap-form-group full-width">
               <label class="sap-label required" for="nombre_completo">Nombre Completo</label>
               <input type="text" class="sap-input" id="nombre_completo"
+                     name="nombre_completo"
                      value="<?= nombreCandidato ?>"
                      placeholder="Ej. Juan Carlos Pérez García"
                      autocomplete="name" required>
@@ -140,6 +141,7 @@
                 <?= labelDocumento ?>
               </label>
               <input type="text" class="sap-input" id="documento_identidad"
+                     name="documento_identidad"
                      placeholder="Número de tu <?= labelDocumento ?>"
                      inputmode="numeric" required>
             </div>
@@ -147,12 +149,14 @@
             <div class="sap-form-group">
               <label class="sap-label required" for="telefono">Teléfono Móvil</label>
               <input type="tel" class="sap-input" id="telefono"
+                     name="telefono"
                      placeholder="Ej. 55551234" inputmode="tel" required>
             </div>
 
             <div class="sap-form-group full-width">
               <label class="sap-label required" for="email">Correo Electrónico</label>
               <input type="email" class="sap-input" id="email"
+                     name="email"
                      placeholder="tucorreo@mail.com" inputmode="email" required>
             </div>
 
@@ -161,7 +165,7 @@
             <div class="sap-form-group full-width">
               <label class="sap-label required">
                 Hoja de Vida / CV
-                <span style="font-weight:400;color:var(--sap-text-secondary);"> (PDF, Word o imagen — máx. 5 MB)</span>
+                <span style="font-weight:400;color:var(--sap-text-secondary);"> (PDF, Word o imagen — máx. 2 MB)</span>
               </label>
               <div class="file-drop-zone" id="dropZone"
                    onclick="document.getElementById('cvFile').click()"
@@ -170,7 +174,7 @@
                        onchange="procesarArchivo(this.files[0])">
                 <div class="file-drop-icon">📄</div>
                 <div class="file-drop-label">Haz clic o arrastra tu CV aquí</div>
-                <div class="file-drop-hint">PDF, Word o imagen • Máximo 5 MB</div>
+                <div class="file-drop-hint">PDF, Word o imagen • Máximo 2 MB</div>
                 <div class="file-selected" id="fileSelectedLabel" style="display:none;"></div>
               </div>
               <div class="progress-bar-wrap" id="progressWrap">
@@ -182,7 +186,7 @@
 
             <div class="sap-form-group full-width">
               <label class="sap-label" for="notas">¿Por qué te interesa esta posición?</label>
-              <textarea class="sap-textarea" id="notas" rows="3"
+              <textarea class="sap-textarea" id="notas" name="notas" rows="3"
                         placeholder="Cuéntanos sobre tu experiencia o motivación para este puesto..."></textarea>
             </div>
 
@@ -217,7 +221,7 @@
 
   <script>
     var BTN_TEXT = 'Enviar Postulación';
-    var MAX_BYTES = 5 * 1024 * 1024;
+    var MAX_BYTES = 2 * 1024 * 1024; // 2 MB — límite para GAS Web App POST
 
     function onDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
     function onDragLeave() { document.getElementById('dropZone').classList.remove('dragover'); }
@@ -226,7 +230,7 @@
     function procesarArchivo(file) {
       if (!file) return;
       if (file.size > MAX_BYTES) {
-        mostrarError('El archivo excede 5 MB. Usa un formato más liviano.');
+        mostrarError('El archivo excede 2 MB. Comprime el PDF o usa una imagen más pequeña.');
         return;
       }
       var pw = document.getElementById('progressWrap');
@@ -253,7 +257,8 @@
     }
 
     function enviar() {
-      var btn    = document.getElementById('btnEnviar');
+      var btn = document.getElementById('btnEnviar');
+
       var nombre = document.getElementById('nombre_completo').value.trim();
       var doc    = document.getElementById('documento_identidad').value.trim();
       var tel    = document.getElementById('telefono').value.trim();
@@ -273,45 +278,10 @@
       btn.innerHTML = '<span class="sap-spinner"></span> Enviando...';
       ocultarError();
 
-      var payload = JSON.stringify({
-        token:               document.getElementById('token').value,
-        modo:                document.getElementById('modo').value,
-        id_vacante:          document.getElementById('id_vacante').value,
-        nombre_completo:     nombre,
-        documento_identidad: doc,
-        telefono:            tel,
-        email:               email,
-        notas:               document.getElementById('notas').value.trim(),
-        cv_base64:           cvB64,
-        cv_nombre:           document.getElementById('cv_nombre').value,
-        cv_mime:             document.getElementById('cv_mime').value,
-      });
-
-      var url = window.location.href.split('?')[0];
-
-      fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload,
-        redirect: 'follow',
-      })
-      .then(function(r) { return r.text(); })
-      .then(function(text) {
-        var data;
-        try { var i = text.indexOf('{'); data = JSON.parse(i >= 0 ? text.substring(i) : text); }
-        catch(e) { data = { ok: true, mensaje: '¡Postulación recibida!' }; }
-        if (data.ok) {
-          mostrarExito(data.mensaje || '¡Postulación recibida! Nos contactaremos pronto.');
-        } else {
-          var errs = data.errores ? data.errores.join('\n') : (data.error || 'Error desconocido.');
-          mostrarError(errs);
-          btn.disabled = false; btn.innerText = BTN_TEXT;
-        }
-      })
-      .catch(function() {
-        mostrarError('Error de conexión. Intenta de nuevo en unos segundos.');
-        btn.disabled = false; btn.innerText = BTN_TEXT;
-      });
+      // Usar form nativo — GAS Web App maneja application/x-www-form-urlencoded
+      // de forma nativa y confiable a través de e.parameter en doPost.
+      // fetch con JSON pierde el body al seguir el redirect de GAS.
+      document.getElementById('posForm').submit();
     }
 
     function mostrarExito(msg) {
