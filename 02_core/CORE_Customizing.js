@@ -59,12 +59,13 @@ const Customizing = (function() {
       if (!pais) return FALLBACK;
 
       var ctx = {
-        label_documento: pais.label_documento  || FALLBACK.label_documento,
-        moneda_codigo:   pais.moneda_codigo    || FALLBACK.moneda_codigo,
-        moneda_simbolo:  pais.moneda_simbolo   || FALLBACK.moneda_simbolo,
-        formato_fecha:   pais.formato_fecha    || FALLBACK.formato_fecha,
-        codigo_iso:      pais.codigo_iso       || FALLBACK.codigo_iso,
-        nombre_pais:     pais.nombre           || FALLBACK.nombre_pais,
+        label_documento:         pais.label_documento         || FALLBACK.label_documento,
+        label_doc_empresa:       pais.label_doc_empresa       || 'RUC',
+        moneda_codigo:           pais.moneda_codigo           || FALLBACK.moneda_codigo,
+        moneda_simbolo:          pais.moneda_simbolo          || FALLBACK.moneda_simbolo,
+        formato_fecha:           pais.formato_fecha           || FALLBACK.formato_fecha,
+        codigo_iso:              pais.codigo_iso              || FALLBACK.codigo_iso,
+        nombre_pais:             pais.nombre                  || FALLBACK.nombre_pais,
       };
 
       _cache[key] = ctx;

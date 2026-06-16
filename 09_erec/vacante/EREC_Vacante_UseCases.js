@@ -160,6 +160,26 @@ const ErecPostulanteUseCases = {
     const user  = DataAdapter.getCurrentUser();
     const saved = ErecPostulanteRepo.insert(dto, user);
 
+    // Registrar Business Partner automáticamente (PERSONA_FISICA, rol: POSTULANTE)
+    try {
+      const empresa  = VacanteRepo.findById(dto.id_vacante);
+      const idEmpresa = empresa ? empresa.id_empresa : null;
+      const labelDoc = idEmpresa ? Customizing.getLabelDocumento(idEmpresa) : 'CEDULA';
+
+      const id_bp = BPService.registrar({
+        tipo_bp:          'PERSONA_FISICA',
+        tipo_documento:   labelDoc.toUpperCase().replace(/\s+/g, '_'),
+        numero_documento: dto.documento_identidad || dto.email,
+        nombre:           dto.nombre_completo,
+        email:            dto.email,
+        telefono:         dto.telefono,
+      }, 'POSTULANTE', 'EREC', saved.id_postulante_erec);
+
+      DataAdapter.update('EREC_Postulantes', saved.id_postulante_erec, { id_bp: id_bp });
+    } catch(bpErr) {
+      Logger.log('[ErecPostulanteUseCases] BP no creado (no bloquea): ' + bpErr.message);
+    }
+
     // Actualizar estado de la vacante a EN_PROCESO si estaba ABIERTA
     if (vacante.estado === 'ABIERTA') {
       VacanteRepo.actualizarEstado(dto.id_vacante, 'EN_PROCESO');

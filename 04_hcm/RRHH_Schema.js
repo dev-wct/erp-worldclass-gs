@@ -1,11 +1,10 @@
 const RRHH_Schema = {
   Postulantes: {
     pk: 'id_postulante',
-    columns: ['id_postulante','nombre_completo','dpi','telefono','email',
+    columns: ['id_postulante','id_bp','nombre_completo','dpi','telefono','email',
               'fuente','id_campana','fecha_postulacion','estado','notas',
               'link_cv','created_at','created_by'],
-    // id_campana es una referencia suave a SD.Campanas — no se declara como FK
-    // para evitar que el migrador de RRHH exija que SD esté inicializado primero.
+    // id_bp → BP_MASTER: referencia suave cross-módulo
   },
   PostulantesTokens: {
     pk: 'id_token',
@@ -26,12 +25,12 @@ const RRHH_Schema = {
   },
   Empleados: {
     pk: 'id_empleado',
-    columns: ['id_empleado','id_postulante_erec','nombre_completo','dpi',
+    columns: ['id_empleado','id_bp','id_postulante_erec','nombre_completo','dpi',
               'email','telefono','id_departamento','id_empresa','id_rol',
               'activo','fecha_ingreso','fecha_salida','tipo_contrato',
               'created_at','updated_at','created_by'],
     fk: {
-      // id_postulante_erec → EREC_Postulantes: referencia suave (EREC es módulo separado)
+      // id_bp → BP_MASTER: referencia suave cross-módulo
       id_departamento: 'CAT_Departamentos',
       id_empresa:      'CAT_Empresas',
       id_rol:          'CAT_Roles',

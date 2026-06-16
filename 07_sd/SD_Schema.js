@@ -10,23 +10,14 @@ const SD_Schema = {
   Leads: {
     pk: 'id_lead',
     columns: [
-      'id_lead',
-      'nombre_completo',
-      'telefono',
-      'email',
-      'tipo_tdc',
-      'banco_emisor',
-      'id_campana',
-      'estado',
-      'fuente',
-      'notas',
-      'created_at',
-      'updated_at',
-      'created_by'
+      'id_lead', 'id_bp',
+      'nombre_completo', 'telefono', 'email',
+      'tipo_tdc', 'banco_emisor', 'id_campana',
+      'estado', 'fuente', 'notas',
+      'created_at', 'updated_at', 'created_by'
     ],
-    fk: {
-      id_campana: 'Campanas'
-    }
+    // id_bp → BP_MASTER: referencia suave cross-módulo
+    fk: { id_campana: 'Campanas' }
   },
   Llamadas: {
     pk: 'id_llamada',

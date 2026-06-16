@@ -31,18 +31,21 @@
 
 ---
 
-## Fase 2 — Separar EAM de MM ⏳ PENDIENTE
+## Fase 2 — Separar EAM de MM ✅ COMPLETADA
 
 | Ítem | Estado |
 |---|---|
-| Crear `06_eam/` con estructura de capas | ⏳ |
-| Mover `equipo/`, `chip/`, `asignacion/` a EAM | ⏳ |
-| Actualizar EREC Schema | ⏳ |
-| Actualizar Bootstrap | ⏳ |
-| Actualizar entrypoint (menús) | ⏳ |
-| Actualizar DriveOrganizer (carpeta EAM) | ⏳ |
-| Migrar datos existentes en Sheets | ⏳ |
-| `clasp push` + smoke test | ⏳ |
+| Crear `06_eam/` con estructura de capas | ✅ |
+| Mover `equipo/`, `chip/`, `asignacion/` a EAM | ✅ |
+| Renombrar prefijos `MM_` → `EAM_` en todos los archivos | ✅ |
+| `EAM_Schema.js` con FKs cross-módulo como referencias suaves | ✅ |
+| `EAM_Setup.js` con `syncAndSeed()` idempotente | ✅ |
+| `05_mm/` queda como placeholder documentado para Procure-to-Pay | ✅ |
+| Bootstrap actualizado — 7 pasos con EAM en lugar de MM seed | ✅ |
+| Entrypoint — menú EAM, `apiMigrarEAM` | ✅ |
+| DriveOrganizer — carpetas `HCM/`, `EAM/`, `MM/` separadas | ✅ |
+| CORE_TestSeeder — usa `EAM_Setup.seedCatalogs()` | ✅ |
+| `git commit` con historial de renombres preservado | ✅ |
 
 ---
 

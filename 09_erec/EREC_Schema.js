@@ -63,22 +63,13 @@ const EREC_Schema = {
   EREC_Postulantes: {
     pk: 'id_postulante_erec',
     columns: [
-      'id_postulante_erec',
-      'id_vacante',          // FK → EREC_Vacantes
-      'nombre_completo',
-      'documento_identidad', // Número de cédula/DPI/DUI según país
-      'telefono',
-      'email',
-      'link_cv',             // URL en Drive (subido desde el formulario)
-      'fuente',              // TOKEN_INDIVIDUAL | LINK_PUBLICO | REFERIDO | INTERNO
-      'etapa_actual',        // POSTULADO | REVISION | ENTREVISTA | PRUEBA | OFERTA | CONTRATADO | DESCARTADO
-      'puntaje',             // 0-100 (asignado por el reclutador)
-      'notas_candidato',     // Notas libres del postulante (del formulario)
-      'fecha_postulacion',
-      'created_at',
-      'updated_at',
-      'created_by',
+      'id_postulante_erec', 'id_bp', 'id_vacante',
+      'nombre_completo', 'documento_identidad',
+      'telefono', 'email', 'link_cv',
+      'fuente', 'etapa_actual', 'puntaje', 'notas_candidato',
+      'fecha_postulacion', 'created_at', 'updated_at', 'created_by',
     ],
+    // id_bp → BP_MASTER: referencia suave cross-módulo
     fk: { id_vacante: 'EREC_Vacantes' },
   },
 

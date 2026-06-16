@@ -22,65 +22,83 @@ const CORE_TestSeeder = {
       // 1. Asegurar catálogos base inicializados
       MDM_Setup.seedCatalogs();
       EAM_Setup.seedCatalogs();
-      
+
       const user = DataAdapter.getCurrentUser();
 
       // Resolver catálogos de empresas en memoria
       const empresasList = DataAdapter.findAll("CAT_Empresas");
       const companyMap = {};
-      empresasList.forEach(c => {
-        companyMap[c.id_empresa] = c.nombre;
+      empresasList.forEach(c => { companyMap[c.id_empresa] = c.nombre; });
+      const defaultCompanyId   = empresasList.length > 0 ? empresasList[0].id_empresa : 1;
+      const defaultCompanyName = empresasList.length > 0 ? empresasList[0].nombre : "WorldClass Travel";
+
+      // --- SEMBRAR BUSINESS PARTNERS (personas físicas de prueba) ---
+      Logger.log("Sembrando Business Partners...");
+      const bpNombres = [
+        "Alejandro Gómez","Beatriz Estrada","Carlos Lemus","Diana Flores","Eduardo Reyes",
+        "Gabriela Ortiz","Héctor Maldonado","Irene Morales","Jorge Cabrera","Karen Santos",
+        "Luis Fuentes","María Argueta","Néstor Paredes","Olga Castillo","Pedro Méndez",
+        "Ramiro Aldana","Sofía Cruz","Tomás Sandoval","Ursula Mérida","Víctor Juárez",
+        "Francisco Ruiz","Gabriela Soto","Humberto Paz","Isabel Méndez","Julio Estrada",
+        "Laura Calderón","Mauricio Vega","Natalia Roldán","Oscar Lemus","Patricia Girón",
+      ];
+
+      const bpIds = {};  // nombre → id_bp (para reutilizar al sembrar Empleados/Leads)
+      bpNombres.forEach(function(nombre, i) {
+        const docNum = '300000' + String(i + 1).padStart(4, '0');
+        const result = BPService.obtenerOCrear({
+          tipo_bp:          'PERSONA_FISICA',
+          tipo_documento:   'DPI',
+          numero_documento: docNum,
+          nombre:           nombre,
+          email:            nombre.toLowerCase().replace(/ /g, '.').normalize('NFD').replace(/[\u0300-\u036f]/g, '') + '@test.com',
+          telefono:         '5555' + String(1000 + i),
+        });
+        bpIds[nombre] = result.id_bp;
       });
 
-      // Si no hay empresas, usar un fallback default
-      const defaultCompanyId = empresasList.length > 0 ? empresasList[0].id_empresa : 1;
-      const defaultCompanyName = empresasList.length > 0 ? empresasList[0].nombre : "WorldClass Travel";
-      
-      // --- SEMBRAR 20 POSTULANTES ---
+      // --- SEMBRAR 20 POSTULANTES (HCM legacy) ---
       Logger.log("Sembrando Postulantes...");
-      const postulantesNombres = [
-        "Alejandro Gómez", "Beatriz Estrada", "Carlos Lemus", "Diana Flores", "Eduardo Reyes",
-        "Gabriela Ortiz", "Héctor Maldonado", "Irene Morales", "Jorge Cabrera", "Karen Santos",
-        "Luis Fuentes", "María Argueta", "Néstor Paredes", "Olga Castillo", "Pedro Méndez",
-        "Ramiro Aldana", "Sofía Cruz", "Tomás Sandoval", "Ursula Mérida", "Víctor Juárez"
-      ];
-      
-      const fuentes = ["FACEBOOK", "INSTAGRAM", "REFERIDO", "LINKEDIN", "COMPUTRABAJO"];
-      const estadosPost = ["POSTULADO", "ENTREVISTA", "PRUEBA", "ACEPTADO", "RECHAZADO"];
-      
+      const postulantesNombres = bpNombres.slice(0, 20);
+      const fuentes    = ["FACEBOOK","INSTAGRAM","REFERIDO","LINKEDIN","COMPUTRABAJO"];
+      const estadosPost = ["POSTULADO","ENTREVISTA","PRUEBA","ACEPTADO","RECHAZADO"];
+
       for (let i = 0; i < 20; i++) {
         const idPost = DataAdapter.getNextId("Postulantes");
+        const nombre = postulantesNombres[i];
         DataAdapter.insert("Postulantes", {
-          id_postulante: idPost,
-          nombre_completo: postulantesNombres[i],
-          dpi: "2000" + String(10000 + i),
-          telefono: "5555" + String(1000 + i),
-          email: postulantesNombres[i].toLowerCase().replace(" ", ".") + "@mail.com",
-          fuente: fuentes[i % fuentes.length],
+          id_postulante:     idPost,
+          id_bp:             bpIds[nombre] || '',
+          nombre_completo:   nombre,
+          dpi:               '300000' + String(i + 1).padStart(4, '0'),
+          telefono:          '5555' + String(1000 + i),
+          email:             nombre.toLowerCase().replace(/ /g, '.').normalize('NFD').replace(/[\u0300-\u036f]/g, '') + '@mail.com',
+          fuente:            fuentes[i % fuentes.length],
           fecha_postulacion: new Date(Date.now() - (30 - i) * 24 * 60 * 60 * 1000),
-          estado: i < 12 ? "ACEPTADO" : estadosPost[i % estadosPost.length],
-          notas: "Perfil con interés en Call Center.",
-          created_at: new Date(),
-          created_by: user
+          estado:            i < 12 ? 'ACEPTADO' : estadosPost[i % estadosPost.length],
+          notas:             'Perfil con interés en Call Center.',
+          created_at:        new Date(),
+          created_by:        user,
         });
       }
 
       // --- SEMBRAR 20 EMPLEADOS ---
       Logger.log("Sembrando Empleados...");
-      const departamentos = [1, 2, 3, 4]; // Tecnología, Ventas, Operaciones, Admón
-      const empresas = [1, 2]; // WCT, Rapivisa
-      const roles = [1, 2, 3]; // Admin, Supervisor, Consulta
-      
+      const departamentos  = [1, 2, 3, 4];
+      const empresas       = [1, 2];
+      const roles          = [1, 2, 3];
+
       for (let i = 0; i < 20; i++) {
-        const idEmp = DataAdapter.getNextId("Empleados");
-        const nombre = i < postulantesNombres.length ? postulantesNombres[i] : "Agente " + i;
-        const empIdEmpresa = empresas[i % empresas.length];
+        const idEmp         = DataAdapter.getNextId("Empleados");
+        const nombre        = postulantesNombres[i];
+        const empIdEmpresa  = empresas[i % empresas.length];
         const empCompanyName = companyMap[empIdEmpresa] || "worldclasstravel";
-        const emailDomain = empCompanyName.toLowerCase().replace("erp", "").trim().replace(/\s+/g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "") + ".com";
+        const emailDomain   = empCompanyName.toLowerCase().replace('erp','').trim().replace(/\s+/g,'').normalize('NFD').replace(/[\u0300-\u036f]/g,'') + '.com';
 
         DataAdapter.insert("Empleados", {
-          id_empleado: idEmp,
-          id_postulante: i < 12 ? (i + 1) : "",
+          id_empleado:    idEmp,
+          id_bp:          bpIds[nombre] || '',
+          id_postulante_erec: '',
           nombre_completo: nombre,
           dpi: "2000" + String(20000 + i),
           email: nombre.toLowerCase().replace(" ", ".").normalize("NFD").replace(/[\u0300-\u036f]/g, "") + "@" + emailDomain,
@@ -212,26 +230,29 @@ const CORE_TestSeeder = {
         "Xavier Orellana", "Yolanda Dubón", "Zacarias Ortiz", "Alma Cardona", "Bernardo Cruz"
       ];
       
-      const bancos = ["BAC", "BANRURAL", "BI", "PROMERICA", "BAM"];
-      const tdcs = ["VISA", "MASTERCARD", "AMERICAN EXPRESS", "NINGUNA"];
+      const bancos     = ["BAC", "BANRURAL", "BI", "PROMERICA", "BAM"];
+      const tdcs       = ["VISA", "MASTERCARD", "AMERICAN EXPRESS", "NINGUNA"];
       const estadosLead = ["NUEVO", "CONTACTADO", "INTERESADO", "CITA_AGENDADA"];
 
       for (let i = 0; i < 20; i++) {
-        const idLead = DataAdapter.getNextId("Leads");
+        const idLead   = DataAdapter.getNextId("Leads");
+        const nombre   = leadsNombres[i];
+        const id_bp    = bpIds[nombre] || '';
         DataAdapter.insert("Leads", {
-          id_lead: idLead,
-          nombre_completo: leadsNombres[i],
-          telefono: "3333" + String(5000 + i),
-          email: leadsNombres[i].toLowerCase().replace(" ", ".") + "@test.com",
-          tipo_tdc: tdcs[i % tdcs.length],
-          banco_emisor: bancos[i % bancos.length],
-          id_campana: (i % 2 === 0 ? 1 : 2), // Campaña 1 o 2 (Activas)
-          estado: i < 10 ? "CITA_AGENDADA" : estadosLead[i % estadosLead.length],
-          fuente: "FACEBOOK",
-          notas: "Perfil con alto interés.",
-          created_at: new Date(),
-          updated_at: new Date(),
-          created_by: user
+          id_lead:         idLead,
+          id_bp:           id_bp,
+          nombre_completo: nombre,
+          telefono:        "3333" + String(5000 + i),
+          email:           nombre.toLowerCase().replace(" ", ".") + "@test.com",
+          tipo_tdc:        tdcs[i % tdcs.length],
+          banco_emisor:    bancos[i % bancos.length],
+          id_campana:      (i % 2 === 0 ? 1 : 2),
+          estado:          i < 10 ? "CITA_AGENDADA" : estadosLead[i % estadosLead.length],
+          fuente:          "FACEBOOK",
+          notas:           "Perfil con alto interés.",
+          created_at:      new Date(),
+          updated_at:      new Date(),
+          created_by:      user,
         });
       }
 

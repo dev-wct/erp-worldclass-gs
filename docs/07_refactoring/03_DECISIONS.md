@@ -117,7 +117,56 @@
 
 ---
 
-## DEC-011 — MM actual es EAM, no MM
+## DEC-012 — Business Partner como identidad única transversal
+
+**Decisión:** introducir `BP_MASTER` en MDM como la identidad única de toda persona u organización del sistema.
+
+**Comportamiento:**
+- El BP se crea **automáticamente** como efecto secundario de registrar cualquier entidad (Lead, Empleado, Postulante, Empresa). El usuario nunca interactúa directamente con BP.
+- Si al crear una entidad ya existe un BP con el mismo `tipo_documento` + `numero_documento`, se reutiliza el existente — no se crea duplicado.
+- Un BP puede tener múltiples roles simultáneos (ej: Juan Pérez es POSTULANTE y luego EMPLEADO bajo el mismo `id_bp`).
+
+**Identificadores únicos naturales:**
+- `PERSONA_FISICA` → cédula / DPI / DUI / DNI (según país, resuelto por `Customizing.getLabelDocumento()`)
+- `PERSONA_JURIDICA` → RUC / NIT / RFC (según país)
+- La combinación `tipo_documento + numero_documento` es el campo de deduplicación.
+- `id_bp` sigue siendo un autonumérico interno — es la FK que usan los módulos.
+
+**Tablas que agregan `id_bp`:**
+- `CAT_Empresas` (tipo: PERSONA_JURIDICA, rol: EMPRESA)
+- `Leads` (tipo: PERSONA_FISICA, rol: CLIENTE)
+- `Empleados` (tipo: PERSONA_FISICA, rol: EMPLEADO)
+- `EREC_Postulantes` (tipo: PERSONA_FISICA, rol: POSTULANTE)
+
+**Los módulos NO cambian su UX.** Los formularios existentes siguen igual. La creación del BP ocurre en los UseCases de cada módulo, transparente para el usuario.
+
+**Datos de prueba:** son semilla, se pueden recrear. La estrategia es correr Bootstrap limpio con el nuevo schema y luego el Seeder que ya crea los BPs automáticamente.
+
+**Estado:** 🔄 En implementación (Fase 3)
+
+---
+
+## DEC-013 — Estructura del BP_MASTER
+
+**Decisión:** el modelo de BP tiene dos tablas en MDM.
+
+`BP_MASTER` — registro central de identidad:
+```
+id_bp, tipo_bp (PERSONA_FISICA | PERSONA_JURIDICA),
+tipo_documento, numero_documento,
+nombre, email, telefono,
+created_at, created_by
+```
+
+`BP_Roles` — roles activos de cada BP:
+```
+id_rol_bp, id_bp, rol (CLIENTE | EMPLEADO | POSTULANTE | PROVEEDOR | EMPRESA),
+modulo, referencia_id, activo, created_at
+```
+
+**Justificación:** separar identidad de roles permite que un BP tenga múltiples roles sin duplicar datos personales. Es el modelo exacto de SAP Business Partner.
+
+**Estado:** 🔄 En implementación (Fase 3)
 
 **Decisión (pendiente de implementar):** el módulo `05_mm/` actual contiene lógica de activos (equipos, chips, asignaciones) que arquitectónicamente pertenece a EAM. El MM real (Procure-to-Pay) aún no existe.
 
