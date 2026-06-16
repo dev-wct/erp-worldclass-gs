@@ -11,6 +11,8 @@ R1_OPERATIONAL_CORE
 ├── BACKLOG.md
 ├── GO_LIVE_CRITERIA.md
 └── TASKS.md
+
+
 Visión
 ↓
 Arquitectura
@@ -32,3 +34,6 @@ Backlog
 Go Live
 ↓
 Tasks
+
+
+què perytence al 80% del ERP y que al 20% 
