@@ -220,13 +220,15 @@ function apiRegistrarPostulante(payload) {
 }
 
 function apiGetCatalogosVacante() {
-  return safeExecute(function() {
-    return {
-      empresas:      DataAdapter.findAll('CAT_Empresas',      { activo: true }),
-      departamentos: DataAdapter.findAll('CAT_Departamentos', { activo: true }),
-      roles:         DataAdapter.findAll('CAT_Roles',         { activo: true }),
-    };
-  }, 'EREC.getCatalogos');
+  try {
+    var empresas      = DataAdapter.findAll('CAT_Empresas')      || [];
+    var departamentos = DataAdapter.findAll('CAT_Departamentos') || [];
+    var roles         = DataAdapter.findAll('CAT_Roles')         || [];
+    return { ok: true, empresas: empresas, departamentos: departamentos, roles: roles };
+  } catch(e) {
+    Logger.log('[apiGetCatalogosVacante ERROR] ' + e.message);
+    return { ok: false, empresas: [], departamentos: [], roles: [], error: e.message };
+  }
 }
 
 function apiCrearVacante(formData) {
