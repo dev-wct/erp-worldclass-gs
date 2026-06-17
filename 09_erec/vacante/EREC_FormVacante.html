@@ -113,12 +113,12 @@
 
     ERP.Gateway.callArgs('apiGetCatalogosVacante', [],
       function(data) {
-        if (!data || !data.empresas) {
-          ERP.Msg.error('Error cargando catálogos. Error: ' + (data && data.error ? data.error : 'respuesta nula'));
+        if (!data || !data.ok) {
+          ERP.Msg.error('Error cargando catálogos. ' + (data && data.error ? data.error : 'Respuesta inesperada del servidor.'));
           return;
         }
-        ERP.Select.fill('id_empresa',     data.empresas,      'id_empresa',    'nombre', '— Seleccionar —');
-        ERP.Select.fill('id_rol_destino', data.roles || [],   'id_rol',        'nombre', '— Sin rol específico —');
+        ERP.Select.fill('id_empresa',     data.empresas      || [], 'id_empresa',    'nombre', '— Seleccionar empresa —');
+        ERP.Select.fill('id_rol_destino', data.roles         || [], 'id_rol',        'nombre', '— Sin rol específico —');
         _deptos = data.departamentos || [];
       },
       function(err) { ERP.Msg.error('Error del servidor: ' + (err ? err.message : 'sin detalle')); }

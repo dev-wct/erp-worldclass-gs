@@ -220,29 +220,14 @@ function apiRegistrarPostulante(payload) {
 }
 
 function apiGetCatalogosVacante() {
-  try {
-    // Diagnóstico: verificar que la Sheet es accesible
-    var ss = Utils.getActiveSpreadsheet();
-    if (!ss) {
-      Logger.log('[apiGetCatalogosVacante] ERROR: getActiveSpreadsheet retornó null');
-      return { ok: false, empresas: [], departamentos: [], roles: [], error: 'Sheet no accesible' };
-    }
-    Logger.log('[apiGetCatalogosVacante] Sheet OK: ' + ss.getName());
-
-    var shEmp = ss.getSheetByName('CAT_Empresas');
-    Logger.log('[apiGetCatalogosVacante] CAT_Empresas sheet: ' + (shEmp ? 'OK filas=' + shEmp.getLastRow() : 'NULL'));
-
-    var empresas      = DataAdapter.findAll('CAT_Empresas')      || [];
-    var departamentos = DataAdapter.findAll('CAT_Departamentos') || [];
-    var roles         = DataAdapter.findAll('CAT_Roles')         || [];
-
-    Logger.log('[apiGetCatalogosVacante] resultados: emp=' + empresas.length + ' dep=' + departamentos.length + ' roles=' + roles.length);
-
-    return { ok: true, empresas: empresas, departamentos: departamentos, roles: roles };
-  } catch(e) {
-    Logger.log('[apiGetCatalogosVacante ERROR] ' + e.message + ' | stack: ' + e.stack);
-    return { ok: false, empresas: [], departamentos: [], roles: [], error: e.message };
-  }
+  return safeExecute(function() {
+    return {
+      ok:            true,
+      empresas:      DataAdapter.findAll('CAT_Empresas',      { activo: true }),
+      departamentos: DataAdapter.findAll('CAT_Departamentos', { activo: true }),
+      roles:         DataAdapter.findAll('CAT_Roles',         { activo: true }),
+    };
+  }, 'EREC.getCatalogosVacante');
 }
 
 function apiCrearVacante(formData) {
