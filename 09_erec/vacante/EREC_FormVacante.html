@@ -1,166 +1,255 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <base target="_top">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <?!= include('02_core/CORE_DesignSystem'); ?>
-  <?!= include('02_core/CORE_FormHandler'); ?>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<base target="_top">
+<title>Nueva Vacante — <?= APP_ERP_NAME ?></title>
+<?!= include('02_core/CORE_Styles'); ?>
+<style>
+html,body{height:100%;margin:0;padding:0;overflow:hidden;display:flex;flex-direction:column;background:#f5f6f7;}
+.shellbar{height:48px;background:#1d2b3a;display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.sb-left{display:flex;align-items:center;gap:10px;min-width:0;}
+.sb-logo{width:26px;height:26px;border-radius:5px;background:#0a6ed1;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sb-name{color:#fff;font-weight:600;font-size:14px;white-space:nowrap;text-decoration:none;}
+.sb-sep{color:rgba(255,255,255,.3);margin:0 2px;}
+.sb-mod{color:rgba(255,255,255,.6);font-size:13px;}
+.sb-page{color:rgba(255,255,255,.9);font-size:13px;font-weight:500;}
+.sb-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.sb-status{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(16,126,62,.2);color:#5dbb84;font-size:11px;font-weight:500;}
+.sb-dot{width:7px;height:7px;border-radius:50%;background:#5dbb84;flex-shrink:0;}
+.sb-email{color:rgba(255,255,255,.5);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sb-avatar{width:29px;height:29px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,.2);}
+.page-body{flex:1;overflow-y:auto;padding:20px 24px 24px;}
+.erp-card{max-width:760px;margin:0 auto;}
+.erp-card-footer{position:sticky;bottom:0;z-index:10;}
+</style>
 </head>
 <body>
-<div class="sap-container">
-  <div class="sap-card">
-    <div class="sap-card-header">
+
+<header class="shellbar">
+  <div class="sb-left">
+    <div class="sb-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+    </div>
+    <a href="<?= getWebAppUrl() ?>?page=launchpad" target="_top" class="sb-name"><?= APP_ERP_NAME ?></a>
+    <span class="sb-sep">/</span><span class="sb-mod">E-Recruiting</span>
+    <span class="sb-sep">/</span><span class="sb-page">Nueva Vacante</span>
+  </div>
+  <div class="sb-right">
+    <div class="sb-status"><div class="sb-dot"></div><span>Conectado</span></div>
+    <? if (APP_USER) { ?><span class="sb-email"><?= APP_USER ?></span><? } ?>
+    <div class="sb-avatar">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
+  </div>
+</header>
+
+<div class="page-body">
+<article class="erp-card">
+
+  <header class="erp-card-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="width:36px;height:36px;border-radius:6px;background:#e3f2fd;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1565c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M14 3H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-5-4z"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
+      </div>
       <div>
-        <div class="sap-card-title">📋 Nueva Vacante de Reclutamiento</div>
-        <div class="sap-card-subtitle">E-Recruiting — Abrir posición para proceso de selección</div>
+        <h1 style="font-size:16px;font-weight:600;color:#1d2d3d;margin:0;line-height:1.2;">Nueva Vacante</h1>
+        <p style="font-size:12px;color:#515f6e;margin:2px 0 0;">E-Recruiting — Abrir posición para proceso de selección</p>
+      </div>
+    </div>
+    <div id="catalog-status"></div>
+  </header>
+
+  <div class="erp-card-body">
+    <div id="erp-msg" class="erp-msg" style="display:none;" role="alert"></div>
+
+    <div id="retry-banner" class="erp-msg erp-msg-warning" style="display:none;" role="alert">
+      <span style="flex-shrink:0;">⚠️</span>
+      <div style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <span id="retry-text" style="font-size:13px;">No se pudieron cargar las listas.</span>
+        <button type="button" onclick="cargarCatalogos()" class="erp-btn erp-btn-sm" style="border-color:#e9730c;color:#e9730c;">↺ Reintentar</button>
       </div>
     </div>
 
-    <div class="sap-card-content">
-      <div id="msg" class="sap-message-strip" style="display:none;"></div>
+    <form id="vacanteForm" onsubmit="guardar(event)" novalidate>
+      <div class="erp-form-grid">
 
-      <form id="vacanteForm" onsubmit="guardar(event)">
-        <div class="sap-form-grid">
+        <p class="erp-section-title">Información de la Posición</p>
 
-          <div class="sap-section-title">Información de la Posición</div>
-
-          <div class="sap-form-group full-width">
-            <label class="sap-label required">Título del Puesto</label>
-            <input type="text" class="sap-input" id="titulo"
-                   placeholder="Ej. Agente de Call Center, Ejecutivo de Ventas VIP" required>
-          </div>
-
-          <div class="sap-form-group full-width">
-            <label class="sap-label required">Descripción del Puesto</label>
-            <textarea class="sap-textarea" id="descripcion" rows="3"
-                      placeholder="Describe las responsabilidades principales del puesto..." required></textarea>
-          </div>
-
-          <div class="sap-form-group full-width">
-            <label class="sap-label">Requisitos Mínimos</label>
-            <textarea class="sap-textarea" id="requisitos" rows="3"
-                      placeholder="Experiencia, habilidades, educación requerida..."></textarea>
-          </div>
-
-          <div class="sap-section-title">Organización</div>
-
-          <div class="sap-form-group">
-            <label class="sap-label required">Empresa</label>
-            <select id="id_empresa" class="sap-select" required onchange="filtrarDepartamentos()">
-              <option value="">Cargando...</option>
-            </select>
-          </div>
-
-          <div class="sap-form-group">
-            <label class="sap-label required">Departamento</label>
-            <select id="id_departamento" class="sap-select" required>
-              <option value="">— Seleccionar empresa primero —</option>
-            </select>
-          </div>
-
-          <div class="sap-form-group">
-            <label class="sap-label">Rol Destino</label>
-            <select id="id_rol_destino" class="sap-select">
-              <option value="">— Seleccionar —</option>
-            </select>
-          </div>
-
-          <div class="sap-form-group">
-            <label class="sap-label required">Plazas Disponibles</label>
-            <input type="number" class="sap-input" id="plazas_disponibles"
-                   min="1" value="1" required>
-          </div>
-
-          <div class="sap-section-title">Fechas y Estado</div>
-
-          <div class="sap-form-group">
-            <label class="sap-label required">Fecha de Apertura</label>
-            <input type="date" class="sap-input" id="fecha_apertura" required>
-          </div>
-
-          <div class="sap-form-group">
-            <label class="sap-label">Fecha de Cierre</label>
-            <input type="date" class="sap-input" id="fecha_cierre">
-          </div>
-
-          <div class="sap-form-group">
-            <label class="sap-label required">Estado Inicial</label>
-            <select id="estado" class="sap-select">
-              <option value="BORRADOR">Borrador (no visible)</option>
-              <option value="ABIERTA" selected>Abierta (recibiendo postulaciones)</option>
-            </select>
-          </div>
-
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="titulo">Título del Puesto</label>
+          <input type="text" id="titulo" class="erp-input" placeholder="Ej. Agente de Call Center" autocomplete="off" required>
+        </div>
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="descripcion">Descripción del Puesto</label>
+          <textarea id="descripcion" class="erp-textarea" rows="3" placeholder="Responsabilidades principales..." required></textarea>
+        </div>
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="requisitos">Requisitos Mínimos</label>
+          <textarea id="requisitos" class="erp-textarea" rows="2" placeholder="Experiencia, habilidades..."></textarea>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;
-                    padding-top:16px;border-top:1px solid var(--sap-border-light);">
-          <button type="button" class="sap-btn" onclick="google.script.host.close()">Cancelar</button>
-          <button type="submit" id="saveBtn" class="sap-btn sap-btn-emphasized">📋 Crear Vacante</button>
+        <p class="erp-section-title">Organización</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_empresa">Empresa</label>
+          <div id="sk_empresa" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_empresa" class="erp-select" style="display:none;" required onchange="onEmpresaChange()">
+            <option value="">— Seleccionar empresa —</option>
+          </select>
         </div>
-      </form>
-    </div>
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_departamento">Departamento</label>
+          <div id="sk_departamento" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_departamento" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar empresa primero —</option>
+          </select>
+        </div>
+        <div class="erp-field">
+          <label class="erp-label" for="id_rol_destino">Rol Destino</label>
+          <div id="sk_rol" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_rol_destino" class="erp-select" style="display:none;">
+            <option value="">— Sin rol específico —</option>
+          </select>
+        </div>
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="plazas_disponibles">Plazas Disponibles</label>
+          <input type="number" id="plazas_disponibles" class="erp-input" min="1" value="1" required>
+        </div>
+
+        <p class="erp-section-title">Fechas y Estado</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="fecha_apertura">Fecha de Apertura</label>
+          <input type="date" id="fecha_apertura" class="erp-input" required>
+        </div>
+        <div class="erp-field">
+          <label class="erp-label" for="fecha_cierre">Fecha de Cierre</label>
+          <input type="date" id="fecha_cierre" class="erp-input">
+        </div>
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="estado">Estado Inicial</label>
+          <select id="estado" class="erp-select">
+            <option value="BORRADOR">Borrador — no visible para candidatos</option>
+            <option value="ABIERTA" selected>Abierta — recibiendo postulaciones</option>
+          </select>
+        </div>
+
+      </div>
+    </form>
   </div>
+
+  <footer class="erp-card-footer">
+    <button type="button" class="erp-btn" onclick="window.open('<?= getWebAppUrl() ?>?page=launchpad', '_top')">← Volver</button>
+    <button type="submit" form="vacanteForm" id="saveBtn" class="erp-btn erp-btn-primary" disabled>
+      <span id="saveSpinner" class="erp-spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span>
+      <span id="saveTxt">Cargando listas...</span>
+    </button>
+  </footer>
+
+</article>
 </div>
 
+<?!= include('02_core/CORE_Components'); ?>
+<?!= include('02_core/CORE_FormHandler'); ?>
+
 <script>
-  var BTN_TEXT = '📋 Crear Vacante';
-  var _deptos  = [];
+  var _deptos = [], _intentos = 0, MAX_R = 3;
 
   window.onload = function() {
     document.getElementById('fecha_apertura').value = new Date().toISOString().split('T')[0];
-
-    ERP.Gateway.callArgs('apiGetCatalogosVacante', [],
-      function(data) {
-        if (!data || !data.ok) {
-          ERP.Msg.error('Error cargando catálogos. ' + (data && data.error ? data.error : 'Respuesta inesperada del servidor.'));
-          return;
-        }
-        ERP.Select.fill('id_empresa',     data.empresas      || [], 'id_empresa',    'nombre', '— Seleccionar empresa —');
-        ERP.Select.fill('id_rol_destino', data.roles         || [], 'id_rol',        'nombre', '— Sin rol específico —');
-        _deptos = data.departamentos || [];
-      },
-      function(err) { ERP.Msg.error('Error del servidor: ' + (err ? err.message : 'sin detalle')); }
-    );
+    cargarCatalogos();
   };
 
-  function filtrarDepartamentos() {
-    var idEmp = document.getElementById('id_empresa').value;
-    var filtrados = _deptos.filter(function(d) {
-      return String(d.id_empresa) === String(idEmp);
-    });
-    ERP.Select.fill('id_departamento', filtrados, 'id_departamento', 'nombre',
-      filtrados.length > 0 ? '— Seleccionar departamento —' : 'Sin departamentos para esta empresa'
-    );
+  function cargarCatalogos() {
+    _intentos++;
+    document.getElementById('retry-banner').style.display = 'none';
+    _sk(true); _btn('loading');
+    _badge('⏳ Cargando...', '#515f6e');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        _sk(false);
+        if (!res || res.ok === false) { _fallo(res ? ERP.Msg.extractError(res) : 'Sin datos del servidor.'); return; }
+        var emp = res.empresas || [], dep = res.departamentos || [], rol = res.roles || [];
+        if (!emp.length) { _fallo('Sin empresas. Ejecuta Bootstrap.'); return; }
+        ERP.Select.fill('id_empresa',     emp, 'id_empresa', 'nombre', '— Seleccionar empresa —');
+        ERP.Select.fill('id_rol_destino', rol, 'id_rol',     'nombre', '— Sin rol específico —');
+        _deptos = dep;
+        if (emp.length === 1) document.getElementById('id_empresa').value = String(emp[0].id_empresa);
+        onEmpresaChange();
+        _intentos = 0; _btn('ready');
+        _badge('● Listo', '#107e3e');
+      })
+      .withFailureHandler(function(err) {
+        _sk(false); _fallo(err && err.message ? err.message : 'Error.');
+      })
+      .apiGetCatalogosVacante();
+  }
+
+  function _fallo(msg) {
+    if (_intentos < MAX_R) { setTimeout(cargarCatalogos, _intentos * 1500); return; }
+    document.getElementById('retry-text').textContent = msg;
+    document.getElementById('retry-banner').style.display = 'flex';
+    _btn('ready'); _badge('⚠️ Error', '#bb0000');
+  }
+
+  function onEmpresaChange() {
+    var id = document.getElementById('id_empresa').value;
+    var f  = _deptos.filter(function(d) { return String(d.id_empresa) === String(id); });
+    ERP.Select.fill('id_departamento', f, 'id_departamento', 'nombre',
+      f.length ? '— Seleccionar departamento —' : '— Sin departamentos —');
   }
 
   function guardar(e) {
     e.preventDefault();
-    ERP.Btn.loading('saveBtn');
-    ERP.Msg.hide();
-
-    var data = ERP.Form.collect([
-      'titulo', 'descripcion', 'requisitos',
-      'id_empresa', 'id_departamento', 'id_rol_destino',
-      'plazas_disponibles', 'fecha_apertura', 'fecha_cierre', 'estado'
-    ]);
-
-    ERP.Gateway.call('apiCrearVacante', data,
-      function(res) {
-        if (res.ok) {
-          ERP.Msg.success('✔ ' + res.mensaje);
-          setTimeout(function() { google.script.host.close(); }, 1800);
-        } else {
-          ERP.Msg.error((res.errores || [res.error || 'Error']).join('\n'));
-          ERP.Btn.ready('saveBtn', BTN_TEXT);
-        }
+    ERP.UI.msgHide();
+    var t = document.getElementById('titulo').value.trim();
+    var d = document.getElementById('descripcion').value.trim();
+    var emp = document.getElementById('id_empresa').value;
+    var dep = document.getElementById('id_departamento').value;
+    var err = [];
+    if (!t)   err.push('Título requerido.');
+    if (!d)   err.push('Descripción requerida.');
+    if (!emp) err.push('Selecciona empresa.');
+    if (!dep) err.push('Selecciona departamento.');
+    if (err.length) { ERP.UI.msg('error', err.join('<br>')); return; }
+    ERP.Gateway.submit({
+      method: 'apiCrearVacante',
+      payload: ERP.Form.collect(['titulo','descripcion','requisitos','id_empresa','id_departamento','id_rol_destino','plazas_disponibles','fecha_apertura','fecha_cierre','estado']),
+      btnId: 'saveBtn', btnText: '✔ Crear Vacante', loadingText: 'Creando...',
+      onSuccess: function(res) {
+        ERP.UI.msg('success', res.mensaje || '✔ Vacante creada.');
+        setTimeout(function() { window.open('<?= getWebAppUrl() ?>?page=launchpad', '_top'); }, 2000);
       },
-      function(err) {
-        ERP.Msg.error(err.message);
-        ERP.Btn.ready('saveBtn', BTN_TEXT);
-      }
-    );
+    });
+  }
+
+  function _sk(show) {
+    [['empresa','id_empresa'],['departamento','id_departamento'],['rol','id_rol_destino']].forEach(function(p) {
+      var sk = document.getElementById('sk_' + p[0]);
+      var sel = document.getElementById(p[1]);
+      if (sk)  sk.style.display  = show ? 'block' : 'none';
+      if (sel) sel.style.display = show ? 'none'  : 'block';
+    });
+  }
+
+  function _btn(estado) {
+    var btn = document.getElementById('saveBtn');
+    var sp  = document.getElementById('saveSpinner');
+    var txt = document.getElementById('saveTxt');
+    if (!btn) return;
+    if (estado === 'loading') {
+      btn.disabled = true; sp.style.display = 'inline-block'; txt.textContent = 'Cargando listas...';
+    } else {
+      btn.disabled = false; sp.style.display = 'none'; txt.textContent = '✔ Crear Vacante';
+    }
+  }
+
+  function _badge(text, color) {
+    var el = document.getElementById('catalog-status');
+    if (!el) return;
+    el.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:500;background:' + color + '22;color:' + color + ';">' + text + '</span>';
   }
 </script>
 </body>
