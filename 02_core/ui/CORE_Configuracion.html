@@ -655,4 +655,13 @@
       }
     });
   }
+
+  // Escapa caracteres HTML para evitar XSS y ReferenceError
+  function _esc(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
 </script>
