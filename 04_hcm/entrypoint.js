@@ -8,6 +8,7 @@ function onOpen() {
     .addItem('⚙️ Inicializar ERP (Bootstrap)',      'apiInicializarERPCompleto')
     .addItem('🔄 Sincronizar todas las tablas',     'apiSincronizarTodo')
     .addItem('🧹 Limpiar y Re-sembrar Maestros (Ecuador)', 'apiEjecutarLimpiezaEcuador')
+    .addItem('🔍 Diagnosticar base de datos',      'apiEjecutarDiagnostico')
     .addToUi();
 }
 
@@ -212,4 +213,50 @@ function apiEjecutarLimpiezaEcuador() {
   } catch(e) {
     ui.alert("⚠️ Error de ejecución", e.message, ui.ButtonSet.OK);
   }
+}
+
+function apiEjecutarDiagnostico() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = Utils.getActiveSpreadsheet();
+  if (!ss) {
+    ui.alert("Error", "No se pudo obtener el Spreadsheet activo.", ui.ButtonSet.OK);
+    return;
+  }
+
+  var report = "=== DIAGNÓSTICO DE BASE DE DATOS ===\n\n";
+
+  var tables = ['CAT_Paises', 'CAT_Empresas', 'BP_MASTER'];
+  tables.forEach(tableName => {
+    var sh = ss.getSheetByName(tableName);
+    if (!sh) {
+      report += `❌ Tabla '${tableName}': NO EXISTE\n\n`;
+      return;
+    }
+    
+    var lastRow = sh.getLastRow();
+    var lastCol = sh.getLastColumn();
+    report += `📁 Tabla '${tableName}': EXISTE (${lastRow} filas, ${lastCol} columnas)\n`;
+    if (lastRow > 1) {
+      var headers = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+      var rows = sh.getRange(2, 1, Math.min(lastRow - 1, 15), lastCol).getValues();
+      report += `   Cabeceras: [${headers.join(', ')}]\n`;
+      report += `   Primeras filas:\n`;
+      rows.forEach((row, i) => {
+        report += `     Row ${i+2}: [${row.join(', ')}]\n`;
+      });
+    } else {
+      report += `   ⚠️ La tabla está vacía (solo cabecera).\n`;
+    }
+    report += "\n";
+  });
+
+  var html = HtmlService.createHtmlOutput(
+    '<!DOCTYPE html><html><head><title>Diagnóstico</title></head>' +
+    '<body><h3>🔍 Reporte de Diagnóstico</h3>' +
+    '<pre style="background:#f5f5f5;padding:10px;border-radius:4px;white-space:pre-wrap;font-size:11px;word-break:break-all;">' + 
+    report.replace(/</g, "&lt;").replace(/>/g, "&gt;") + 
+    '</pre></body></html>'
+  ).setWidth(600).setHeight(500);
+
+  ui.showModalDialog(html, '🔍 Diagnóstico del ERP');
 }
