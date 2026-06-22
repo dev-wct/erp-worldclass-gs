@@ -82,6 +82,9 @@ function apiLimpiarYReinstalarMaestros() {
     const ss = Utils.getActiveSpreadsheet();
     if (!ss) throw new Error("No se pudo obtener la hoja de cálculo activa.");
 
+    // Asegurar y sanar la estructura de tablas y cabeceras (Self-Healing)
+    SetupEngine.syncDatabase(MDM_Schema);
+
     // Orden de borrado relacional seguro
     const tablesToClear = ['CAT_Departamentos', 'CAT_Empresas', 'BP_MASTER', 'CAT_Paises', 'CAT_Roles'];
     tablesToClear.forEach(tableName => {
