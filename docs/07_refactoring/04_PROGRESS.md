@@ -1,7 +1,7 @@
 # 04_PROGRESS — Estado de la Refactorización
 
 > Actualizar este archivo cada vez que se completa un ítem.
-> Fecha de última actualización: Junio 2026
+> Fecha de última actualización: 17 Jun 2026 — Design System + Web App Router completados
 
 ---
 
@@ -49,18 +49,22 @@
 
 ---
 
-## Fase 3 — Business Partner ⏳ PENDIENTE (requiere diseño previo)
+## Fase 3 — Business Partner ✅ COMPLETADA
 
 | Ítem | Estado |
 |---|---|
-| Diseño del modelo BP (campos, roles, relaciones) | ⏳ |
-| Crear `BP_MASTER` en MDM | ⏳ |
-| Agregar `id_bp` a `CAT_Empresas` | ⏳ |
-| Agregar `id_bp` a `Leads` | ⏳ |
-| Agregar `id_bp` a `Empleados` | ⏳ |
-| Agregar `id_bp` a `EREC_Postulantes` | ⏳ |
-| Migrar datos existentes | ⏳ |
-| `clasp push` + smoke test | ⏳ |
+| Diseño del modelo BP (campos, roles, relaciones) — `DEC-012` y `DEC-013` | ✅ |
+| `BP_MASTER` y `BP_Roles` en `MDM_Schema.js` | ✅ |
+| `MDM_BPService.js` — `obtenerOCrear`, `asignarRol`, `registrar`, `getRoles`, `findByDocumento` | ✅ |
+| `MDM_Setup.js` — seed de `BP_MASTER` para empresas del holding | ✅ |
+| `CAT_Empresas` — columna `id_bp` (FK suave → BP_MASTER) | ✅ |
+| `SD_Schema.js` / `Leads` — columna `id_bp` | ✅ |
+| `RRHH_Schema.js` / `Empleados` — columna `id_bp` | ✅ |
+| `EREC_Schema.js` / `EREC_Postulantes` — columna `id_bp` | ✅ |
+| `SD_Lead_UseCases.js` — llama `BPService.registrar()` en `registrar()` | ✅ |
+| `RRHH_Empleado_UseCases.js` — llama `BPService.registrar()` en `contratar()` | ✅ |
+| `EREC_Vacante_UseCases.js` — llama `BPService.registrar()` en `ErecPostulanteUseCases.registrar()` | ✅ |
+| `CORE_TestSeeder.js` — seed de 30 BPs personas físicas + 9 postulantes EREC con `id_bp` | ✅ |
 
 ---
 
@@ -87,3 +91,38 @@
 | `08_erec/` — módulo E-Recruiting completo | v2 | Jun 2026 |
 | `CAT_Paises` — tabla MDM con configuración regional | v2 | Jun 2026 |
 | Email habilitado con `MailApp` (estaba comentado) | v2 | Jun 2026 |
+
+---
+
+## Design System v2 ✅ COMPLETADO
+
+| Ítem | Estado |
+|---|---|
+| `CORE_Head.html` — Tailwind CDN + tokens SAP Horizon + Inter + Lucide + CSS puro `.erp-*` | ✅ |
+| `CORE_Shell.html` / `CORE_ShellClose.html` — layout wrapper sin scriptlets | ✅ |
+| `CORE_Components.html` — `ERP.UI.*`: msg, skeleton, badge, spinner, card, field, emptyState, setFormReady/Loading/Error | ✅ |
+| `CORE_FormHandler.html` — `ERP.Msg/Btn/Select/Form/Gateway` refactorizados con `Gateway.submit()` | ✅ |
+| `CORE_DesignSystem.html` — puente legacy `.sap-*` para formularios no migrados | ✅ |
+| Bug `Date` en GAS — fix en `DataAdapter._sanitize()` (JSON round-trip en `findAll`) | ✅ |
+| `EREC_FormVacante.html` — template de referencia sobre el nuevo design system | ✅ |
+
+---
+
+## Web App Router ✅ COMPLETADO
+
+| Ítem | Estado |
+|---|---|
+| `CORE_AppRouter.js` — `doGet/doPost` único, mapa de rutas `APP_ROUTES`, variables universales de template | ✅ |
+| `CORE_Launchpad.html` — Launchpad SAP Fiori standalone: shellbar, tiles por módulo, indicador conectado, sync overlay | ✅ |
+| `EREC_Vacante_Controller.js` — `doGet/doPost` renombrados a `_erecDoGetPublico/_erecDoPostPublico` | ✅ |
+| `EREC_FormVacante.html` — migrado a standalone: shellbar + breadcrumb + botón Volver → `?page=launchpad` | ✅ |
+| `entrypoint.js` — menú reducido a 2 ítems: "Abrir ERP" (nueva pestaña) + Bootstrap | ✅ |
+| `CORE_Bootstrap.js` — `_colorearTabs()`: tabs de Sheets coloreadas por módulo al final del Bootstrap | ✅ |
+
+**Flujo completo:** Sheets → `🚀 Abrir ERP` → nueva pestaña → Launchpad → tile → formulario → Volver → Launchpad
+
+**Pendiente de deploy:**
+1. `clasp push`
+2. Apps Script → Implementar → Nueva implementación (Web App)
+3. Copiar URL → Script Properties → `WEBAPP_URL = <url>`
+4. Recargar Sheets → probar flujo completo

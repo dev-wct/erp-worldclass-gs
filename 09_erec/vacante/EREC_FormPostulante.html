@@ -1,332 +1,518 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <? var vd = JSON.parse(vacanteData); ?>
-  <title><?= vd.titulo ?> — <?= erpName ?></title>
-  <?!= include('02_core/CORE_DesignSystem'); ?>
-  <style>
-    body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: var(--sap-spacing-xl) var(--sap-spacing-md);
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<? var vd = JSON.parse(vacanteData); ?>
+<title><?= vd.titulo ?> — <?= erpName ?></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  <?!= getSharedUtilsClientCode(); ?>
+  <?!= getSharedValidatorClientCode(); ?>
+  <? if (typeof codigoIso !== 'undefined' && codigoIso) { ?>
+    SharedValidator.configure('<?= codigoIso ?>');
+  <? } ?>
+</script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
+      colors: {
+        brand:   { DEFAULT:'#0a6ed1', dark:'#0854a0', light:'#e8f1fb' },
+        success: { DEFAULT:'#107e3e', light:'#eef7f2' },
+        error:   { DEFAULT:'#bb0000', light:'#fdf2f2' },
+        ink:     '#1d2d3d',
+        muted:   '#515f6e',
+        canvas:  '#f5f6f7',
+        border:  '#e0e0e0',
+      }
     }
-    .sap-container { width: 100%; max-width: 640px; }
+  }
+};
+</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',system-ui,sans-serif;background:#f5f6f7;
+     -webkit-font-smoothing:antialiased;min-height:100vh;}
+input,select,textarea,button{font-family:inherit;}
 
-    .erec-brand { text-align: center; margin-bottom: var(--sap-spacing-lg); }
-    .erec-brand-title { font-size: 22px; font-weight: 700; color: var(--sap-text-main); }
-    .erec-brand-badge {
-      display: inline-block; margin-top: 6px;
-      font-size: var(--sap-font-size-sm); color: var(--sap-text-secondary);
-      background: var(--sap-bg-hover); padding: 3px 12px; border-radius: 20px;
-    }
+/* Campo de formulario */
+.field{display:flex;flex-direction:column;gap:4px;}
+.field-label{font-size:13px;font-weight:500;color:#515f6e;}
+.field-label.req::after{content:' *';color:#bb0000;font-weight:600;}
+.field-input{width:100%;padding:11px 14px;font-size:14px;color:#1d2d3d;
+             background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;
+             transition:border-color .15s,box-shadow .15s;outline:none;}
+.field-input::placeholder{color:#aab4bc;}
+.field-input:hover{border-color:#aab4bc;}
+.field-input:focus{border-color:#0a6ed1;box-shadow:0 0 0 3px rgba(10,110,209,.15);}
+textarea.field-input{resize:vertical;min-height:90px;line-height:1.6;}
 
-    /* Tarjeta de la vacante */
-    .vacante-card {
-      background: linear-gradient(135deg, #0a6ed1 0%, #0854a0 100%);
-      border-radius: var(--sap-border-radius-md);
-      padding: var(--sap-spacing-lg);
-      color: white;
-      margin-bottom: var(--sap-spacing-lg);
-    }
-    .vacante-titulo   { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
-    .vacante-desc     { font-size: 13px; opacity: 0.9; line-height: 1.6; margin-bottom: var(--sap-spacing-sm); }
-    .vacante-requisitos { font-size: 12px; opacity: 0.8; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px; margin-top: 10px; }
-    .vacante-meta     { display: flex; gap: var(--sap-spacing-md); margin-top: 10px; flex-wrap: wrap; }
-    .vacante-badge    { background: rgba(255,255,255,0.2); border-radius: 12px; padding: 3px 10px; font-size: 11px; }
+/* Botón principal */
+.btn-submit{width:100%;padding:14px;background:#0a6ed1;color:#fff;border:none;
+            border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;
+            display:flex;align-items:center;justify-content:center;gap:8px;
+            transition:background .15s,transform .1s;letter-spacing:.01em;}
+.btn-submit:hover:not(:disabled){background:#0854a0;}
+.btn-submit:active:not(:disabled){transform:scale(.99);}
+.btn-submit:disabled{opacity:.65;cursor:not-allowed;}
 
-    /* Zona de archivo */
-    .file-drop-zone {
-      border: 2px dashed var(--sap-border-color);
-      border-radius: var(--sap-border-radius-md);
-      padding: var(--sap-spacing-lg);
-      text-align: center;
-      cursor: pointer;
-      transition: var(--sap-transition);
-      background: var(--sap-bg-body);
-    }
-    .file-drop-zone:hover, .file-drop-zone.dragover {
-      border-color: var(--sap-primary);
-      background: var(--sap-primary-light);
-    }
-    .file-drop-zone input[type="file"] { display: none; }
-    .file-drop-icon   { font-size: 32px; margin-bottom: 8px; }
-    .file-drop-label  { font-size: var(--sap-font-size-base); color: var(--sap-text-secondary); }
-    .file-drop-hint   { font-size: var(--sap-font-size-sm); color: var(--sap-text-secondary); margin-top: 4px; }
-    .file-selected    { font-size: var(--sap-font-size-sm); color: var(--sap-success); margin-top: 8px; font-weight: 500; }
-    .progress-bar-wrap { width:100%; height:6px; background:var(--sap-border-light); border-radius:3px; margin-top:8px; display:none; }
-    .progress-bar      { height:100%; background:var(--sap-primary); border-radius:3px; width:0%; transition:width 0.3s; }
+/* Drop zone CV */
+.drop-zone{border:2px dashed #d0d7de;border-radius:10px;padding:24px 16px;
+           text-align:center;cursor:pointer;transition:all .15s;background:#fafbfc;}
+.drop-zone:hover,.drop-zone.over{border-color:#0a6ed1;background:#f0f6ff;}
+.drop-zone input{display:none;}
+.progress-wrap{height:4px;background:#e0e0e0;border-radius:4px;margin-top:10px;display:none;}
+.progress-bar{height:100%;background:#0a6ed1;border-radius:4px;width:0%;transition:width .3s;}
 
-    /* Pantalla de éxito */
-    .success-screen { display:none; text-align:center; padding:var(--sap-spacing-xl); }
-    .success-icon   { font-size:56px; margin-bottom:var(--sap-spacing-md); }
-    .success-title  { font-size:20px; font-weight:700; color:var(--sap-success); margin-bottom:var(--sap-spacing-sm); }
-    .success-msg    { color:var(--sap-text-secondary); line-height:1.7; }
-  </style>
+/* Spinner */
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.4);
+         border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Message strip */
+.msg-strip{display:none;align-items:flex-start;gap:10px;padding:12px 14px;
+           border-radius:8px;font-size:13px;border-left:4px solid;margin-bottom:16px;}
+.msg-error  {background:#fdf2f2;color:#bb0000;border-left-color:#bb0000;}
+.msg-success{background:#eef7f2;color:#107e3e;border-left-color:#107e3e;}
+</style>
 </head>
 <body>
-  <div class="sap-container">
 
-    <div class="erec-brand">
-      <div class="erec-brand-title">🏢 <?= erpName ?></div>
-      <div class="erec-brand-badge">Proceso de Selección</div>
+<!-- ══════════════════════════════════════════════════════
+     HERO — Header con info de la vacante
+     ══════════════════════════════════════════════════ -->
+<div style="background:linear-gradient(135deg,#1d2b3a 0%,#0a3d6b 60%,#0a6ed1 100%);
+            padding:40px 20px 60px;text-align:center;position:relative;overflow:hidden;">
+
+  <!-- Círculos decorativos de fondo -->
+  <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;
+              border-radius:50%;background:rgba(255,255,255,.04);pointer-events:none;"></div>
+  <div style="position:absolute;bottom:-60px;left:-30px;width:160px;height:160px;
+              border-radius:50%;background:rgba(255,255,255,.03);pointer-events:none;"></div>
+
+  <!-- Logo / Marca -->
+  <div style="display:inline-flex;align-items:center;justify-content:center;
+              width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.12);
+              margin-bottom:16px;border:1.5px solid rgba(255,255,255,.2);">
+    <i data-lucide="layers" style="width:26px;height:26px;color:#fff;"></i>
+  </div>
+
+  <p style="color:rgba(255,255,255,.6);font-size:12px;font-weight:500;
+            text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">
+    <?= erpName ?> · Proceso de Selección
+  </p>
+
+  <h1 style="color:#fff;font-size:clamp(20px,5vw,28px);font-weight:700;
+             line-height:1.25;margin-bottom:12px;max-width:520px;margin-left:auto;margin-right:auto;">
+    <?= vd.titulo ?>
+  </h1>
+
+  <!-- Badges de la vacante -->
+  <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px;">
+    <span style="background:rgba(255,255,255,.15);color:#fff;padding:4px 12px;
+                 border-radius:99px;font-size:12px;font-weight:500;
+                 border:1px solid rgba(255,255,255,.2);">
+      <? if (vd.codigo) { ?><?= vd.codigo ?><? } ?>
+    </span>
+    <? if (vd.plazas_disponibles) { ?>
+    <span style="background:rgba(16,126,62,.3);color:#7ddfaa;padding:4px 12px;
+                 border-radius:99px;font-size:12px;font-weight:500;
+                 border:1px solid rgba(16,126,62,.4);">
+      <?= vd.plazas_disponibles ?> plaza(s) disponible(s)
+    </span>
+    <? } ?>
+    <? if (vd.fecha_cierre) { ?>
+    <span style="background:rgba(233,115,12,.25);color:#ffb570;padding:4px 12px;
+                 border-radius:99px;font-size:12px;font-weight:500;
+                 border:1px solid rgba(233,115,12,.35);">
+      Cierre: <?= vd.fecha_cierre ?>
+    </span>
+    <? } ?>
+  </div>
+
+  <? if (vd.descripcion) { ?>
+  <p style="color:rgba(255,255,255,.75);font-size:14px;line-height:1.7;
+            max-width:480px;margin:0 auto;">
+    <?= vd.descripcion ?>
+  </p>
+  <? } ?>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     REQUISITOS — Pill visual debajo del hero
+     ══════════════════════════════════════════════════ -->
+<? if (vd.requisitos) { ?>
+<div style="background:#fff;border-bottom:1px solid #ebebeb;">
+  <div style="max-width:580px;margin:0 auto;padding:16px 20px;
+              display:flex;align-items:flex-start;gap:10px;">
+    <div style="width:32px;height:32px;border-radius:8px;background:#e8f1fb;
+                display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+      <i data-lucide="clipboard-check" style="width:16px;height:16px;color:#0a6ed1;"></i>
     </div>
+    <div>
+      <p style="font-size:12px;font-weight:600;text-transform:uppercase;
+                letter-spacing:.5px;color:#515f6e;margin-bottom:3px;">Requisitos</p>
+      <p style="font-size:13px;color:#1d2d3d;line-height:1.6;"><?= vd.requisitos ?></p>
+    </div>
+  </div>
+</div>
+<? } ?>
 
-    <!-- Tarjeta de la vacante -->
-    <div class="vacante-card">
-      <div class="vacante-titulo"><?= vd.titulo ?></div>
-      <? if (vd.descripcion) { ?>
-        <div class="vacante-desc"><?= vd.descripcion ?></div>
-      <? } ?>
-      <? if (vd.requisitos) { ?>
-        <div class="vacante-requisitos">
-          <strong>Requisitos:</strong> <?= vd.requisitos ?>
+<!-- ══════════════════════════════════════════════════════
+     FORMULARIO
+     ══════════════════════════════════════════════════ -->
+<div style="max-width:580px;margin:0 auto;padding:24px 16px 48px;">
+
+  <!-- Card del formulario -->
+  <div style="background:#fff;border-radius:16px;border:1px solid #e8eaed;
+              box-shadow:0 4px 24px rgba(29,45,61,.06);overflow:hidden;">
+
+    <!-- Header del card -->
+    <div style="padding:20px 24px 16px;border-bottom:1px solid #f0f0f0;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#e8f1fb;
+                    display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i data-lucide="user-round" style="width:20px;height:20px;color:#0a6ed1;"></i>
         </div>
-      <? } ?>
-      <div class="vacante-meta">
-        <span class="vacante-badge">📋 <?= vd.codigo ?></span>
-        <? if (vd.plazas_disponibles) { ?>
-          <span class="vacante-badge">👥 <?= vd.plazas_disponibles ?> plaza(s)</span>
-        <? } ?>
-        <? if (vd.fecha_cierre) { ?>
-          <span class="vacante-badge">📅 Cierre: <?= vd.fecha_cierre ?></span>
-        <? } ?>
-      </div>
-    </div>
-
-    <!-- Formulario -->
-    <div class="sap-card" id="formCard">
-      <div class="sap-card-header">
         <div>
-          <div class="sap-card-title">👤 Tu Postulación</div>
-          <div class="sap-card-subtitle">
+          <h2 style="font-size:16px;font-weight:600;color:#1d2d3d;margin-bottom:2px;">
+            Tu Postulación
+          </h2>
+          <p style="font-size:13px;color:#515f6e;">
             <? if (nombreCandidato) { ?>
-              Hola <strong><?= nombreCandidato ?></strong>, completa tu información.
+              Hola <strong><?= nombreCandidato ?></strong>, completa tu información para postularte.
             <? } else { ?>
               Completa el formulario para postularte a esta posición.
             <? } ?>
-          </div>
+          </p>
         </div>
       </div>
+    </div>
 
-      <div class="sap-card-content">
-        <div id="msg" class="sap-message-strip sap-message-strip-error" style="display:none;"></div>
+    <!-- Body -->
+    <div style="padding:20px 24px 24px;">
 
-        <form id="posForm" method="POST">
-          <input type="hidden" id="token"               name="token"               value="<?= token ?>">
-          <input type="hidden" id="modo"                name="modo"                value="<?= modo ?>">
-          <input type="hidden" id="id_vacante"          name="id_vacante"          value="<?= idVacante ?>">
-          <input type="hidden" id="cv_base64"           name="cv_base64"           value="">
-          <input type="hidden" id="cv_nombre"           name="cv_nombre"           value="">
-          <input type="hidden" id="cv_mime"             name="cv_mime"             value="">
+      <!-- Message strip -->
+      <div id="msg" class="msg-strip msg-error" role="alert">
+        <i data-lucide="circle-x" style="width:16px;height:16px;flex-shrink:0;margin-top:1px;"></i>
+        <span id="msg-text"></span>
+      </div>
 
-          <div class="sap-form-grid">
+      <!-- Campos ocultos -->
+      <input type="hidden" id="token"      value="<?= token ?>">
+      <input type="hidden" id="modo"       value="<?= modo ?>">
+      <input type="hidden" id="id_vacante" value="<?= idVacante ?>">
+      <input type="hidden" id="cv_base64"  value="">
+      <input type="hidden" id="cv_nombre"  value="">
+      <input type="hidden" id="cv_mime"    value="">
 
-            <div class="sap-section-title">Datos Personales</div>
+      <!-- Sección: Datos Personales -->
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+                color:#515f6e;border-bottom:1px solid #f0f0f0;padding-bottom:8px;margin-bottom:16px;">
+        Datos Personales
+      </p>
 
-            <div class="sap-form-group full-width">
-              <label class="sap-label required" for="nombre_completo">Nombre Completo</label>
-              <input type="text" class="sap-input" id="nombre_completo"
-                     name="nombre_completo"
-                     value="<?= nombreCandidato ?>"
-                     placeholder="Ej. Juan Carlos Pérez García"
-                     autocomplete="name" required>
-            </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
 
-            <div class="sap-form-group">
-              <label class="sap-label required" for="documento_identidad">
-                <?= labelDocumento ?>
-              </label>
-              <input type="text" class="sap-input" id="documento_identidad"
-                     name="documento_identidad"
-                     placeholder="Número de tu <?= labelDocumento ?>"
-                     inputmode="numeric" required>
-            </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label class="field-label req" for="nombre_completo">Nombre Completo</label>
+          <input type="text" class="field-input" id="nombre_completo"
+                 value="<?= nombreCandidato ?>"
+                 placeholder="Ej. Juan Carlos Pérez García"
+                 autocomplete="name">
+        </div>
 
-            <div class="sap-form-group">
-              <label class="sap-label required" for="telefono">Teléfono Móvil</label>
-              <input type="tel" class="sap-input" id="telefono"
-                     name="telefono"
-                     placeholder="Ej. 55551234" inputmode="tel" required>
-            </div>
+        <div class="field">
+          <label class="field-label req" for="documento_identidad"><?= labelDocumento ?></label>
+          <input type="text" class="field-input" id="documento_identidad"
+                 placeholder="Número de <?= labelDocumento ?>"
+                 inputmode="numeric">
+        </div>
 
-            <div class="sap-form-group full-width">
-              <label class="sap-label required" for="email">Correo Electrónico</label>
-              <input type="email" class="sap-input" id="email"
-                     name="email"
-                     placeholder="tucorreo@mail.com" inputmode="email" required>
-            </div>
+        <div class="field">
+          <label class="field-label req" for="telefono">Teléfono Móvil</label>
+          <input type="tel" class="field-input" id="telefono"
+                 placeholder="Ej. 55551234" inputmode="tel">
+        </div>
 
-            <div class="sap-section-title">Documentos</div>
+        <div class="field" style="grid-column:1/-1;">
+          <label class="field-label req" for="email">Correo Electrónico</label>
+          <input type="email" class="field-input" id="email"
+                 placeholder="tucorreo@mail.com" inputmode="email">
+        </div>
 
-            <div class="sap-form-group full-width">
-              <label class="sap-label required">
-                Hoja de Vida / CV
-                <span style="font-weight:400;color:var(--sap-text-secondary);"> (PDF, Word o imagen — máx. 2 MB)</span>
-              </label>
-              <div class="file-drop-zone" id="dropZone"
-                   onclick="document.getElementById('cvFile').click()"
-                   ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
-                <input type="file" id="cvFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                       onchange="procesarArchivo(this.files[0])">
-                <div class="file-drop-icon">📄</div>
-                <div class="file-drop-label">Haz clic o arrastra tu CV aquí</div>
-                <div class="file-drop-hint">PDF, Word o imagen • Máximo 2 MB</div>
-                <div class="file-selected" id="fileSelectedLabel" style="display:none;"></div>
-              </div>
-              <div class="progress-bar-wrap" id="progressWrap">
-                <div class="progress-bar" id="progressBar"></div>
-              </div>
-            </div>
+      </div>
 
-            <div class="sap-section-title">Sobre Ti</div>
+      <!-- Sección: CV -->
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+                color:#515f6e;border-bottom:1px solid #f0f0f0;padding-bottom:8px;
+                margin-bottom:16px;margin-top:8px;">
+        Hoja de Vida
+      </p>
 
-            <div class="sap-form-group full-width">
-              <label class="sap-label" for="notas">¿Por qué te interesa esta posición?</label>
-              <textarea class="sap-textarea" id="notas" name="notas" rows="3"
-                        placeholder="Cuéntanos sobre tu experiencia o motivación para este puesto..."></textarea>
-            </div>
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('cvFile').click()"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)"
+           style="margin-bottom:14px;">
+        <input type="file" id="cvFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+               onchange="procesarArchivo(this.files[0])">
 
+        <div id="drop-idle">
+          <div style="width:48px;height:48px;border-radius:12px;background:#f0f6ff;
+                      display:flex;align-items:center;justify-content:center;margin:0 auto 10px;">
+            <i data-lucide="file-up" style="width:24px;height:24px;color:#0a6ed1;"></i>
           </div>
-
-          <div style="margin-top:var(--sap-spacing-lg);">
-            <button type="button" id="btnEnviar" onclick="enviar()"
-                    class="sap-btn sap-btn-emphasized" style="width:100%;padding:14px;">
-              Enviar Postulación
-            </button>
-          </div>
-          <p style="text-align:center;font-size:11px;color:var(--sap-text-secondary);margin-top:var(--sap-spacing-md);">
-            Al enviar, aceptas que tus datos sean procesados para este proceso de selección.
+          <p style="font-size:14px;font-weight:500;color:#1d2d3d;margin-bottom:4px;">
+            Arrastra tu CV aquí o <span style="color:#0a6ed1;text-decoration:underline;">selecciona archivo</span>
           </p>
-        </form>
-      </div>
-    </div>
+          <p style="font-size:12px;color:#515f6e;">PDF, Word o imagen · Máximo 5 MB</p>
+        </div>
 
-    <!-- Éxito -->
-    <div class="sap-card success-screen" id="successCard">
-      <div class="sap-card-content">
-        <div class="success-icon">🎉</div>
-        <div class="success-title">¡Postulación Enviada!</div>
-        <p class="success-msg" id="successMsg">
-          Hemos recibido tu postulación para <strong><?= vd.titulo ?></strong>.<br>
-          Nos pondremos en contacto contigo pronto.
-        </p>
+        <div id="drop-selected" style="display:none;">
+          <div style="width:44px;height:44px;border-radius:12px;background:#eef7f2;
+                      display:flex;align-items:center;justify-content:center;margin:0 auto 8px;">
+            <i data-lucide="file-check" style="width:22px;height:22px;color:#107e3e;"></i>
+          </div>
+          <p id="file-name" style="font-size:13px;font-weight:600;color:#107e3e;margin-bottom:2px;"></p>
+          <p id="file-size" style="font-size:12px;color:#515f6e;"></p>
+          <button type="button" onclick="quitarArchivo(event)"
+                  style="margin-top:8px;font-size:12px;color:#515f6e;background:none;
+                         border:1px solid #e0e0e0;border-radius:6px;padding:3px 10px;cursor:pointer;">
+            Cambiar archivo
+          </button>
+        </div>
       </div>
-    </div>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
 
+      <!-- Sección: Sobre Ti -->
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+                color:#515f6e;border-bottom:1px solid #f0f0f0;padding-bottom:8px;
+                margin-bottom:16px;margin-top:8px;">
+        Sobre Ti
+      </p>
+
+      <div class="field" style="margin-bottom:20px;">
+        <label class="field-label" for="notas">¿Por qué te interesa esta posición?</label>
+        <textarea class="field-input" id="notas" rows="3"
+                  placeholder="Cuéntanos sobre tu experiencia o motivación..."></textarea>
+      </div>
+
+      <!-- Botón enviar -->
+      <button type="button" id="btnEnviar" class="btn-submit" onclick="enviar()">
+        <i data-lucide="send" style="width:18px;height:18px;"></i>
+        Enviar Postulación
+      </button>
+
+      <p style="text-align:center;font-size:11px;color:#8c9ba5;margin-top:12px;line-height:1.6;">
+        Al enviar, aceptas que tus datos sean procesados únicamente para este proceso de selección.
+      </p>
+
+    </div>
   </div>
 
-  <script>
-    var BTN_TEXT = 'Enviar Postulación';
-    var MAX_BYTES = 2 * 1024 * 1024; // 2 MB — límite para GAS Web App POST
+  <!-- Footer -->
+  <p style="text-align:center;font-size:11px;color:#aab4bc;margin-top:20px;">
+    <?= erpName ?> · Proceso confidencial de reclutamiento
+  </p>
+</div>
 
-    function onDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
-    function onDragLeave() { document.getElementById('dropZone').classList.remove('dragover'); }
-    function onDrop(e) { e.preventDefault(); onDragLeave(); procesarArchivo(e.dataTransfer.files[0]); }
+<!-- ══════════════════════════════════════════════════════
+     PANTALLA DE ÉXITO
+     ══════════════════════════════════════════════════ -->
+<div id="successScreen" style="display:none;min-height:100vh;background:#f5f6f7;
+     display:none;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:#fff;border-radius:20px;padding:40px 32px;max-width:420px;
+              width:100%;text-align:center;box-shadow:0 8px 40px rgba(29,45,61,.1);">
+    <div style="width:72px;height:72px;border-radius:50%;background:#eef7f2;
+                display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+      <i data-lucide="circle-check" style="width:36px;height:36px;color:#107e3e;"></i>
+    </div>
+    <h2 style="font-size:22px;font-weight:700;color:#107e3e;margin-bottom:10px;">
+      ¡Postulación Enviada!
+    </h2>
+    <p id="successMsg" style="font-size:14px;color:#515f6e;line-height:1.7;margin-bottom:24px;">
+      Hemos recibido tu información. Nos pondremos en contacto pronto.
+    </p>
+    <div style="background:#f5f6f7;border-radius:10px;padding:14px 16px;
+                display:flex;align-items:center;gap:10px;text-align:left;">
+      <i data-lucide="mail" style="width:18px;height:18px;color:#0a6ed1;flex-shrink:0;"></i>
+      <p style="font-size:12px;color:#515f6e;line-height:1.5;">
+        Revisa tu correo electrónico — recibirás una confirmación de tu postulación.
+      </p>
+    </div>
+  </div>
+</div>
 
-    function procesarArchivo(file) {
-      if (!file) return;
-      if (file.size > MAX_BYTES) {
-        mostrarError('El archivo excede 2 MB. Comprime el PDF o usa una imagen más pequeña.');
-        return;
-      }
-      var pw = document.getElementById('progressWrap');
-      var pb = document.getElementById('progressBar');
-      pw.style.display = 'block'; pb.style.width = '30%';
+<script>
+  var MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
-      var reader = new FileReader();
-      reader.onload = function(ev) {
-        pb.style.width = '100%';
-        setTimeout(function() { pw.style.display = 'none'; pb.style.width = '0%'; }, 600);
-        var result    = ev.target.result;
-        var b64       = result.split(',')[1];
-        var mimeMatch = result.match(/^data:([^;]+);base64,/);
-        document.getElementById('cv_base64').value = b64;
-        document.getElementById('cv_nombre').value = file.name;
-        document.getElementById('cv_mime').value   = mimeMatch ? mimeMatch[1] : file.type;
-        var lbl = document.getElementById('fileSelectedLabel');
-        lbl.textContent = '✔ ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
-        lbl.style.display = 'block';
-        ocultarError();
-      };
-      reader.onerror = function() { mostrarError('No se pudo leer el archivo.'); pw.style.display = 'none'; };
-      reader.readAsDataURL(file);
+  /* ── Drag & Drop ──────────────────────────────────────────────── */
+  function onDragOver(e) {
+    e.preventDefault();
+    document.getElementById('dropZone').classList.add('over');
+  }
+  function onDragLeave() {
+    document.getElementById('dropZone').classList.remove('over');
+  }
+  function onDrop(e) {
+    e.preventDefault();
+    onDragLeave();
+    procesarArchivo(e.dataTransfer.files[0]);
+  }
+
+  function procesarArchivo(file) {
+    if (!file) return;
+    if (file.size > MAX_BYTES) {
+      mostrarError('El archivo excede 5 MB. Comprime el PDF o usa una imagen más pequeña.');
+      return;
     }
 
-    function enviar() {
-      var btn = document.getElementById('btnEnviar');
+    var pw = document.getElementById('progressWrap');
+    var pb = document.getElementById('progressBar');
+    pw.style.display = 'block';
+    pb.style.width   = '30%';
 
-      var nombre = document.getElementById('nombre_completo').value.trim();
-      var doc    = document.getElementById('documento_identidad').value.trim();
-      var tel    = document.getElementById('telefono').value.trim();
-      var email  = document.getElementById('email').value.trim();
-      var cvB64  = document.getElementById('cv_base64').value;
+    var reader    = new FileReader();
+    reader.onload = function(ev) {
+      pb.style.width = '100%';
+      setTimeout(function() { pw.style.display = 'none'; pb.style.width = '0%'; }, 500);
 
-      if (!nombre || !doc || !tel || !email) {
-        mostrarError('Por favor completa todos los campos obligatorios (*).');
-        return;
-      }
-      if (!cvB64) {
-        mostrarError('Por favor adjunta tu hoja de vida antes de enviar.');
-        return;
-      }
+      var result    = ev.target.result;
+      var b64       = result.split(',')[1];
+      var mimeMatch = result.match(/^data:([^;]+);base64,/);
 
-      btn.disabled  = true;
-      btn.innerHTML = '<span class="sap-spinner"></span> Enviando...';
+      document.getElementById('cv_base64').value = b64;
+      document.getElementById('cv_nombre').value = file.name;
+      document.getElementById('cv_mime').value   = mimeMatch ? mimeMatch[1] : file.type;
+
+      // Mostrar estado seleccionado
+      document.getElementById('drop-idle').style.display     = 'none';
+      document.getElementById('drop-selected').style.display = 'block';
+      document.getElementById('file-name').textContent = file.name;
+      document.getElementById('file-size').textContent = (file.size / 1024).toFixed(0) + ' KB';
       ocultarError();
+    };
+    reader.onerror = function() {
+      mostrarError('No se pudo leer el archivo. Intenta con otro.');
+      pw.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
 
-      // GAS Web App: el form nativo no funciona dentro del sandbox.
-      // Usamos google.script.run para enviar datos al servidor de forma confiable.
-      var payload = {
-        token:               document.getElementById('token').value,
-        modo:                document.getElementById('modo').value,
-        id_vacante:          document.getElementById('id_vacante').value,
-        nombre_completo:     nombre,
-        documento_identidad: doc,
-        telefono:            tel,
-        email:               email,
-        notas:               document.getElementById('notas').value.trim(),
-        cv_base64:           cvB64,
-        cv_nombre:           document.getElementById('cv_nombre').value,
-        cv_mime:             document.getElementById('cv_mime').value,
-      };
+  function quitarArchivo(e) {
+    e.stopPropagation();
+    document.getElementById('cv_base64').value             = '';
+    document.getElementById('cv_nombre').value             = '';
+    document.getElementById('cv_mime').value               = '';
+    document.getElementById('cvFile').value                = '';
+    document.getElementById('drop-idle').style.display     = 'block';
+    document.getElementById('drop-selected').style.display = 'none';
+  }
 
-      google.script.run
-        .withSuccessHandler(function(resultado) {
-          if (resultado && resultado.ok) {
-            mostrarExito(resultado.mensaje || '¡Postulación recibida! Nos contactaremos pronto.');
-          } else {
-            var errs = resultado && resultado.errores
-              ? resultado.errores.join('\n')
-              : 'Error al procesar tu postulación.';
-            mostrarError(errs);
-            btn.disabled  = false;
-            btn.innerText = BTN_TEXT;
-          }
-        })
-        .withFailureHandler(function(err) {
-          mostrarError('Error del servidor: ' + (err.message || 'intenta de nuevo.'));
+  /* ── Enviar ───────────────────────────────────────────────────── */
+  function enviar() {
+    var nombre = document.getElementById('nombre_completo').value.trim();
+    var doc    = document.getElementById('documento_identidad').value.trim();
+    var tel    = document.getElementById('telefono').value.trim();
+    var email  = document.getElementById('email').value.trim();
+    var cvB64  = document.getElementById('cv_base64').value;
+
+    var validation = SharedValidator.validate({
+      nombre_completo:     nombre,
+      documento_identidad: doc,
+      telefono:            tel,
+      email:               email
+    }, {
+      nombre_completo:     ['required'],
+      documento_identidad: ['required', 'dpi'],
+      telefono:            ['required', 'telefono'],
+      email:               ['required', 'email']
+    });
+
+    var errores = [];
+    if (!validation.isValid) {
+      if (validation.errors.nombre_completo)     errores.push('Nombre completo: ' + validation.errors.nombre_completo);
+      if (validation.errors.documento_identidad) errores.push('<?= labelDocumento ?>: ' + validation.errors.documento_identidad);
+      if (validation.errors.telefono)            errores.push('Teléfono: ' + validation.errors.telefono);
+      if (validation.errors.email)               errores.push('Correo: ' + validation.errors.email);
+    }
+    if (!cvB64) {
+      errores.push('Adjunta tu hoja de vida antes de enviar.');
+    }
+
+    if (errores.length) { mostrarError(errores.join(' ')); return; }
+
+    var btn = document.getElementById('btnEnviar');
+    btn.disabled  = true;
+    btn.innerHTML = '<span class="spinner"></span> Enviando postulación...';
+    ocultarError();
+
+    var payload = {
+      token:               document.getElementById('token').value,
+      modo:                document.getElementById('modo').value,
+      id_vacante:          document.getElementById('id_vacante').value,
+      nombre_completo:     nombre,
+      documento_identidad: doc,
+      telefono:            tel,
+      email:               email,
+      notas:               document.getElementById('notas').value.trim(),
+      cv_base64:           cvB64,
+      cv_nombre:           document.getElementById('cv_nombre').value,
+      cv_mime:             document.getElementById('cv_mime').value,
+    };
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res && res.ok) {
+          mostrarExito(res.mensaje || '¡Postulación recibida! Nos contactaremos pronto.');
+        } else {
+          var msg = res && res.errores ? res.errores.join(' ') : 'Error al procesar. Intenta de nuevo.';
+          mostrarError(msg);
           btn.disabled  = false;
-          btn.innerText = BTN_TEXT;
-        })
-        .apiRegistrarPostulante(payload);
-    }
+          btn.innerHTML = '<i data-lucide="send" style="width:18px;height:18px;"></i> Enviar Postulación';
+          if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [btn] });
+        }
+      })
+      .withFailureHandler(function(err) {
+        mostrarError('Error del servidor: ' + (err && err.message ? err.message : 'intenta de nuevo.'));
+        btn.disabled  = false;
+        btn.innerHTML = '<i data-lucide="send" style="width:18px;height:18px;"></i> Enviar Postulación';
+        if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [btn] });
+      })
+      .apiRegistrarPostulante(payload);
+  }
 
-    function mostrarExito(msg) {
-      document.getElementById('formCard').style.display = 'none';
-      document.getElementById('successMsg').innerHTML   = msg.replace(/\n/g, '<br>');
-      document.getElementById('successCard').style.display = 'block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    function mostrarError(msg) {
-      var el = document.getElementById('msg');
-      el.innerText = msg; el.style.display = 'flex';
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-    function ocultarError() { document.getElementById('msg').style.display = 'none'; }
-  </script>
+  /* ── UI helpers ───────────────────────────────────────────────── */
+  function mostrarExito(msg) {
+    document.querySelector('body > div:not(#successScreen)') &&
+      document.querySelectorAll('body > div').forEach(function(d) {
+        if (d.id !== 'successScreen') d.style.display = 'none';
+      });
+    var sc = document.getElementById('successScreen');
+    sc.style.display = 'flex';
+    document.getElementById('successMsg').innerHTML = msg.replace(/\n/g, '<br>');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [sc] });
+  }
+
+  function mostrarError(txt) {
+    var el = document.getElementById('msg');
+    document.getElementById('msg-text').textContent = txt;
+    el.style.display = 'flex';
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function ocultarError() {
+    document.getElementById('msg').style.display = 'none';
+  }
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>
 </body>
 </html>

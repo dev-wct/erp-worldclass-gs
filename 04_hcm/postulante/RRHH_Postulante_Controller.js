@@ -25,7 +25,13 @@
  *   ?campana=ID   → modo público, solo valida que la campaña exista y esté activa
  *   (nada)        → link público sin campaña (formulario abierto)
  */
-function doGet(e) {
+/**
+ * @deprecated — Este doGet fue reemplazado por CORE_AppRouter.doGet().
+ * Renombrado para evitar conflicto. El formulario legacy de RRHH Postulantes
+ * ya fue reemplazado por el módulo EREC (_erecDoGetPublico).
+ * Mantener por compatibilidad — no eliminar hasta migración completa.
+ */
+function _rrhhDoGetPostulanteLegacy(e) {
   var params   = (e && e.parameter) ? e.parameter : {};
   var token    = params.token    || '';
   var idCampana = params.campana || '';
@@ -58,8 +64,8 @@ function doGet(e) {
  * GAS Web App recibe form nativo (application/x-www-form-urlencoded) en e.parameter.
  * Es el método más confiable en GAS — sin dependencias de fetch ni CORS.
  */
-function doPost(e) {
-  var params = {};
+/** @deprecated — reemplazado por _erecDoPostPublico en EREC_Vacante_Controller.js */
+function _rrhhDoPostPostulanteLegacy(e) {
 
   // Prioridad 1: JSON en el body (fetch moderno)
   try {

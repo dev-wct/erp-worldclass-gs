@@ -65,10 +65,7 @@ const VacanteUseCases = {
       return { ok: false, errores: ['Solo se pueden generar links para vacantes ABIERTAS o EN_PROCESO.'] };
     }
 
-    var webAppUrl = '';
-    try {
-      webAppUrl = PropertiesService.getScriptProperties().getProperty('WEBAPP_URL') || '';
-    } catch(e) {}
+    var webAppUrl = getWebAppUrl();
 
     var token = Utilities.getUuid();
     var ahora = new Date();
@@ -139,13 +136,30 @@ const ErecPostulanteUseCases = {
    * Llamado desde doPost de la Web App pública.
    */
   registrar: function(dto) {
-    // Validar que la vacante existe y está abierta
+    // 1. Validar que la vacante existe y está abierta (se obtiene primero para configurar el validador regional)
     const vacante = VacanteRepo.findById(dto.id_vacante);
     if (!vacante) {
       return { ok: false, errores: ['La vacante a la que intentas postularte no existe o fue cerrada.'] };
     }
     if (vacante.estado !== 'ABIERTA' && vacante.estado !== 'EN_PROCESO') {
       return { ok: false, errores: ['Esta vacante ya no está recibiendo postulaciones.'] };
+    }
+
+    // Configurar validador regional según la empresa de la vacante
+    if (vacante.id_empresa) {
+      SharedValidator.configure(vacante.id_empresa);
+    }
+
+    // 2. Validaciones de formato sintácticas e isomórficas
+    const formatRes = SharedValidator.validate(dto, {
+      nombre_completo:     ['required'],
+      documento_identidad: ['required', 'dpi'],
+      telefono:            ['required', 'telefono'],
+      email:               ['required', 'email']
+    });
+
+    if (!formatRes.isValid) {
+      return { ok: false, errores: Object.values(formatRes.errors) };
     }
 
     // Deduplicar por email en la misma vacante

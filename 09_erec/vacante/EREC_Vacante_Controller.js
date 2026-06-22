@@ -16,16 +16,23 @@
  *   ?vacante=ID&token=UUID  → modo individual (token validado)
  *   ?vacante=ID             → modo público (cualquiera puede postular)
  */
-function doGet(e) {
+/**
+ * _erecDoGetPublico
+ * Formulario público de candidatos — llamado por CORE_AppRouter.doGet()
+ * cuando llegan parámetros ?vacante= o ?token=
+ * NO definir doGet() aquí — el único doGet() del proyecto está en CORE_AppRouter.js
+ */
+function _erecDoGetPublico(e) {
   var params    = (e && e.parameter) ? e.parameter : {};
   var idVacante = params.vacante || '';
   var token     = params.token   || '';
 
-  // Validar token individual si existe
+  var link = null;
+  // Validar token si existe (tanto individual como público)
   if (token) {
-    var link = ErecLinkRepo.findByToken(token);
+    link = ErecLinkRepo.findByToken(token);
     if (!link) return _erecPaginaError('Link inválido', 'Este link no es válido.');
-    if (link.estado === 'USADO') {
+    if (link.modo === 'INDIVIDUAL' && link.estado === 'USADO') {
       return _erecPaginaError('Link ya utilizado', 'Este link fue utilizado anteriormente. Solo puede usarse una vez.');
     }
     if (new Date() > new Date(link.expira_at)) {
@@ -48,13 +55,15 @@ function doGet(e) {
   // Resolver label del documento según el país de la empresa
   var labelDoc = Customizing.getLabelDocumento(vacante.id_empresa);
 
+  var ctxEmp = Customizing.getContextoEmpresa(vacante.id_empresa);
   var tpl = HtmlService.createTemplateFromFile('09_erec/vacante/EREC_FormPostulante');
   tpl.erpName         = Config.ERP_NAME;
   tpl.token           = token;
-  tpl.modo            = token ? 'INDIVIDUAL' : 'PUBLICO';
+  tpl.modo            = link ? link.modo : 'PUBLICO';
   tpl.idVacante       = String(idVacante);
   tpl.vacanteData     = JSON.stringify(VacanteDTO.toPublic(vacante));
   tpl.labelDocumento  = labelDoc;
+  tpl.codigoIso       = ctxEmp.codigo_iso;
   // Reusar el objeto link ya validado — evita un segundo read a la Sheet
   tpl.nombreCandidato = (token && link) ? (link.nombre_destino || '') : '';
 
@@ -68,7 +77,11 @@ function doGet(e) {
  * Usa form nativo (application/x-www-form-urlencoded) via e.parameter.
  * Retorna una página HTML de resultado — el browser la muestra directamente.
  */
-function doPost(e) {
+/**
+ * _erecDoPostPublico
+ * Recibe el formulario de postulación del candidato — llamado por CORE_AppRouter.doPost()
+ */
+function _erecDoPostPublico(e) {
   var params = {};
 
   // e.parameter funciona para form nativo urlencoded
@@ -85,14 +98,19 @@ function doPost(e) {
   Logger.log('[EREC doPost] raw e.parameter: ' + JSON.stringify(e ? e.parameter : null));
 
   var token     = String(params.token      || '').trim();
-  var modo      = String(params.modo       || 'PUBLICO').trim();
   var idVacante = String(params.id_vacante || '').trim();
+  var link      = token ? ErecLinkRepo.findByToken(token) : null;
 
-  // Validar token en modo individual
-  if (modo === 'INDIVIDUAL' && token) {
-    var link = ErecLinkRepo.findByToken(token);
-    if (!link || link.estado === 'USADO' || new Date() > new Date(link.expira_at)) {
-      return _erecPaginaError('Token inválido o expirado', 'Este link ya no es válido. Contacta al reclutador.');
+  // Validar token si existe
+  if (token) {
+    if (!link) {
+      return _erecPaginaError('Link inválido', 'Este link no es válido.');
+    }
+    if (link.modo === 'INDIVIDUAL' && link.estado === 'USADO') {
+      return _erecPaginaError('Token inválido o expirado', 'Este link ya no es válido o ya fue utilizado.');
+    }
+    if (new Date() > new Date(link.expira_at)) {
+      return _erecPaginaError('Token inválido o expirado', 'Este link ha expirado. Contacta al reclutador.');
     }
   }
 
@@ -127,14 +145,14 @@ function doPost(e) {
     email:               String(params.email                || '').trim().toLowerCase(),
     notas:               String(params.notas                || '').trim(),
     link_cv:             linkCv,
-    fuente:              modo === 'INDIVIDUAL' ? 'TOKEN_INDIVIDUAL' : 'LINK_PUBLICO',
+    fuente:              (link && link.modo === 'INDIVIDUAL') ? 'TOKEN_INDIVIDUAL' : 'LINK_PUBLICO',
   };
 
   var resultado = ErecPostulanteUseCases.registrar(dto);
   Logger.log('[EREC doPost] resultado: ' + JSON.stringify(resultado));
 
-  // Marcar token como usado si fue exitoso
-  if (resultado.ok && modo === 'INDIVIDUAL' && token) {
+  // Marcar token como usado si fue exitoso y el link es individual
+  if (resultado.ok && link && link.modo === 'INDIVIDUAL') {
     ErecLinkRepo.marcarUsado(token);
   }
 
@@ -154,24 +172,32 @@ function doPost(e) {
 // ─── APIs INTERNAS (menú del ERP) ────────────────────────────────────────────
 
 function abrirFormVacante() {
+  // Modal dialog con dimensiones de aplicación web real.
+  // En desktop (laptop/PC) esto se ve como una ventana flotante profesional,
+  // sin nada que delate que es una hoja de cálculo por detrás.
   var html = HtmlService.createTemplateFromFile('09_erec/vacante/EREC_FormVacante')
     .evaluate()
-    .setWidth(620)
-    .setHeight(680);
-  SpreadsheetApp.getUi().showModalDialog(html, '📋 Nueva Vacante de Reclutamiento');
+    .setWidth(760)
+    .setHeight(700);
+  SpreadsheetApp.getUi().showModalDialog(html, ' ');
 }
 
 function apiRegistrarPostulante(payload) {
   return safeExecute(function() {
     var token     = String(payload.token      || '').trim();
-    var modo      = String(payload.modo       || 'PUBLICO').trim();
     var idVacante = String(payload.id_vacante || '').trim();
+    var link      = token ? ErecLinkRepo.findByToken(token) : null;
 
-    // Validar token en modo individual
-    if (modo === 'INDIVIDUAL' && token) {
-      var link = ErecLinkRepo.findByToken(token);
-      if (!link || link.estado === 'USADO' || new Date() > new Date(link.expira_at)) {
-        return { ok: false, errores: ['Token inválido o expirado.'] };
+    // Validar token si existe
+    if (token) {
+      if (!link) {
+        return { ok: false, errores: ['Token inválido.'] };
+      }
+      if (link.modo === 'INDIVIDUAL' && link.estado === 'USADO') {
+        return { ok: false, errores: ['Este link ya fue utilizado y es de uso único.'] };
+      }
+      if (new Date() > new Date(link.expira_at)) {
+        return { ok: false, errores: ['Este link ha expirado.'] };
       }
     }
 
@@ -205,12 +231,12 @@ function apiRegistrarPostulante(payload) {
       email:               String(payload.email                || '').trim().toLowerCase(),
       notas:               String(payload.notas                || '').trim(),
       link_cv:             linkCv,
-      fuente:              modo === 'INDIVIDUAL' ? 'TOKEN_INDIVIDUAL' : 'LINK_PUBLICO',
+      fuente:              (link && link.modo === 'INDIVIDUAL') ? 'TOKEN_INDIVIDUAL' : 'LINK_PUBLICO',
     };
 
     var resultado = ErecPostulanteUseCases.registrar(dto);
 
-    if (resultado.ok && modo === 'INDIVIDUAL' && token) {
+    if (resultado.ok && link && link.modo === 'INDIVIDUAL') {
       ErecLinkRepo.marcarUsado(token);
     }
 
@@ -219,20 +245,49 @@ function apiRegistrarPostulante(payload) {
   }, 'EREC.registrarPostulante');
 }
 
-function apiGetCatalogosVacante() {
+function apiGetVacantesAbiertas() {
   return safeExecute(function() {
+    var vacantes = VacanteRepo.findAbiertas();
+    return { ok: true, vacantes: DataAdapter.sanitize(vacantes) };
+  }, 'EREC.getVacantesAbiertas');
+}
+
+function apiGetLinksPostulacion() {
+  return safeExecute(function() {
+    var links = DataAdapter.findAll('EREC_LinksPostulacion') || [];
+    return { ok: true, links: DataAdapter.sanitize(links) };
+  }, 'EREC.getLinksPostulacion');
+}
+
+function apiGetCatalogosVacante() {  return safeExecute(function() {
+    var empresas      = DataAdapter.findAll('CAT_Empresas')      || [];
+    var departamentos = DataAdapter.findAll('CAT_Departamentos') || [];
+    var roles         = DataAdapter.findAll('CAT_Roles')         || [];
+
+    var ss = Utils.getActiveSpreadsheet();
+    var shEmp = ss ? ss.getSheetByName('CAT_Empresas') : null;
+    var shDep = ss ? ss.getSheetByName('CAT_Departamentos') : null;
+    var headersEmp = shEmp ? shEmp.getRange(1, 1, 1, shEmp.getLastColumn()).getValues()[0].map(function(h) { return String(h).trim(); }) : [];
+    var headersDep = shDep ? shDep.getRange(1, 1, 1, shDep.getLastColumn()).getValues()[0].map(function(h) { return String(h).trim(); }) : [];
+
+    Logger.log('[EREC] apiGetCatalogosVacante → emp=' + empresas.length +
+               ' dep=' + departamentos.length + ' roles=' + roles.length);
+
     return {
-      ok:            true,
-      empresas:      DataAdapter.findAll('CAT_Empresas',      { activo: true }),
-      departamentos: DataAdapter.findAll('CAT_Departamentos', { activo: true }),
-      roles:         DataAdapter.findAll('CAT_Roles',         { activo: true }),
+      ok: true,
+      empresas: empresas,
+      departamentos: departamentos,
+      roles: roles,
+      headersEmp: headersEmp,
+      headersDep: headersDep
     };
   }, 'EREC.getCatalogosVacante');
 }
 
 function apiCrearVacante(formData) {
   return safeExecute(function() {
-    return VacanteUseCases.crear(VacanteDTO.fromForm(formData));
+    var result = VacanteUseCases.crear(VacanteDTO.fromForm(formData));
+    return DataAdapter.sanitize(result);
   }, 'EREC.crearVacante');
 }
 
@@ -369,4 +424,114 @@ function _erecPaginaError(titulo, mensaje) {
 function _erecJsonResponse(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+
+// ─── DIAGNÓSTICO (ejecutar desde el editor GAS con el botón Run) ──────────────
+
+/**
+ * diagnosticarCatalogosEREC
+ * ─────────────────────────────────────────────────────────────────────────
+ * Muestra en un alert exactamente qué hay en CAT_Empresas, CAT_Departamentos
+ * y CAT_Roles: si la hoja existe, cuántas filas tiene, los headers reales
+ * y el tipo + valor de cada celda en la primera fila de datos.
+ *
+ * Ejecutar: Abre el editor de Apps Script → selecciona esta función → Run.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+function diagnosticarTemplate() {
+  try {
+    var tpl = HtmlService.createTemplateFromFile('09_erec/vacante/EREC_FormVacante');
+    tpl.APP_PAGE     = 'vacante';
+    tpl.APP_USER     = 'test@test.com';
+    tpl.APP_VERSION  = '4.0.0';
+    tpl.APP_ERP_NAME = 'ERP Test';
+    tpl.SHELL_MODE   = 'standalone';
+    tpl.SHELL_MODULE = 'E-Recruiting';
+    tpl.SHELL_USER   = 'test@test.com';
+    var output = tpl.evaluate().getContent();
+    Logger.log('LONGITUD: ' + output.length);
+    Logger.log('PRIMEROS 500: ' + output.substring(0, 500));
+    Logger.log('ULTIMOS 200: ' + output.substring(output.length - 200));
+    SpreadsheetApp.getUi().alert('OK', 'Longitud: ' + output.length + '\n\nInicio:\n' + output.substring(0, 300), SpreadsheetApp.getUi().ButtonSet.OK);
+  } catch(e) {
+    SpreadsheetApp.getUi().alert('ERROR', e.message + '\n\n' + e.stack, SpreadsheetApp.getUi().ButtonSet.OK);
+  }
+}
+
+function diagnosticarCatalogosEREC() {
+  var ss  = Utils.getActiveSpreadsheet();
+  var msg = '=== DIAGNÓSTICO CATÁLOGOS EREC ===\n\n';
+
+  var tablas = ['CAT_Empresas', 'CAT_Departamentos', 'CAT_Roles'];
+
+  tablas.forEach(function(tabla) {
+    var sh = ss ? ss.getSheetByName(tabla) : null;
+
+    if (!sh) {
+      msg += '[❌] ' + tabla + ': HOJA NO ENCONTRADA\n\n';
+      return;
+    }
+
+    var totalFilas = sh.getLastRow();
+    msg += '[📋] ' + tabla + ' → ' + totalFilas + ' fila(s) total\n';
+
+    if (totalFilas < 1) {
+      msg += '   Sin filas (ni cabecera)\n\n';
+      return;
+    }
+
+    var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+    msg += '   Headers: ' + headers.join(' | ') + '\n';
+
+    if (totalFilas < 2) {
+      msg += '   Sin filas de datos (solo cabecera)\n\n';
+      return;
+    }
+
+    var primerRow = sh.getRange(2, 1, 1, sh.getLastColumn()).getValues()[0];
+    msg += '   Fila 2 (datos + tipo):\n';
+    primerRow.forEach(function(val, i) {
+      var tipo = Object.prototype.toString.call(val);
+      msg += '     ' + (headers[i] || 'col' + i) + ' = '
+           + JSON.stringify(val) + '  [' + tipo + ']\n';
+    });
+    msg += '\n';
+  });
+
+  // También muestra el resultado real de DataAdapter para confirmar
+  msg += '--- DataAdapter.findAll (sin filtro) ---\n';
+  try {
+    var emp  = DataAdapter.findAll('CAT_Empresas')      || [];
+    var dep  = DataAdapter.findAll('CAT_Departamentos') || [];
+    var rol  = DataAdapter.findAll('CAT_Roles')         || [];
+    msg += 'CAT_Empresas      → ' + emp.length  + ' registro(s)\n';
+    msg += 'CAT_Departamentos → ' + dep.length  + ' registro(s)\n';
+    msg += 'CAT_Roles         → ' + rol.length  + ' registro(s)\n';
+    if (emp.length > 0)  msg += 'Primer empresa:  ' + JSON.stringify(emp[0])  + '\n';
+    if (dep.length > 0)  msg += 'Primer depto:    ' + JSON.stringify(dep[0])  + '\n';
+    if (rol.length > 0)  msg += 'Primer rol:      ' + JSON.stringify(rol[0])  + '\n';
+  } catch(e) {
+    msg += 'ERROR en DataAdapter: ' + e.message + '\n';
+  }
+
+  // ── NUEVO: probar apiGetCatalogosVacante directamente ──────────────
+  msg += '\n--- apiGetCatalogosVacante() directo ---\n';
+  try {
+    var resultado = apiGetCatalogosVacante();
+    msg += 'Tipo retornado: ' + typeof resultado + '\n';
+    msg += 'Es null: ' + (resultado === null) + '\n';
+    msg += 'Es undefined: ' + (resultado === undefined) + '\n';
+    if (resultado) {
+      msg += 'ok: ' + resultado.ok + '\n';
+      msg += 'empresas.length: ' + (resultado.empresas ? resultado.empresas.length : 'undefined') + '\n';
+      msg += 'Raw JSON: ' + JSON.stringify(resultado).substring(0, 300) + '\n';
+    }
+  } catch(e) {
+    msg += 'EXCEPCIÓN al llamar apiGetCatalogosVacante: ' + e.message + '\n';
+    msg += 'Stack: ' + e.stack + '\n';
+  }
+
+  Logger.log(msg);
+  SpreadsheetApp.getUi().alert('Diagnóstico EREC — Catálogos', msg, SpreadsheetApp.getUi().ButtonSet.OK);
 }

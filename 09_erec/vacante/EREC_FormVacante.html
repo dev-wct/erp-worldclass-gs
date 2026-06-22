@@ -1,57 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<base target="_top">
-<title>Nueva Vacante — <?= APP_ERP_NAME ?></title>
-<?!= include('02_core/CORE_Styles'); ?>
-<style>
-html,body{height:100%;margin:0;padding:0;overflow:hidden;display:flex;flex-direction:column;background:#f5f6f7;}
-.shellbar{height:48px;background:#1d2b3a;display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.2);}
-.sb-left{display:flex;align-items:center;gap:10px;min-width:0;}
-.sb-logo{width:26px;height:26px;border-radius:5px;background:#0a6ed1;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.sb-name{color:#fff;font-weight:600;font-size:14px;white-space:nowrap;text-decoration:none;}
-.sb-sep{color:rgba(255,255,255,.3);margin:0 2px;}
-.sb-mod{color:rgba(255,255,255,.6);font-size:13px;}
-.sb-page{color:rgba(255,255,255,.9);font-size:13px;font-weight:500;}
-.sb-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.sb-status{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(16,126,62,.2);color:#5dbb84;font-size:11px;font-weight:500;}
-.sb-dot{width:7px;height:7px;border-radius:50%;background:#5dbb84;flex-shrink:0;}
-.sb-email{color:rgba(255,255,255,.5);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.sb-avatar{width:29px;height:29px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,.2);}
-.page-body{flex:1;overflow-y:auto;padding:20px 24px 24px;}
-.erp-card{max-width:760px;margin:0 auto;}
-.erp-card-footer{position:sticky;bottom:0;z-index:10;}
-</style>
-</head>
-<body>
+<?!= include('02_core/ui/CORE_Shell'); ?>
 
-<header class="shellbar">
-  <div class="sb-left">
-    <div class="sb-logo">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-    </div>
-    <a href="<?= getWebAppUrl() ?>?page=launchpad" target="_top" class="sb-name"><?= APP_ERP_NAME ?></a>
-    <span class="sb-sep">/</span><span class="sb-mod">E-Recruiting</span>
-    <span class="sb-sep">/</span><span class="sb-page">Nueva Vacante</span>
-  </div>
-  <div class="sb-right">
-    <div class="sb-status"><div class="sb-dot"></div><span>Conectado</span></div>
-    <? if (APP_USER) { ?><span class="sb-email"><?= APP_USER ?></span><? } ?>
-    <div class="sb-avatar">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    </div>
-  </div>
-</header>
-
-<div class="page-body">
 <article class="erp-card">
 
   <header class="erp-card-header">
     <div style="display:flex;align-items:center;gap:12px;">
+      <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" style="padding:4px;border-radius:50%;" onclick="volver()" title="Volver">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+      </button>
       <div style="width:36px;height:36px;border-radius:6px;background:#e3f2fd;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1565c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M14 3H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-5-4z"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
+        <i data-lucide="clipboard-list" style="width:18px;height:18px;color:#1565c0;"></i>
       </div>
       <div>
         <h1 style="font-size:16px;font-weight:600;color:#1d2d3d;margin:0;line-height:1.2;">Nueva Vacante</h1>
@@ -71,6 +28,7 @@ html,body{height:100%;margin:0;padding:0;overflow:hidden;display:flex;flex-direc
         <button type="button" onclick="cargarCatalogos()" class="erp-btn erp-btn-sm" style="border-color:#e9730c;color:#e9730c;">↺ Reintentar</button>
       </div>
     </div>
+
 
     <form id="vacanteForm" onsubmit="guardar(event)" novalidate>
       <div class="erp-form-grid">
@@ -149,12 +107,13 @@ html,body{height:100%;margin:0;padding:0;overflow:hidden;display:flex;flex-direc
   </footer>
 
 </article>
-</div>
 
-<?!= include('02_core/CORE_Components'); ?>
-<?!= include('02_core/CORE_FormHandler'); ?>
+<?!= include('02_core/ui/CORE_ShellClose'); ?>
 
 <script>
+  const _backUrl = '<?= getWebAppUrl() ?>?page=<?= APP_PARAMS.back ? APP_PARAMS.back : "launchpad" ?>';
+  function volver() { window.open(_backUrl, '_top'); }
+
   var _deptos = [], _intentos = 0, MAX_R = 3;
 
   window.onload = function() {
@@ -170,9 +129,12 @@ html,body{height:100%;margin:0;padding:0;overflow:hidden;display:flex;flex-direc
     google.script.run
       .withSuccessHandler(function(res) {
         _sk(false);
+
+
         if (!res || res.ok === false) { _fallo(res ? ERP.Msg.extractError(res) : 'Sin datos del servidor.'); return; }
         var emp = res.empresas || [], dep = res.departamentos || [], rol = res.roles || [];
         if (!emp.length) { _fallo('Sin empresas. Ejecuta Bootstrap.'); return; }
+
         ERP.Select.fill('id_empresa',     emp, 'id_empresa', 'nombre', '— Seleccionar empresa —');
         ERP.Select.fill('id_rol_destino', rol, 'id_rol',     'nombre', '— Sin rol específico —');
         _deptos = dep;
@@ -209,10 +171,10 @@ html,body{height:100%;margin:0;padding:0;overflow:hidden;display:flex;flex-direc
     var emp = document.getElementById('id_empresa').value;
     var dep = document.getElementById('id_departamento').value;
     var err = [];
-    if (!t)   err.push('Título requerido.');
-    if (!d)   err.push('Descripción requerida.');
-    if (!emp) err.push('Selecciona empresa.');
-    if (!dep) err.push('Selecciona departamento.');
+    if (!t)        err.push('Título requerido.');
+    if (!d)        err.push('Descripción requerida.');
+    if (emp === '') err.push('Selecciona empresa.');
+    if (dep === '') err.push('Selecciona departamento.');
     if (err.length) { ERP.UI.msg('error', err.join('<br>')); return; }
     ERP.Gateway.submit({
       method: 'apiCrearVacante',
@@ -220,7 +182,7 @@ html,body{height:100%;margin:0;padding:0;overflow:hidden;display:flex;flex-direc
       btnId: 'saveBtn', btnText: '✔ Crear Vacante', loadingText: 'Creando...',
       onSuccess: function(res) {
         ERP.UI.msg('success', res.mensaje || '✔ Vacante creada.');
-        setTimeout(function() { window.open('<?= getWebAppUrl() ?>?page=launchpad', '_top'); }, 2000);
+        setTimeout(volver, 2000);
       },
     });
   }
@@ -251,6 +213,5 @@ html,body{height:100%;margin:0;padding:0;overflow:hidden;display:flex;flex-direc
     if (!el) return;
     el.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:500;background:' + color + '22;color:' + color + ';">' + text + '</span>';
   }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 </script>
-</body>
-</html>

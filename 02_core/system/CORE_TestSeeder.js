@@ -5,11 +5,38 @@
  */
 const CORE_TestSeeder = {
   
+  clearTestTables: function() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) return;
+
+    const tablesToClear = [
+      "Postulantes", "Empleados", "Equipos", "Chips", "Asignaciones", 
+      "Campanas", "Leads", "Llamadas", "Citas", "Pagos_Nomina", 
+      "Costos_Chips", "EREC_Vacantes", "EREC_Postulantes", 
+      "EREC_EntrevistasNotas", "EREC_LinksPostulacion", "BP_Roles"
+    ];
+
+    tablesToClear.forEach(tableName => {
+      const sh = ss.getSheetByName(tableName);
+      if (sh && sh.getLastRow() > 1) {
+        sh.deleteRows(2, sh.getLastRow() - 1);
+        Logger.log("[TestSeeder] Tabla limpia: " + tableName);
+      }
+    });
+
+    // Limpiar BP_MASTER (preservar sólo ID 1 e ID 2 que son las empresas del holding)
+    const bpSh = ss.getSheetByName("BP_MASTER");
+    if (bpSh && bpSh.getLastRow() > 3) {
+      bpSh.deleteRows(4, bpSh.getLastRow() - 3);
+      Logger.log("[TestSeeder] BP_MASTER limpio (preservando empresas)");
+    }
+  },
+
   runSeed: function() {
     const ui = SpreadsheetApp.getUi();
     const confirm = ui.alert(
       "Confirmación de Inicialización de Pruebas",
-      "¿Desea generar 20 registros consistentes de prueba en todas las tablas transaccionales del ERP? Esto poblará automáticamente Postulantes, Empleados, Equipos, Chips, Asignaciones, Campañas, Leads, Llamadas, Citas, Nóminas y Costos de Chips.",
+      "¿Desea generar 20 registros consistentes de prueba en todas las tablas transaccionales del ERP? Esto limpiará los datos de prueba anteriores y los volverá a sembrar de forma limpia.",
       ui.ButtonSet.YES_NO
     );
     
@@ -22,6 +49,9 @@ const CORE_TestSeeder = {
       // 1. Asegurar catálogos base inicializados
       MDM_Setup.seedCatalogs();
       EAM_Setup.seedCatalogs();
+
+      // 2. Limpiar registros de prueba anteriores para evitar duplicados y "verguero"
+      this.clearTestTables();
 
       const user = DataAdapter.getCurrentUser();
 
@@ -43,18 +73,26 @@ const CORE_TestSeeder = {
         "Laura Calderón","Mauricio Vega","Natalia Roldán","Oscar Lemus","Patricia Girón",
       ];
 
-      const bpIds = {};  // nombre → id_bp (para reutilizar al sembrar Empleados/Leads)
+      const bpIds = {};  // nombre → id_bp
+      const bpRecords = [];
       bpNombres.forEach(function(nombre, i) {
         const docNum = '300000' + String(i + 1).padStart(4, '0');
-        const result = BPService.obtenerOCrear({
+        bpRecords.push({
           tipo_bp:          'PERSONA_FISICA',
           tipo_documento:   'DPI',
           numero_documento: docNum,
           nombre:           nombre,
           email:            nombre.toLowerCase().replace(/ /g, '.').normalize('NFD').replace(/[\u0300-\u036f]/g, '') + '@test.com',
           telefono:         '5555' + String(1000 + i),
+          activo:            true,
+          created_at:        new Date(),
+          created_by:        user,
         });
-        bpIds[nombre] = result.id_bp;
+      });
+      
+      DataAdapter.insertBatch("BP_MASTER", bpRecords);
+      bpRecords.forEach(bp => {
+        bpIds[bp.nombre] = bp.id_bp;
       });
 
       // --- SEMBRAR 20 POSTULANTES (HCM legacy) ---
@@ -62,12 +100,11 @@ const CORE_TestSeeder = {
       const postulantesNombres = bpNombres.slice(0, 20);
       const fuentes    = ["FACEBOOK","INSTAGRAM","REFERIDO","LINKEDIN","COMPUTRABAJO"];
       const estadosPost = ["POSTULADO","ENTREVISTA","PRUEBA","ACEPTADO","RECHAZADO"];
+      const postulantesRecords = [];
 
       for (let i = 0; i < 20; i++) {
-        const idPost = DataAdapter.getNextId("Postulantes");
         const nombre = postulantesNombres[i];
-        DataAdapter.insert("Postulantes", {
-          id_postulante:     idPost,
+        postulantesRecords.push({
           id_bp:             bpIds[nombre] || '',
           nombre_completo:   nombre,
           dpi:               '300000' + String(i + 1).padStart(4, '0'),
@@ -81,22 +118,22 @@ const CORE_TestSeeder = {
           created_by:        user,
         });
       }
+      DataAdapter.insertBatch("Postulantes", postulantesRecords);
 
       // --- SEMBRAR 20 EMPLEADOS ---
       Logger.log("Sembrando Empleados...");
       const departamentos  = [1, 2, 3, 4];
       const empresas       = [1, 2];
       const roles          = [1, 2, 3];
+      const empleadosRecords = [];
 
       for (let i = 0; i < 20; i++) {
-        const idEmp         = DataAdapter.getNextId("Empleados");
         const nombre        = postulantesNombres[i];
         const empIdEmpresa  = empresas[i % empresas.length];
         const empCompanyName = companyMap[empIdEmpresa] || "worldclasstravel";
         const emailDomain   = empCompanyName.toLowerCase().replace('erp','').trim().replace(/\s+/g,'').normalize('NFD').replace(/[\u0300-\u036f]/g,'') + '.com';
 
-        DataAdapter.insert("Empleados", {
-          id_empleado:    idEmp,
+        empleadosRecords.push({
           id_bp:          bpIds[nombre] || '',
           id_postulante_erec: '',
           nombre_completo: nombre,
@@ -106,7 +143,7 @@ const CORE_TestSeeder = {
           id_departamento: departamentos[i % departamentos.length],
           id_empresa: empIdEmpresa,
           id_rol: roles[i % roles.length],
-          activo: i < 18, // 18 activos, 2 inactivos
+          activo: i < 18,
           fecha_ingreso: new Date(Date.now() - (60 - i) * 24 * 60 * 60 * 1000),
           fecha_salida: i >= 18 ? new Date() : "",
           tipo_contrato: i % 2 === 0 ? "PLANILLA" : "SERVICIOS",
@@ -115,18 +152,18 @@ const CORE_TestSeeder = {
           created_by: user
         });
       }
+      DataAdapter.insertBatch("Empleados", empleadosRecords);
 
       // --- SEMBRAR 20 EQUIPOS ---
       Logger.log("Sembrando Equipos en Bodega...");
-      const marcas = [1, 2, 3, 4, 5]; // Dell, HP, Lenovo, Apple, Samsung
-      const tipos = [1, 2, 3]; // Laptop, Celular, Tablet
-      const estadosEq = [1, 2, 3]; // Activo, En Bodega, Reparación
+      const marcas = [1, 2, 3, 4, 5];
+      const tipos = [1, 2, 3];
+      const estadosEq = [1, 2, 3];
+      const equiposRecords = [];
       
       for (let i = 0; i < 20; i++) {
-        const idEq = DataAdapter.getNextId("Equipos");
-        DataAdapter.insert("Equipos", {
-          id_equipo: idEq,
-          codigo_interno: "EQ-" + String(idEq).padStart(4, '0'),
+        equiposRecords.push({
+          codigo_interno: "EQ-" + String(i + 1).padStart(4, '0'),
           id_tipo: tipos[i % tipos.length],
           tipo: ["Laptop", "Celular", "Tablet"][i % tipos.length],
           id_marca: marcas[i % marcas.length],
@@ -140,24 +177,24 @@ const CORE_TestSeeder = {
           fecha_compra: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
           garantia_hasta: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
           valor_compra: 4500 + (i * 100),
-          link_factura: "https://drive.google.com/factura_" + idEq,
-          link_foto: "https://drive.google.com/foto_" + idEq,
+          link_factura: "https://drive.google.com/factura_" + (i + 1),
+          link_foto: "https://drive.google.com/foto_" + (i + 1),
           observaciones: "Equipo en excelente estado.",
           created_at: new Date(),
           updated_at: new Date(),
           created_by: user
         });
       }
+      DataAdapter.insertBatch("Equipos", equiposRecords);
 
       // --- SEMBRAR 20 CHIPS SIM ---
       Logger.log("Sembrando Chips SIM...");
-      const operadoras = [1, 2, 3]; // Claro, Movistar, Tigo
+      const operadoras = [1, 2, 3];
+      const chipsRecords = [];
       
       for (let i = 0; i < 20; i++) {
-        const idChip = DataAdapter.getNextId("Chips");
-        DataAdapter.insert("Chips", {
-          id_chip: idChip,
-          codigo_interno: "SIM-" + String(idChip).padStart(4, '0'),
+        chipsRecords.push({
+          codigo_interno: "SIM-" + String(i + 1).padStart(4, '0'),
           numero: "3000" + String(9000 + i),
           id_operadora: operadoras[i % operadoras.length],
           operadora: ["Claro", "Movistar", "Tigo"][i % operadoras.length],
@@ -165,7 +202,7 @@ const CORE_TestSeeder = {
           costo_mensual: 199.00 + (i * 10),
           id_empresa: defaultCompanyId,
           empresa: defaultCompanyName,
-          id_estado: i % 2 === 0 ? 1 : 2, // 1: Activo, 2: En Bodega
+          id_estado: i % 2 === 0 ? 1 : 2,
           estado: i % 2 === 0 ? "Activo" : "En bodega",
           fecha_activacion: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000),
           observaciones: "SIM corporativa.",
@@ -174,13 +211,13 @@ const CORE_TestSeeder = {
           created_by: user
         });
       }
+      DataAdapter.insertBatch("Chips", chipsRecords);
 
       // --- SEMBRAR 10 ASIGNACIONES ---
       Logger.log("Sembrando Asignaciones...");
+      const asignacionesRecords = [];
       for (let i = 0; i < 10; i++) {
-        const idAsig = DataAdapter.getNextId("Asignaciones");
-        DataAdapter.insert("Asignaciones", {
-          id_asignacion: idAsig,
+        asignacionesRecords.push({
           id_equipo: i + 1,
           codigo_equipo: "EQ-" + String(i + 1).padStart(4, '0'),
           id_chip: i + 1,
@@ -189,13 +226,13 @@ const CORE_TestSeeder = {
           empleado: postulantesNombres[i],
           id_empresa: defaultCompanyId,
           empresa: defaultCompanyName,
-          id_departamento: 2, // Ventas
+          id_departamento: 2,
           departamento: "Ventas",
           estado_flujo: "APROBADO",
           fecha_asignacion: new Date(Date.now() - (15 - i) * 24 * 60 * 60 * 1000),
           fecha_devolucion: "",
           activo: true,
-          link_acta: "https://drive.google.com/acta_" + idAsig,
+          link_acta: "https://drive.google.com/acta_" + (i + 1),
           notas: "Asignación inicial para Call Center.",
           created_at: new Date(),
           approved_by: user,
@@ -203,14 +240,14 @@ const CORE_TestSeeder = {
           created_by: user
         });
       }
+      DataAdapter.insertBatch("Asignaciones", asignacionesRecords);
 
       // --- SEMBRAR 3 CAMPAÑAS ---
       Logger.log("Sembrando Campañas...");
       const campanasNombres = ["Campaña VIP Verano 2026", "Hot Sale Membresías", "Black Friday Escapes"];
+      const campanasRecords = [];
       for (let i = 0; i < 3; i++) {
-        const idCamp = DataAdapter.getNextId("Campanas");
-        DataAdapter.insert("Campanas", {
-          id_campana: idCamp,
+        campanasRecords.push({
           nombre: campanasNombres[i],
           fecha_inicio: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
           fecha_fin: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -220,6 +257,7 @@ const CORE_TestSeeder = {
           created_by: user
         });
       }
+      DataAdapter.insertBatch("Campanas", campanasRecords);
 
       // --- SEMBRAR 20 LEADS ---
       Logger.log("Sembrando Leads...");
@@ -233,13 +271,12 @@ const CORE_TestSeeder = {
       const bancos     = ["BAC", "BANRURAL", "BI", "PROMERICA", "BAM"];
       const tdcs       = ["VISA", "MASTERCARD", "AMERICAN EXPRESS", "NINGUNA"];
       const estadosLead = ["NUEVO", "CONTACTADO", "INTERESADO", "CITA_AGENDADA"];
+      const leadsRecords = [];
 
       for (let i = 0; i < 20; i++) {
-        const idLead   = DataAdapter.getNextId("Leads");
         const nombre   = leadsNombres[i];
         const id_bp    = bpIds[nombre] || '';
-        DataAdapter.insert("Leads", {
-          id_lead:         idLead,
+        leadsRecords.push({
           id_bp:           id_bp,
           nombre_completo: nombre,
           telefono:        "3333" + String(5000 + i),
@@ -255,16 +292,16 @@ const CORE_TestSeeder = {
           created_by:      user,
         });
       }
+      DataAdapter.insertBatch("Leads", leadsRecords);
 
       // --- SEMBRAR 20 LLAMADAS ---
       Logger.log("Sembrando Llamadas...");
       const resultadosCall = ["NO CONTESTO", "OCUPADO", "CONTACTADO", "INTERESADO", "CITA AGENDADA"];
+      const llamadasRecords = [];
       for (let i = 0; i < 20; i++) {
-        const idCall = DataAdapter.getNextId("Llamadas");
-        DataAdapter.insert("Llamadas", {
-          id_llamada: idCall,
+        llamadasRecords.push({
           id_lead: (i % 20) + 1,
-          id_empleado: (i % 5) + 1, // Agentes 1 al 5
+          id_empleado: (i % 5) + 1,
           fecha_hora: new Date(Date.now() - (5 - i * 0.2) * 24 * 60 * 60 * 1000),
           duracion_seg: 10 + (i * 30),
           resultado: i < 10 ? "CITA AGENDADA" : resultadosCall[i % resultadosCall.length],
@@ -273,22 +310,22 @@ const CORE_TestSeeder = {
           created_by: user
         });
       }
+      DataAdapter.insertBatch("Llamadas", llamadasRecords);
 
       // --- SEMBRAR 10 CITAS ---
       Logger.log("Sembrando Citas en Restaurantes...");
       const restaurantes = ["Portal del Ángel", "Altuna", "Tre Fratelli", "Hacienda Real"];
+      const citasRecords = [];
       for (let i = 0; i < 10; i++) {
-        const idCita = DataAdapter.getNextId("Citas");
-        DataAdapter.insert("Citas", {
-          id_cita: idCita,
-          id_lead: i + 1, // Leads 1 al 10 que tienen estado CITA_AGENDADA
+        citasRecords.push({
+          id_lead: i + 1,
           id_empleado_agendo: (i % 5) + 1,
           restaurante: restaurantes[i % restaurantes.length],
           fecha_cita: new Date(Date.now() - (5 - i) * 24 * 60 * 60 * 1000),
           hora_cita: "19:30",
           num_acompanantes: (i % 3) + 1,
           asistio: i < 6 ? "ASISTIO" : "PENDIENTE",
-          resultado_venta: i < 4 ? "VENTA" : "PENDIENTE", // 4 Ventas para probar comisiones
+          resultado_venta: i < 4 ? "VENTA" : "PENDIENTE",
           id_membresia_vendida: i < 4 ? 100 + i : "",
           notas: "Confirmó asistencia.",
           created_at: new Date(),
@@ -296,18 +333,15 @@ const CORE_TestSeeder = {
           created_by: user
         });
       }
+      DataAdapter.insertBatch("Citas", citasRecords);
 
       // --- SEMBRAR 15 PAGOS DE NÓMINA ---
       Logger.log("Sembrando Pagos de Nómina...");
+      const pagosNominaRecords = [];
       for (let i = 0; i < 15; i++) {
-        const idPago = DataAdapter.getNextId("Pagos_Nomina");
-        
-        // Empleados del 1 al 15
         const idEmp = i + 1;
-        const emp = DataAdapter.findById("Empleados", idEmp);
         const sueldo = 3500.00;
         
-        // Calcular comisiones del empleado en Junio 2026, Quincena 1 (donde metimos las citas de arriba)
         const comisionCalc = NominaUseCases.calcularComisiones(idEmp, 2026, new Date().getMonth(), 1);
         const comisiones = comisionCalc.total_comisiones || 0;
         
@@ -315,8 +349,7 @@ const CORE_TestSeeder = {
         const deduc = 170.00;
         const total = sueldo + comisiones + bonos - deduc;
 
-        DataAdapter.insert("Pagos_Nomina", {
-          id_pago: idPago,
+        pagosNominaRecords.push({
           id_empleado: idEmp,
           anio: 2026,
           quincena: 1,
@@ -332,13 +365,13 @@ const CORE_TestSeeder = {
           created_by: user
         });
       }
+      DataAdapter.insertBatch("Pagos_Nomina", pagosNominaRecords);
 
       // --- SEMBRAR 15 COSTOS DE CHIPS ---
       Logger.log("Sembrando Costos de Chips...");
+      const costosChipsRecords = [];
       for (let i = 0; i < 15; i++) {
-        const idCosto = DataAdapter.getNextId("Costos_Chips");
-        DataAdapter.insert("Costos_Chips", {
-          id_costo: idCosto,
+        costosChipsRecords.push({
           id_chip: i + 1,
           anio: 2026,
           mes: new Date().getMonth() + 1,
@@ -348,24 +381,20 @@ const CORE_TestSeeder = {
           created_at: new Date()
         });
       }
+      DataAdapter.insertBatch("Costos_Chips", costosChipsRecords);
 
       // --- SEMBRAR MÓDULO EREC (E-Recruiting) ---
-      // Orden: Vacantes → PostulantesEREC → Entrevistas
-      Logger.log("Sembrando E-Recruiting (Vacantes, Postulantes, Entrevistas)...");
-
+      Logger.log("Sembrando E-Recruiting...");
       const vacantesTitulos = [
         { titulo: 'Agente de Call Center',   dept: 2, rol: 3 },
         { titulo: 'Ejecutivo de Ventas VIP', dept: 2, rol: 2 },
         { titulo: 'Analista de Tecnología',  dept: 1, rol: 2 },
       ];
-      const idsVacantes = [];
-
+      
+      const vacantesRecords = [];
       vacantesTitulos.forEach(function(v, i) {
-        const idVac = DataAdapter.getNextId('EREC_Vacantes');
-        idsVacantes.push(idVac);
-        DataAdapter.insert('EREC_Vacantes', {
-          id_vacante:         idVac,
-          codigo:             'EREC-' + String(idVac).padStart(4, '0'),
+        vacantesRecords.push({
+          codigo:             'EREC-' + String(i + 1).padStart(4, '0'),
           titulo:             v.titulo,
           descripcion:        'Buscamos un profesional para ' + v.titulo + ' con experiencia en atención al cliente.',
           requisitos:         'Mínimo 1 año de experiencia. Disponibilidad inmediata.',
@@ -382,27 +411,49 @@ const CORE_TestSeeder = {
           created_by:         user,
         });
       });
+      DataAdapter.insertBatch('EREC_Vacantes', vacantesRecords);
+      const idsVacantes = vacantesRecords.map(v => v.id_vacante);
 
-      // 3 postulantes por vacante = 9 postulantes EREC
+      // 9 postulantes EREC
       const erecNombres = [
         'Ana López', 'Bruno Morales', 'Carmen Vega',
         'David Ríos', 'Elena Campos', 'Felipe Torres',
         'Gloria Núñez', 'Hernán Ibarra', 'Iris Peña',
       ];
-      const idsErecPostulantes = [];
-
+      
+      const erecBpRecords = [];
       erecNombres.forEach(function(nombre, i) {
-        const idErecP = DataAdapter.getNextId('EREC_Postulantes');
-        idsErecPostulantes.push(idErecP);
-        const idVac  = idsVacantes[i % idsVacantes.length];
-        const etapa  = i < 3 ? 'POSTULADO' : (i < 6 ? 'ENTREVISTA' : 'PRUEBA');
-        DataAdapter.insert('EREC_Postulantes', {
-          id_postulante_erec:  idErecP,
+        const docNum = '3000' + String(5000 + i);
+        const emailPost = nombre.toLowerCase().replace(' ', '.') + '@candidato.com';
+        erecBpRecords.push({
+          tipo_bp:          'PERSONA_FISICA',
+          tipo_documento:   'DPI',
+          numero_documento: docNum,
+          nombre:           nombre,
+          email:            emailPost,
+          telefono:         '6666' + String(1000 + i),
+          activo:           true,
+          created_at:       new Date(),
+          created_by:       user
+        });
+      });
+      DataAdapter.insertBatch("BP_MASTER", erecBpRecords);
+
+      const erecPostulantesRecords = [];
+      erecNombres.forEach(function(nombre, i) {
+        const idVac     = idsVacantes[i % idsVacantes.length];
+        const etapa     = i < 3 ? 'POSTULADO' : (i < 6 ? 'ENTREVISTA' : 'PRUEBA');
+        const docNum    = '3000' + String(5000 + i);
+        const emailPost = nombre.toLowerCase().replace(' ', '.') + '@candidato.com';
+        const idBp      = erecBpRecords[i].id_bp;
+
+        erecPostulantesRecords.push({
+          id_bp:               idBp,
           id_vacante:          idVac,
           nombre_completo:     nombre,
-          documento_identidad: '3000' + String(5000 + i),
+          documento_identidad: docNum,
           telefono:            '6666' + String(1000 + i),
-          email:               nombre.toLowerCase().replace(' ', '.') + '@candidato.com',
+          email:               emailPost,
           link_cv:             '',
           fuente:              i % 2 === 0 ? 'TOKEN_INDIVIDUAL' : 'LINK_PUBLICO',
           etapa_actual:        etapa,
@@ -414,15 +465,29 @@ const CORE_TestSeeder = {
           created_by:          user,
         });
       });
+      DataAdapter.insertBatch('EREC_Postulantes', erecPostulantesRecords);
 
-      // Entrevistas para los postulantes en etapa ENTREVISTA (índices 3, 4, 5)
+      // BP_Roles correspondientes
+      const erecRolesRecords = [];
+      erecPostulantesRecords.forEach(function(p, i) {
+        erecRolesRecords.push({
+          id_bp:         p.id_bp,
+          rol:          'POSTULANTE',
+          modulo:       'EREC',
+          referencia_id: p.id_postulante_erec,
+          activo:       true,
+          created_at:   new Date()
+        });
+      });
+      DataAdapter.insertBatch("BP_Roles", erecRolesRecords);
+
+      // Entrevistas
+      const entrevistasRecords = [];
       [3, 4, 5].forEach(function(idx, j) {
-        const idEnt   = DataAdapter.getNextId('EREC_EntrevistasNotas');
-        const idErecP = idsErecPostulantes[idx];
-        const idVac   = idsVacantes[idx % idsVacantes.length];
-        DataAdapter.insert('EREC_EntrevistasNotas', {
-          id_entrevista:      idEnt,
-          id_postulante_erec: idErecP,
+        const idPostulante = erecPostulantesRecords[idx].id_postulante_erec;
+        const idVac        = idsVacantes[idx % idsVacantes.length];
+        entrevistasRecords.push({
+          id_postulante_erec: idPostulante,
           id_vacante:         idVac,
           id_entrevistador:   1,
           fecha_entrevista:   new Date(Date.now() - (10 - j) * 24 * 60 * 60 * 1000),
@@ -436,14 +501,27 @@ const CORE_TestSeeder = {
           created_by:         user,
         });
       });
-      Logger.log("Semilla EREC completada: 3 vacantes, 9 postulantes, 3 entrevistas.");
+      DataAdapter.insertBatch('EREC_EntrevistasNotas', entrevistasRecords);
+
+      // Ejecutar filtros y formateo selectivo en las hojas modificadas
+      const tablesToFormat = [
+        "BP_MASTER", "Postulantes", "Empleados", "Equipos", "Chips", "Asignaciones", 
+        "Campanas", "Leads", "Llamadas", "Citas", "Pagos_Nomina", "Costos_Chips", 
+        "EREC_Vacantes", "EREC_Postulantes", "EREC_EntrevistasNotas", "BP_Roles"
+      ];
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      tablesToFormat.forEach(function(name) {
+        const sh = ss.getSheetByName(name);
+        if (sh) SetupEngine.formatHeader(sh, true);
+      });
 
       ui.alert(
         "Inicialización Exitosa",
         "Se sembraron exitosamente los registros de prueba en todas las tablas del " + Config.ERP_NAME + ":\n\n" +
-        "• 20 Postulantes\n• 20 Empleados\n• 20 Equipos\n• 20 Chips\n• 10 Asignaciones\n" +
+        "• 39 Business Partners (BP_MASTER) + roles en BP_Roles\n" +
+        "• 20 Postulantes (HCM)\n• 20 Empleados\n• 20 Equipos\n• 20 Chips\n• 10 Asignaciones\n" +
         "• 3 Campañas\n• 20 Leads\n• 20 Llamadas\n• 10 Citas\n• 15 Nóminas\n• 15 Costos de Chips\n" +
-        "• 3 Vacantes EREC\n• 9 Postulantes EREC\n• 3 Entrevistas EREC",
+        "• 3 Vacantes EREC\n• 9 Postulantes EREC (con id_bp)\n• 3 Entrevistas EREC",
         ui.ButtonSet.OK
       );
       

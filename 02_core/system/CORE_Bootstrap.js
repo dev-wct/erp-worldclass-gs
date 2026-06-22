@@ -8,6 +8,70 @@
  *  3. Preguntar si se desea poblar los datos transaccionales de prueba (20 registros).
  */
 const Bootstrap = {
+  /**
+   * Mapa de colores por módulo.
+   * Coincide exactamente con los colores del Launchpad (tiles).
+   * Clave: fragmento del nombre de la hoja (case-insensitive).
+   */
+  TAB_COLORS: {
+    // MDM / Catálogos — azul corporativo
+    'BP_MASTER':          '#0a6ed1',
+    'BP_Roles':           '#0a6ed1',
+    'CAT_':               '#0a6ed1',
+
+    // HCM — café
+    'Empleados':          '#5d4037',
+    'Postulantes':        '#5d4037',
+    'Onboarding':         '#5d4037',
+    'Bajas':              '#5d4037',
+    'Pagos_Nomina':       '#1b5e20',
+
+    // EREC — azul oscuro
+    'EREC_':              '#1565c0',
+
+    // EAM — verde azulado
+    'Equipos':            '#00695c',
+    'Chips':              '#00695c',
+    'Asignaciones':       '#00695c',
+    'Costos_Chips':       '#00695c',
+
+    // SD — morado
+    'Campanas':           '#6a1b9a',
+    'Leads':              '#6a1b9a',
+    'Llamadas':           '#6a1b9a',
+    'Citas':              '#6a1b9a',
+
+    // FICO — verde oscuro (Pagos_Nomina ya está arriba)
+  },
+
+  /**
+   * Colorea las tabs de todas las hojas según su módulo.
+   * Se llama automáticamente al final del Bootstrap.
+   */
+  _colorearTabs: function() {
+    try {
+      var ss     = Utils.getActiveSpreadsheet();
+      var sheets = ss.getSheets();
+      var colores = Bootstrap.TAB_COLORS;
+
+      sheets.forEach(function(sh) {
+        var nombre = sh.getName();
+        // Buscar el primer patrón que coincida con el nombre de la hoja
+        var colorAsignado = null;
+        Object.keys(colores).forEach(function(patron) {
+          if (!colorAsignado && nombre.indexOf(patron) === 0) {
+            colorAsignado = colores[patron];
+          }
+        });
+        if (colorAsignado) {
+          sh.setTabColor(colorAsignado);
+        }
+      });
+      Logger.log('[Bootstrap] Tabs coloreadas: ' + sheets.length + ' hojas procesadas.');
+    } catch(e) {
+      Logger.log('[Bootstrap] No se pudieron colorear tabs: ' + e.message);
+    }
+  },
   runERPSetup: function() {
     const ui = SpreadsheetApp.getUi();
     const response = ui.alert(
@@ -57,6 +121,10 @@ const Bootstrap = {
       try { DriveOrganizer.run(); } catch(driveErr) {
         Logger.log("Drive ya organizado o sin permisos: " + driveErr.message);
       }
+
+      // Colorear tabs de hojas por módulo — UX visual SAP
+      Logger.log("Coloreando tabs de hojas por módulo...");
+      Bootstrap._colorearTabs();
 
       Logger.log("=== BOOTSTRAP COMPLETADO CON ÉXITO ===");
 

@@ -17,13 +17,33 @@ function apiGetCatalogosEmpleado() {
     return {
       empresas:      DataAdapter.findAll('CAT_Empresas',      { activo: true }),
       departamentos: DataAdapter.findAll('CAT_Departamentos', { activo: true }),
-      roles:         DataAdapter.findAll('CAT_Roles',         { activo: true })
+      roles:         DataAdapter.findAll('CAT_Roles',         { activo: true }),
+      paises:        DataAdapter.findAll('CAT_Paises'),
+      empleados:     EmpleadoRepo.findAll()
     };
   }, 'RRHH.Empleado.getCatalogos');
+}
+
+function apiGetEmpleados() {
+  return safeExecute(function() {
+    return EmpleadoRepo.findAll();
+  }, 'RRHH.Empleado.getEmpleados');
 }
 
 function apiGuardarEmpleado(formData) {
   return safeExecute(function() {
     return EmpleadoUseCases.contratar(formData);
   }, 'RRHH.Empleado.guardar');
+}
+
+function apiActualizarEmpleado(id, formData) {
+  return safeExecute(function() {
+    return EmpleadoUseCases.actualizar(id, formData);
+  }, 'RRHH.Empleado.actualizar');
+}
+
+function apiDarBajaEmpleado(id, fechaSalida) {
+  return safeExecute(function() {
+    return EmpleadoUseCases.darBaja(id, fechaSalida);
+  }, 'RRHH.Empleado.darBaja');
 }

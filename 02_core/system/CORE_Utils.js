@@ -26,5 +26,16 @@ const Utils = {
  * para inyectar recursos (como hojas de estilo CSS o scripts compartidos) dinámicamente.
  */
 function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+  try {
+    var tpl = HtmlService.createTemplateFromFile(filename);
+    if (typeof GLOBAL_CONTEXT !== 'undefined' && GLOBAL_CONTEXT) {
+      Object.keys(GLOBAL_CONTEXT).forEach(function(k) {
+        tpl[k] = GLOBAL_CONTEXT[k];
+      });
+    }
+    return tpl.evaluate().getContent();
+  } catch (err) {
+    Logger.log('[include] Error loading ' + filename + ': ' + err.message + ' | stack: ' + err.stack);
+    throw new Error('Error in include("' + filename + '"): ' + err.message + '\n' + err.stack);
+  }
 }

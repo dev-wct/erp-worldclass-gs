@@ -5,16 +5,10 @@
  */
 
 function apiMigrarEREC() {
-  try {
+  return safeExecute(function() {
     EREC_Setup.syncAndSeed();
-    SpreadsheetApp.getUi().alert(
-      'Sincronización Exitosa',
-      'E-Recruiting: Tablas sincronizadas correctamente.',
-      SpreadsheetApp.getUi().ButtonSet.OK
-    );
-  } catch(e) {
-    SpreadsheetApp.getUi().alert('Error de Integridad', e.message, SpreadsheetApp.getUi().ButtonSet.OK);
-  }
+    return { ok: true, mensaje: '✔ EREC sincronizado correctamente.' };
+  }, 'apiMigrarEREC');
 }
 
 /**

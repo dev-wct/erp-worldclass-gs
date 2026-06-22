@@ -1,61 +1,102 @@
 function onOpen() {
-  const ui = SpreadsheetApp.getUi();
-  
-  // 1. Submenú de Sincronización de Base de Datos
-  const menuSync = ui.createMenu('🔄 Sincronizar Bases de Datos')
-    .addItem('Base de Datos: CORE (Catálogos)',       'apiMigrarCORE')
-    .addItem('Base de Datos: HCM (Empleados)',        'apiMigrarHCM')
-    .addItem('Base de Datos: EAM (Activos)',         'apiMigrarEAM')
-    .addItem('Base de Datos: SD (Ventas)',            'apiMigrarSD')
-    .addItem('Base de Datos: FICO (Finanzas)',        'apiMigrarFICO')
-    .addItem('Base de Datos: EREC (Reclutamiento)',   'apiMigrarEREC');
+  const ui  = SpreadsheetApp.getUi();
+  const url = getWebAppUrl();
 
-  // 2. Submenú CORE (Administración y Sistema)
-  const menuCore = ui.createMenu('⚙️ Administración y Sistema')
-    .addItem('🚀 Inicializar ERP Completo (Bootstrap)', 'apiInicializarERPCompleto')
-    .addSeparator()
-    .addItem('📁 Organizar Carpetas en Drive', 'apiOrganizarDrive')
-    .addItem('🧪 Poblar Datos de Prueba (20 registros)', 'apiSembrarDatosPrueba')
-    .addSeparator()
-    .addSubMenu(menuSync);
-
-  // 3. Submenú RRHH / HCM — solo gestión de empleados activos
-  const menuHCM = ui.createMenu('👥 HCM (Recursos Humanos)')
-    .addItem('👤 Registrar Empleado', 'abrirFormEmpleado');
-
-  // 4. Submenú EREC — E-Recruiting
-  const menuEREC = ui.createMenu('🎯 E-Recruiting (Reclutamiento)')
-    .addItem('📋 Nueva Vacante',              'abrirFormVacante')
-    .addItem('🔗 Generar Link de Postulación','abrirDialogoLinksVacante')
-    .addSeparator()
-    .addItem('📋 Ver Links Generados',         'abrirDialogoVerLinksEREC');
-  // 5. Submenú EAM (Activos Corporativos)
-  const menuEAM = ui.createMenu('🖥️ EAM (Activos Corporativos)')
-    .addItem('💻 Registrar Equipo',        'abrirFormEquipo')
-    .addItem('📱 Registrar Chip SIM',      'abrirFormChip')
-    .addItem('🔗 Asignación de Activos',   'abrirFormAsignacion');
-
-  // 6. Submenú SD (Ventas & Call Center)
-  const menuSD = ui.createMenu('📞 SD (Ventas y Call Center)')
-    .addItem('📢 Registrar Campaña', 'abrirFormCampana')
-    .addItem('👤 Registrar Lead', 'abrirFormLead')
-    .addItem('📞 Registrar Llamada', 'abrirFormLlamada')
-    .addItem('📅 Agendar Cita VIP', 'abrirFormCita');
-
-  // 7. Submenú FICO (Finanzas y Controlling)
-  const menuFICO = ui.createMenu('💵 FICO (Finanzas y Control)')
-    .addItem('💰 Registrar Pago de Nómina', 'abrirFormPagoNomina');
-
-  // Menú Raíz del ERP
   ui.createMenu('🏢 ' + Config.ERP_NAME)
-    .addSubMenu(menuHCM)
-    .addSubMenu(menuEREC)
-    .addSubMenu(menuEAM)
-    .addSubMenu(menuSD)
-    .addSubMenu(menuFICO)
+    .addItem('🚀 Abrir ERP',                       'abrirERP')
     .addSeparator()
-    .addSubMenu(menuCore)
+    .addItem('⚙️ Inicializar ERP (Bootstrap)',      'apiInicializarERPCompleto')
+    .addItem('🔄 Sincronizar todas las tablas',     'apiSincronizarTodo')
+    .addItem('🧹 Limpiar y Re-sembrar Maestros (Ecuador)', 'apiEjecutarLimpiezaEcuador')
     .addToUi();
+}
+
+/**
+ * Abre el ERP en una nueva pestaña del browser.
+ * Si la URL del Web App no está configurada aún, muestra instrucciones.
+ */
+function abrirERP() {
+  var url = getWebAppUrl();
+
+  if (!url) {
+    SpreadsheetApp.getUi().alert(
+      'Configuración requerida',
+      'La URL del Web App no está configurada.\n\n' +
+      'Pasos:\n' +
+      '1. Editor Apps Script → Implementar → Nueva implementación\n' +
+      '2. Tipo: Aplicación web → Ejecutar como: Yo → Acceso: Cualquier usuario\n' +
+      '3. Copiar la URL generada\n' +
+      '4. En el editor: Proyecto → Propiedades del script\n' +
+      '5. Agregar propiedad: WEBAPP_URL = <URL copiada>',
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+    return;
+  }
+
+  // Agregar ?page=launchpad explícito para forzar la ruta correcta
+  var launchpadUrl = url + '?page=launchpad';
+
+  var html = HtmlService.createHtmlOutput(
+    '<script>' +
+    'window.open("' + launchpadUrl + '", "_blank");' +
+    'google.script.host.close();' +
+    '</script>'
+  ).setWidth(1).setHeight(1);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Abriendo ERP...');
+}
+
+/**
+ * Sincroniza todos los módulos — versión segura para Web App (sin getUi).
+ * Retorna { ok, mensaje } para que el Launchpad muestre un toast.
+ */
+function apiSincronizarTodo() {
+  return safeExecute(function() {
+    SetupEngine.syncDatabase(MDM_Schema); MDM_Setup.seedCatalogs();
+    SetupEngine.syncDatabase(RRHH_Schema);
+    EAM_Setup.syncAndSeed();
+    SetupEngine.syncDatabase(SD_Schema);
+    SetupEngine.syncDatabase(FICO_Schema);
+    EREC_Setup.syncAndSeed();
+    return { ok: true, mensaje: 'Todos los módulos sincronizados correctamente.' };
+  }, 'apiSincronizarTodo');
+}
+
+/**
+ * Bootstrap seguro para Web App — sin getUi, sin confirmaciones de alert.
+ * El Launchpad muestra el resultado como toast.
+ */
+function apiBootstrapWebApp() {
+  return safeExecute(function() {
+    SetupEngine.syncDatabase(MDM_Schema); MDM_Setup.seedCatalogs();
+    SetupEngine.syncDatabase(RRHH_Schema);
+    EAM_Setup.syncAndSeed();
+    SetupEngine.syncDatabase(SD_Schema);
+    SetupEngine.syncDatabase(FICO_Schema);
+    EREC_Setup.syncAndSeed();
+    try { DriveOrganizer.run(); } catch(e) {}
+    Bootstrap._colorearTabs();
+    return { ok: true, mensaje: '✔ ERP inicializado correctamente. Todos los módulos listos.' };
+  }, 'apiBootstrapWebApp');
+}
+
+/**
+ * Organizar Drive — seguro para Web App.
+ */
+function apiOrganizarDriveWebApp() {
+  return safeExecute(function() {
+    DriveOrganizer.run();
+    return { ok: true, mensaje: '✔ Estructura de Drive organizada.' };
+  }, 'apiOrganizarDrive');
+}
+
+/**
+ * Colorear tabs — seguro para Web App.
+ */
+function apiColorearTabsWebApp() {
+  return safeExecute(function() {
+    Bootstrap._colorearTabs();
+    return { ok: true, mensaje: '✔ Tabs coloreadas por módulo.' };
+  }, 'apiColorearTabs');
 }
 
 function apiInicializarERPCompleto() {
@@ -66,48 +107,109 @@ function apiSembrarDatosPrueba() {
   CORE_TestSeeder.runSeed();
 }
 
+/** Colorear tabs manualmente sin correr Bootstrap completo */
+function apiColorearTabs() {
+  Bootstrap._colorearTabs();
+  SpreadsheetApp.getUi().alert(
+    'Listo', 'Tabs coloreadas por módulo.', SpreadsheetApp.getUi().ButtonSet.OK
+  );
+}
+
+/* ── Funciones de migración unificadas y seguras (Spreadsheet UI y Web App) ─── */
 function apiMigrarCORE() {
-  try {
+  return safeExecute(function() {
     const res = SetupEngine.syncDatabase(MDM_Schema);
     MDM_Setup.seedCatalogs();
-    SpreadsheetApp.getUi().alert("Sincronización Exitosa", "CORE: " + res.mensaje + " Catálogos inicializados con datos semilla.", SpreadsheetApp.getUi().ButtonSet.OK);
-  } catch (e) {
-    SpreadsheetApp.getUi().alert("Error de Integridad", e.message, SpreadsheetApp.getUi().ButtonSet.OK);
-  }
+    var msg = '✔ CORE sincronizado. ' + res.mensaje;
+    try {
+      var ui = SpreadsheetApp.getUi();
+      ui.alert("Sincronización Exitosa", "CORE: " + res.mensaje + " Catálogos inicializados con datos semilla.", ui.ButtonSet.OK);
+    } catch(e) {}
+    return { ok: true, mensaje: msg };
+  }, 'apiMigrarCORE');
 }
 
 function apiMigrarHCM() {
-  try {
+  return safeExecute(function() {
     const res = SetupEngine.syncDatabase(RRHH_Schema);
-    SpreadsheetApp.getUi().alert("Sincronización Exitosa", "HCM: " + res.mensaje, SpreadsheetApp.getUi().ButtonSet.OK);
-  } catch (e) {
-    SpreadsheetApp.getUi().alert("Error de Integridad", e.message, SpreadsheetApp.getUi().ButtonSet.OK);
-  }
+    var msg = '✔ HCM sincronizado. ' + res.mensaje;
+    try {
+      var ui = SpreadsheetApp.getUi();
+      ui.alert("Sincronización Exitosa", "HCM: " + res.mensaje, ui.ButtonSet.OK);
+    } catch(e) {}
+    return { ok: true, mensaje: msg };
+  }, 'apiMigrarHCM');
 }
 
 function apiMigrarEAM() {
-  try {
+  return safeExecute(function() {
     EAM_Setup.syncAndSeed();
-    SpreadsheetApp.getUi().alert("Sincronización Exitosa", "EAM: Activos corporativos sincronizados y catálogos listos.", SpreadsheetApp.getUi().ButtonSet.OK);
-  } catch (e) {
-    SpreadsheetApp.getUi().alert("Error de Integridad", e.message, SpreadsheetApp.getUi().ButtonSet.OK);
-  }
+    var msg = '✔ EAM sincronizado.';
+    try {
+      var ui = SpreadsheetApp.getUi();
+      ui.alert("Sincronización Exitosa", "EAM: Activos corporativos sincronizados y catálogos listos.", ui.ButtonSet.OK);
+    } catch(e) {}
+    return { ok: true, mensaje: msg };
+  }, 'apiMigrarEAM');
 }
 
 function apiMigrarSD() {
-  try {
+  return safeExecute(function() {
     const res = SetupEngine.syncDatabase(SD_Schema);
-    SpreadsheetApp.getUi().alert("Sincronización Exitosa", "SD: " + res.mensaje, SpreadsheetApp.getUi().ButtonSet.OK);
-  } catch (e) {
-    SpreadsheetApp.getUi().alert("Error de Integridad", e.message, SpreadsheetApp.getUi().ButtonSet.OK);
-  }
+    var msg = '✔ SD sincronizado. ' + res.mensaje;
+    try {
+      var ui = SpreadsheetApp.getUi();
+      ui.alert("Sincronización Exitosa", "SD: " + res.mensaje, ui.ButtonSet.OK);
+    } catch(e) {}
+    return { ok: true, mensaje: msg };
+  }, 'apiMigrarSD');
 }
 
 function apiMigrarFICO() {
-  try {
+  return safeExecute(function() {
     const res = SetupEngine.syncDatabase(FICO_Schema);
-    SpreadsheetApp.getUi().alert("Sincronización Exitosa", "FICO: " + res.mensaje, SpreadsheetApp.getUi().ButtonSet.OK);
-  } catch (e) {
-    SpreadsheetApp.getUi().alert("Error de Integridad", e.message, SpreadsheetApp.getUi().ButtonSet.OK);
+    var msg = '✔ FICO sincronizado. ' + res.mensaje;
+    try {
+      var ui = SpreadsheetApp.getUi();
+      ui.alert("Sincronización Exitosa", "FICO: " + res.mensaje, ui.ButtonSet.OK);
+    } catch(e) {}
+    return { ok: true, mensaje: msg };
+  }, 'apiMigrarFICO');
+}
+
+/** Organizar carpetas de Drive */
+function apiOrganizarDrive() {
+  try {
+    DriveOrganizer.run();
+    SpreadsheetApp.getUi().alert(
+      'Listo', 'Estructura de Drive organizada.', SpreadsheetApp.getUi().ButtonSet.OK
+    );
+  } catch(e) {
+    SpreadsheetApp.getUi().alert('Error', e.message, SpreadsheetApp.getUi().ButtonSet.OK);
+  }
+}
+
+function apiEjecutarLimpiezaEcuador() {
+  const ui = SpreadsheetApp.getUi();
+  const response = ui.alert(
+    "⚠️ ATENCIÓN: Limpieza y Re-sembrado de Maestros",
+    "¿Está seguro de que desea limpiar todas las tablas maestras (Empresas, Business Partners corporativos, Países, Departamentos y Roles) y volver a cargarlas desde cero con los datos de Ecuador?\n\nEsto eliminará los duplicados y dejará configuradas a WorldClass y Rapivisa bajo el país Ecuador (RUC y moneda USD) por defecto. Esta acción no se puede deshacer.",
+    ui.ButtonSet.YES_NO
+  );
+  
+  if (response !== ui.Button.YES) {
+    ui.alert("Cancelado", "No se modificaron los datos.", ui.ButtonSet.OK);
+    return;
+  }
+
+  try {
+    const res = apiLimpiarYReinstalarMaestros();
+    if (res.ok) {
+      ui.alert("✔ Éxito", res.mensaje, ui.ButtonSet.OK);
+    } else {
+      ui.alert("⚠️ Error", res.error || "No se pudo completar la limpieza.", ui.ButtonSet.OK);
+    }
+  } catch(e) {
+    ui.alert("⚠️ Error de ejecución", e.message, ui.ButtonSet.OK);
   }
 }

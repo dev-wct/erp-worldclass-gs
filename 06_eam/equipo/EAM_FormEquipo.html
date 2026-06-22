@@ -1,168 +1,172 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registrar Equipo</title>
-  <?!= include('02_core/CORE_DesignSystem'); ?>
-  <?!= include('02_core/CORE_FormHandler'); ?>
-</head>
-<body>
+<?!= include('02_core/ui/CORE_Shell'); ?>
 
-<div class="sap-container">
-  <div class="sap-card">
-    <div class="sap-card-header">
+<article class="erp-card">
+
+  <header class="erp-card-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" style="padding:4px;border-radius:50%;" onclick="volver()" title="Volver">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+      </button>
+      <div style="width:36px;height:36px;border-radius:6px;background:#e8eaf6;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="laptop" style="width:18px;height:18px;color:#283593;"></i>
+      </div>
       <div>
-        <div class="sap-card-title">💻 Registrar Equipo Informático</div>
-        <div class="sap-card-subtitle">MM - Catálogo de Activos en Inventario</div>
+        <h1 style="font-size:16px;font-weight:600;color:#1d2d3d;margin:0;line-height:1.2;">Registrar Equipo Informático</h1>
+        <p style="font-size:12px;color:#515f6e;margin:2px 0 0;">EAM — Catálogo de activos en inventario</p>
       </div>
     </div>
-    
-    <div class="sap-card-content">
-      <div id="msg" class="sap-message-strip" style="display: none;"></div>
-      
-      <form id="equipoForm" onsubmit="guardar(event)">
-        <div class="sap-form-grid">
-          
-          <!-- SECCIÓN: IDENTIFICACIÓN -->
-          <div class="sap-section-title">Identificación del Activo</div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label">Código Interno</label>
-            <input type="text" id="codigo_interno" class="sap-input" style="background:#f1f5f9; cursor:not-allowed;" readonly placeholder="Cargando secuencial...">
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label required">Tipo de Equipo</label>
-            <select id="id_tipo" class="sap-select" required>
-              <option value="">— Seleccionar —</option>
-            </select>
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label required">Marca</label>
-            <select id="id_marca" class="sap-select" required>
-              <option value="">— Seleccionar —</option>
-            </select>
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label required">Modelo</label>
-            <input type="text" id="modelo" class="sap-input" placeholder="Ej: Latitude 5420" required>
-          </div>
-    
-          <div class="sap-form-group full-width">
-            <label class="sap-label required">Número de Serie (Serial)</label>
-            <input type="text" id="serial" class="sap-input" placeholder="Ej: S1N2G3H45" style="text-transform: uppercase;" required>
-          </div>
-    
-          <!-- SECCIÓN: PROPIEDAD Y ESTADO -->
-          <div class="sap-section-title">Propiedad e Inventario</div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label required">Empresa Propietaria</label>
-            <select id="id_empresa" class="sap-select" required>
-              <option value="">— Seleccionar —</option>
-            </select>
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label required">Estado del Activo</label>
-            <select id="id_estado" class="sap-select" required>
-              <option value="">— Seleccionar —</option>
-            </select>
-          </div>
-    
-          <!-- SECCIÓN: ADQUISICIÓN Y GARANTÍA -->
-          <div class="sap-section-title">Adquisición e Historial</div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label">Fecha de Compra</label>
-            <input type="date" id="fecha_compra" class="sap-input">
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label">Garantía Vence</label>
-            <input type="date" id="garantia_hasta" class="sap-input">
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label">Valor de Compra (GTQ)</label>
-            <input type="number" id="valor_compra" class="sap-input" placeholder="0.00" min="0" step="0.01">
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label">Enlace de Factura (Drive)</label>
-            <input type="url" id="link_factura" class="sap-input" placeholder="https://drive.google.com/...">
-          </div>
-    
-          <div class="sap-form-group full-width">
-            <label class="sap-label">Fotografía del Equipo (Drive)</label>
-            <input type="url" id="link_foto" class="sap-input" placeholder="https://drive.google.com/...">
-          </div>
-    
-          <!-- SECCIÓN: OBSERVACIONES -->
-          <div class="sap-section-title">Observaciones</div>
-    
-          <div class="sap-form-group full-width">
-            <textarea id="observaciones" class="sap-textarea" rows="3" placeholder="Notas adicionales sobre el equipo (ej. cargador entregado, estado estético)..."></textarea>
-          </div>
-    
+    <div id="catalog-status"></div>
+  </header>
+
+  <div class="erp-card-body">
+    <div id="erp-msg" class="erp-msg" style="display:none;" role="alert"></div>
+
+    <form id="equipoForm" onsubmit="guardar(event)" novalidate>
+      <div class="erp-form-grid">
+
+        <p class="erp-section-title">Identificación del Activo</p>
+
+        <div class="erp-field">
+          <label class="erp-label" for="codigo_interno">Código Interno</label>
+          <input type="text" id="codigo_interno" class="erp-input" style="background:#f5f6f7;cursor:not-allowed;" readonly placeholder="Cargando...">
         </div>
-    
-        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--sap-border-light);">
-          <button type="button" class="sap-btn" onclick="google.script.host.close()">Cancelar</button>
-          <button type="submit" class="sap-btn sap-btn-emphasized" id="saveBtn">💾 Guardar Equipo</button>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_tipo">Tipo de Equipo</label>
+          <div id="sk_tipo" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_tipo" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar —</option>
+          </select>
         </div>
-      </form>
-    </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_marca">Marca</label>
+          <div id="sk_marca" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_marca" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="modelo">Modelo</label>
+          <input type="text" id="modelo" class="erp-input" placeholder="Ej. Latitude 5420" required>
+        </div>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="serial">Número de Serie (Serial)</label>
+          <input type="text" id="serial" class="erp-input" placeholder="Ej. S1N2G3H45" style="text-transform:uppercase;" required>
+        </div>
+
+        <p class="erp-section-title">Propiedad e Inventario</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_empresa">Empresa Propietaria</label>
+          <div id="sk_empresa" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_empresa" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_estado">Estado del Activo</label>
+          <div id="sk_estado" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_estado" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+
+        <p class="erp-section-title">Adquisición e Historial</p>
+
+        <div class="erp-field">
+          <label class="erp-label" for="fecha_compra">Fecha de Compra</label>
+          <input type="date" id="fecha_compra" class="erp-input">
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label" for="garantia_hasta">Garantía Vence</label>
+          <input type="date" id="garantia_hasta" class="erp-input">
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label" for="valor_compra">Valor de Compra (GTQ)</label>
+          <input type="number" id="valor_compra" class="erp-input" placeholder="0.00" min="0" step="0.01">
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label" for="link_factura">Enlace Factura (Drive)</label>
+          <input type="url" id="link_factura" class="erp-input" placeholder="https://drive.google.com/...">
+        </div>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="link_foto">Fotografía del Equipo (Drive)</label>
+          <input type="url" id="link_foto" class="erp-input" placeholder="https://drive.google.com/...">
+        </div>
+
+        <p class="erp-section-title">Observaciones</p>
+
+        <div class="erp-field erp-full">
+          <textarea id="observaciones" class="erp-textarea" rows="3" placeholder="Notas adicionales (ej. cargador entregado, estado estético)..."></textarea>
+        </div>
+
+      </div>
+    </form>
   </div>
-</div>
+
+  <footer class="erp-card-footer">
+    <button type="button" class="erp-btn" onclick="volver()">← Volver</button>
+    <button type="submit" form="equipoForm" id="saveBtn" class="erp-btn erp-btn-primary" disabled>
+      <span id="saveSpinner" class="erp-spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span>
+      <span id="saveTxt">Cargando...</span>
+    </button>
+  </footer>
+
+</article>
+
+<?!= include('02_core/ui/CORE_ShellClose'); ?>
 
 <script>
-  var BTN_TEXT = '💾 Guardar Equipo';
+  const _backUrl = '<?= getWebAppUrl() ?>?page=<?= APP_PARAMS.back ? APP_PARAMS.back : 'launchpad' ?>';
+  function volver() { window.open(_backUrl, '_top'); }
 
   window.onload = function() {
     ERP.Gateway.callArgs('apiGetCatalogosEquipo', [], cargarFormulario, function(err) {
-      ERP.Msg.error('⚠️ Error cargando catálogos: ' + err.message);
+      ERP.UI.msg('error', '⚠️ Error cargando catálogos: ' + err.message);
     });
   };
 
   function cargarFormulario(data) {
+    ['tipo','marca','empresa','estado'].forEach(function(k) {
+      document.getElementById('sk_' + k).style.display = 'none';
+      document.getElementById('id_' + k).style.display = 'block';
+    });
     ERP.Select.fill('id_tipo',    data.tipos,    'id_tipo',    'nombre', '— Seleccionar —');
     ERP.Select.fill('id_marca',   data.marcas,   'id_marca',   'nombre', '— Seleccionar —');
     ERP.Select.fill('id_empresa', data.empresas, 'id_empresa', 'nombre', '— Seleccionar —');
     ERP.Select.fill('id_estado',  data.estados,  'id_estado',  'nombre', '— Seleccionar —');
     ERP.Select.autoSelect('id_estado', 'bodega');
     document.getElementById('codigo_interno').value = 'EQ-' + String(data.nextId).padStart(4, '0');
+    document.getElementById('saveBtn').disabled = false;
+    document.getElementById('saveSpinner').style.display = 'none';
+    document.getElementById('saveTxt').textContent = '💾 Guardar Equipo';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
   function guardar(e) {
     e.preventDefault();
-    var original = ERP.Btn.loading('saveBtn');
-    ERP.Msg.hide();
-
-    var data = ERP.Form.collect([
-      'id_tipo', 'id_marca', 'modelo', 'serial', 'id_empresa', 'id_estado',
-      'fecha_compra', 'garantia_hasta', 'valor_compra', 'link_factura', 'link_foto', 'observaciones'
-    ]);
-
-    ERP.Gateway.call('apiGuardarEquipo', data,
-      function(res) {
+    ERP.UI.msgHide();
+    ERP.Gateway.submit({
+      method: 'apiGuardarEquipo',
+      payload: ERP.Form.collect(['id_tipo','id_marca','modelo','serial','id_empresa','id_estado','fecha_compra','garantia_hasta','valor_compra','link_factura','link_foto','observaciones']),
+      btnId: 'saveBtn', btnText: '💾 Guardar Equipo', loadingText: 'Guardando...',
+      onSuccess: function(res) {
         if (res.ok) {
-          ERP.Msg.success('✔ ' + res.mensaje);
-          setTimeout(function() { google.script.host.close(); }, 1500);
+          ERP.UI.msg('success', '✔ ' + res.mensaje);
+          setTimeout(volver, 1500);
         } else {
-          ERP.Msg.error('⚠️ ' + res.errores.join('\n'));
-          ERP.Btn.ready('saveBtn', BTN_TEXT);
+          ERP.UI.msg('error', '⚠️ ' + (res.errores || ['Error desconocido.']).join('<br>'));
         }
       },
-      function(err) {
-        ERP.Msg.error('⚠️ Error del Sistema: ' + err.message);
-        ERP.Btn.ready('saveBtn', BTN_TEXT);
-      }
-    );
+    });
   }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 </script>
-</body>
-</html>

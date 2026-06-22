@@ -33,6 +33,7 @@ const MDM_Schema = {
       'nombre',             // nombre completo o razón social
       'email',
       'telefono',
+      'direccion',          // Dirección física o fiscal
       'activo',
       'created_at',
       'created_by',
@@ -78,7 +79,7 @@ const MDM_Schema = {
 
   CAT_Empresas: {
     pk: 'id_empresa',
-    columns: ['id_empresa', 'id_bp', 'nombre', 'codigo', 'id_pais', 'activo', 'created_at', 'updated_at'],
+    columns: ['id_empresa', 'id_bp', 'nombre', 'codigo', 'id_pais', 'logo_url', 'activo', 'created_at', 'updated_at'],
     fk: {
       id_bp:   'BP_MASTER',  // toda empresa es un BP de tipo PERSONA_JURIDICA
       id_pais: 'CAT_Paises',

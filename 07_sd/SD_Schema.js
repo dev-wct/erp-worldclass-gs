@@ -50,6 +50,7 @@ const SD_Schema = {
       'asistio',
       'resultado_venta',
       'id_membresia_vendida',
+      'id_empresa_emisora',  // FK -> CAT_Empresas (WorldClass o Rapivisa)
       'notas',
       'created_at',
       'updated_at',
@@ -57,7 +58,8 @@ const SD_Schema = {
     ],
     fk: {
       id_lead: 'Leads',
-      id_empleado_agendo: 'Empleados'
+      id_empleado_agendo: 'Empleados',
+      id_empresa_emisora: 'CAT_Empresas'
     }
   }
 };

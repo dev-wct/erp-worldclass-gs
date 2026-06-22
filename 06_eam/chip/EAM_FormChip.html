@@ -1,119 +1,132 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registrar Chip SIM</title>
-  <?!= include('02_core/CORE_DesignSystem'); ?>
-  <?!= include('02_core/CORE_FormHandler'); ?>
-</head>
-<body>
+<?!= include('02_core/ui/CORE_Shell'); ?>
 
-<div class="sap-container">
-  <div class="sap-card">
-    <div class="sap-card-header">
+<article class="erp-card">
+
+  <header class="erp-card-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" style="padding:4px;border-radius:50%;" onclick="volver()" title="Volver">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+      </button>
+      <div style="width:36px;height:36px;border-radius:6px;background:#e0f7fa;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="smartphone" style="width:18px;height:18px;color:#006064;"></i>
+      </div>
       <div>
-        <div class="sap-card-title">📱 Registrar Chip SIM (Línea)</div>
-        <div class="sap-card-subtitle">MM - Control de Líneas Telefónicas Corporativas</div>
+        <h1 style="font-size:16px;font-weight:600;color:#1d2d3d;margin:0;line-height:1.2;">Registrar Chip SIM</h1>
+        <p style="font-size:12px;color:#515f6e;margin:2px 0 0;">EAM — Control de líneas telefónicas corporativas</p>
       </div>
     </div>
-    
-    <div class="sap-card-content">
-      <div id="msg" class="sap-message-strip" style="display: none;"></div>
-      
-      <form id="chipForm" onsubmit="guardar(event)">
-        <div class="sap-form-grid">
-          
-          <!-- SECCIÓN: IDENTIFICACIÓN -->
-          <div class="sap-section-title">Identificación de la Línea</div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label">Código Interno</label>
-            <input type="text" id="codigo_interno" class="sap-input" style="background:#f1f5f9; cursor:not-allowed;" readonly placeholder="Cargando secuencial...">
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label required">Número de Teléfono</label>
-            <input type="tel" id="numero" class="sap-input" placeholder="Ej: 50255551234" required>
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label required">Operadora</label>
-            <select id="id_operadora" class="sap-select" required>
-              <option value="">— Seleccionar —</option>
-            </select>
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label">Plan Contratado</label>
-            <input type="text" id="plan" class="sap-input" placeholder="Ej: Corporativo Sin Límites">
-          </div>
-    
-          <!-- SECCIÓN: PROPIEDAD Y COSTO -->
-          <div class="sap-section-title">Propiedad y Costos</div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label required">Empresa Propietaria</label>
-            <select id="id_empresa" class="sap-select" required>
-              <option value="">— Seleccionar —</option>
-            </select>
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label required">Estado de la Línea</label>
-            <select id="id_estado" class="sap-select" required>
-              <option value="">— Seleccionar —</option>
-            </select>
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label required">Costo Mensual (GTQ)</label>
-            <input type="number" id="costo_mensual" class="sap-input" placeholder="0.00" min="0" step="0.01" oninput="actualizarPreviewCosto()" required>
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label">Fecha de Activación</label>
-            <input type="date" id="fecha_activacion" class="sap-input">
-          </div>
-    
-          <div id="costo_preview" class="sap-message-strip sap-message-strip-warning full-width" style="display: none; grid-column: 1 / -1; margin-bottom: 0;"></div>
-    
-          <!-- SECCIÓN: OBSERVACIONES -->
-          <div class="sap-section-title">Observaciones</div>
-    
-          <div class="sap-form-group full-width">
-            <textarea id="observaciones" class="sap-textarea" rows="3" placeholder="Notas adicionales sobre la SIM card..."></textarea>
-          </div>
-    
+    <div id="catalog-status"></div>
+  </header>
+
+  <div class="erp-card-body">
+    <div id="erp-msg" class="erp-msg" style="display:none;" role="alert"></div>
+
+    <form id="chipForm" onsubmit="guardar(event)" novalidate>
+      <div class="erp-form-grid">
+
+        <p class="erp-section-title">Identificación de la Línea</p>
+
+        <div class="erp-field">
+          <label class="erp-label" for="codigo_interno">Código Interno</label>
+          <input type="text" id="codigo_interno" class="erp-input" style="background:#f5f6f7;cursor:not-allowed;" readonly placeholder="Cargando...">
         </div>
-    
-        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--sap-border-light);">
-          <button type="button" class="sap-btn" onclick="google.script.host.close()">Cancelar</button>
-          <button type="submit" class="sap-btn sap-btn-emphasized" id="saveBtn">💾 Guardar Chip</button>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="numero">Número de Teléfono</label>
+          <input type="tel" id="numero" class="erp-input" placeholder="Ej. 50255551234" required>
         </div>
-      </form>
-    </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_operadora">Operadora</label>
+          <div id="sk_operadora" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_operadora" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label" for="plan">Plan Contratado</label>
+          <input type="text" id="plan" class="erp-input" placeholder="Ej. Corporativo Sin Límites">
+        </div>
+
+        <p class="erp-section-title">Propiedad y Costos</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_empresa">Empresa Propietaria</label>
+          <div id="sk_empresa" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_empresa" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_estado">Estado de la Línea</label>
+          <div id="sk_estado" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_estado" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="costo_mensual">Costo Mensual (GTQ)</label>
+          <input type="number" id="costo_mensual" class="erp-input" placeholder="0.00" min="0" step="0.01" oninput="actualizarPreviewCosto()" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label" for="fecha_activacion">Fecha de Activación</label>
+          <input type="date" id="fecha_activacion" class="erp-input">
+        </div>
+
+        <div id="costo_preview" class="erp-msg erp-msg-warning erp-full" style="display:none;"></div>
+
+        <p class="erp-section-title">Observaciones</p>
+
+        <div class="erp-field erp-full">
+          <textarea id="observaciones" class="erp-textarea" rows="3" placeholder="Notas adicionales sobre la SIM card..."></textarea>
+        </div>
+
+      </div>
+    </form>
   </div>
-</div>
+
+  <footer class="erp-card-footer">
+    <button type="button" class="erp-btn" onclick="volver()">← Volver</button>
+    <button type="submit" form="chipForm" id="saveBtn" class="erp-btn erp-btn-primary" disabled>
+      <span id="saveSpinner" class="erp-spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span>
+      <span id="saveTxt">Cargando...</span>
+    </button>
+  </footer>
+
+</article>
+
+<?!= include('02_core/ui/CORE_ShellClose'); ?>
 
 <script>
-  var BTN_TEXT = '💾 Guardar Chip';
+  const _backUrl = '<?= getWebAppUrl() ?>?page=<?= APP_PARAMS.back ? APP_PARAMS.back : 'launchpad' ?>';
+  function volver() { window.open(_backUrl, '_top'); }
 
   window.onload = function() {
     ERP.Gateway.callArgs('apiGetCatalogosChip', [], cargarFormulario, function(err) {
-      ERP.Msg.error('⚠️ Error cargando catálogos: ' + err.message);
+      ERP.UI.msg('error', '⚠️ Error cargando catálogos: ' + err.message);
     });
   };
 
   function cargarFormulario(data) {
+    ['operadora','empresa','estado'].forEach(function(k) {
+      document.getElementById('sk_' + k).style.display = 'none';
+      document.getElementById('id_' + k).style.display = 'block';
+    });
     ERP.Select.fill('id_operadora', data.operadoras, 'id_operadora', 'nombre', '— Seleccionar —');
     ERP.Select.fill('id_empresa',   data.empresas,   'id_empresa',   'nombre', '— Seleccionar —');
     ERP.Select.fill('id_estado',    data.estados,    'id_estado',    'nombre', '— Seleccionar —');
     ERP.Select.autoSelect('id_estado', 'bodega');
     document.getElementById('codigo_interno').value = 'SIM-' + String(data.nextId).padStart(4, '0');
+    document.getElementById('saveBtn').disabled = false;
+    document.getElementById('saveSpinner').style.display = 'none';
+    document.getElementById('saveTxt').textContent = '💾 Guardar Chip';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
-  // Preview de costo anual — lógica de display puro (no negocio)
   function actualizarPreviewCosto() {
     var costo   = parseFloat(document.getElementById('costo_mensual').value);
     var preview = document.getElementById('costo_preview');
@@ -127,30 +140,20 @@
 
   function guardar(e) {
     e.preventDefault();
-    var original = ERP.Btn.loading('saveBtn');
-    ERP.Msg.hide();
-
-    var data = ERP.Form.collect([
-      'numero', 'id_operadora', 'plan', 'id_empresa', 'id_estado',
-      'costo_mensual', 'fecha_activacion', 'observaciones'
-    ]);
-
-    ERP.Gateway.call('apiGuardarChip', data,
-      function(res) {
+    ERP.UI.msgHide();
+    ERP.Gateway.submit({
+      method: 'apiGuardarChip',
+      payload: ERP.Form.collect(['numero','id_operadora','plan','id_empresa','id_estado','costo_mensual','fecha_activacion','observaciones']),
+      btnId: 'saveBtn', btnText: '💾 Guardar Chip', loadingText: 'Guardando...',
+      onSuccess: function(res) {
         if (res.ok) {
-          ERP.Msg.success('✔ ' + res.mensaje);
-          setTimeout(function() { google.script.host.close(); }, 1500);
+          ERP.UI.msg('success', '✔ ' + res.mensaje);
+          setTimeout(volver, 1500);
         } else {
-          ERP.Msg.error('⚠️ ' + res.errores.join('\n'));
-          ERP.Btn.ready('saveBtn', BTN_TEXT);
+          ERP.UI.msg('error', '⚠️ ' + (res.errores || ['Error desconocido.']).join('<br>'));
         }
       },
-      function(err) {
-        ERP.Msg.error('⚠️ Error del Sistema: ' + err.message);
-        ERP.Btn.ready('saveBtn', BTN_TEXT);
-      }
-    );
+    });
   }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 </script>
-</body>
-</html>

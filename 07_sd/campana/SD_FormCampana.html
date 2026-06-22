@@ -1,96 +1,105 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <base target="_top">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrar Nueva Campaña</title>
-    <?!= include('02_core/CORE_DesignSystem'); ?>
-    <?!= include('02_core/CORE_FormHandler'); ?>
-  </head>
-  <body>
-    <div class="sap-container">
-      <div class="sap-card">
-        <div class="sap-card-header">
-          <div>
-            <div class="sap-card-title">📢 Registrar Nueva Campaña</div>
-            <div class="sap-card-subtitle">SD - Campañas de Ventas de Membresías VIP</div>
-          </div>
-        </div>
+<?!= include('02_core/ui/CORE_Shell'); ?>
 
-        <div class="sap-card-content">
-          <div id="error" class="sap-message-strip sap-message-strip-error" style="display: none;"></div>
+<article class="erp-card">
 
-          <form id="campForm" onsubmit="guardar(event)">
-            <div class="sap-form-grid">
-              
-              <div class="sap-form-group full-width">
-                <label class="sap-label required" for="nombre">Nombre de la Campaña</label>
-                <input type="text" class="sap-input" id="nombre" placeholder="Ej. Membresías VIP Verano" required>
-              </div>
-
-              <div class="sap-form-group">
-                <label class="sap-label required" for="fecha_inicio">Fecha de Inicio</label>
-                <input type="date" class="sap-input" id="fecha_inicio" required>
-              </div>
-              
-              <div class="sap-form-group">
-                <label class="sap-label required" for="fecha_fin">Fecha de Fin</label>
-                <input type="date" class="sap-input" id="fecha_fin" required>
-              </div>
-
-              <div class="sap-form-group">
-                <label class="sap-label required" for="objetivo_citas">Objetivo de Citas</label>
-                <input type="number" class="sap-input" id="objetivo_citas" min="0" placeholder="Ej. 100" required>
-              </div>
-              
-              <div class="sap-form-group">
-                <label class="sap-label required" for="estado">Estado Inicial</label>
-                <select id="estado" class="sap-select">
-                  <option value="PLANIFICADA">Planificada</option>
-                  <option value="ACTIVA" selected>Activa</option>
-                  <option value="FINALIZADA">Finalizada</option>
-                </select>
-              </div>
-
-            </div>
-
-            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--sap-border-light);">
-              <button type="button" class="sap-btn" onclick="google.script.host.close()">Cancelar</button>
-              <button type="submit" id="btnGuardar" class="sap-btn sap-btn-emphasized">💾 Registrar Campaña</button>
-            </div>
-          </form>
-        </div>
+  <header class="erp-card-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" style="padding:4px;border-radius:50%;" onclick="volver()" title="Volver">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+      </button>
+      <div style="width:36px;height:36px;border-radius:6px;background:#fce4ec;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="megaphone" style="width:18px;height:18px;color:#c62828;"></i>
+      </div>
+      <div>
+        <h1 style="font-size:16px;font-weight:600;color:#1d2d3d;margin:0;line-height:1.2;">Nueva Campaña</h1>
+        <p style="font-size:12px;color:#515f6e;margin:2px 0 0;">SD — Campañas de ventas de membresías VIP</p>
       </div>
     </div>
+  </header>
 
-    <script>
-      var BTN_TEXT = '💾 Registrar Campaña';
+  <div class="erp-card-body">
+    <div id="erp-msg" class="erp-msg" style="display:none;" role="alert"></div>
 
-      function guardar(e) {
-        e.preventDefault();
-        ERP.Btn.loading('btnGuardar');
-        ERP.Msg.hide('error');
+    <form id="campForm" onsubmit="guardar(event)" novalidate>
+      <div class="erp-form-grid">
 
-        var data = ERP.Form.collect([
-          'nombre', 'fecha_inicio', 'fecha_fin', 'objetivo_citas', 'estado'
-        ]);
+        <p class="erp-section-title">Datos de la Campaña</p>
 
-        ERP.Gateway.call('apiGuardarCampana', data,
-          function(res) {
-            if (res.ok) {
-              google.script.host.close();
-            } else {
-              ERP.Msg.error(res.errores.join('\n'), 'error');
-              ERP.Btn.ready('btnGuardar', BTN_TEXT);
-            }
-          },
-          function(err) {
-            ERP.Msg.error(err.message, 'error');
-            ERP.Btn.ready('btnGuardar', BTN_TEXT);
-          }
-        );
-      }
-    </script>
-  </body>
-</html>
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="nombre">Nombre de la Campaña</label>
+          <input type="text" class="erp-input" id="nombre" placeholder="Ej. Membresías VIP Verano" autocomplete="off" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="fecha_inicio">Fecha de Inicio</label>
+          <input type="date" class="erp-input" id="fecha_inicio" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="fecha_fin">Fecha de Fin</label>
+          <input type="date" class="erp-input" id="fecha_fin" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="objetivo_citas">Objetivo de Citas</label>
+          <input type="number" class="erp-input" id="objetivo_citas" min="0" placeholder="Ej. 100" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="estado">Estado Inicial</label>
+          <select id="estado" class="erp-select">
+            <option value="PLANIFICADA">Planificada</option>
+            <option value="ACTIVA" selected>Activa</option>
+            <option value="FINALIZADA">Finalizada</option>
+          </select>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <footer class="erp-card-footer">
+    <button type="button" class="erp-btn" onclick="volver()">← Volver</button>
+    <button type="submit" form="campForm" id="saveBtn" class="erp-btn erp-btn-primary">
+      💾 Registrar Campaña
+    </button>
+  </footer>
+
+</article>
+
+<?!= include('02_core/ui/CORE_ShellClose'); ?>
+
+<script>
+  const _backUrl = '<?= getWebAppUrl() ?>?page=<?= APP_PARAMS.back ? APP_PARAMS.back : 'launchpad' ?>';
+  function volver() { window.open(_backUrl, '_top'); }
+
+  function guardar(e) {
+    e.preventDefault();
+    ERP.UI.msgHide();
+    var nombre = document.getElementById('nombre').value.trim();
+    var fi     = document.getElementById('fecha_inicio').value;
+    var ff     = document.getElementById('fecha_fin').value;
+    var obj    = document.getElementById('objetivo_citas').value;
+    var errs   = [];
+    if (!nombre) errs.push('Nombre de campaña requerido.');
+    if (!fi)     errs.push('Fecha de inicio requerida.');
+    if (!ff)     errs.push('Fecha de fin requerida.');
+    if (!obj)    errs.push('Objetivo de citas requerido.');
+    if (errs.length) { ERP.UI.msg('error', errs.join('<br>')); return; }
+
+    ERP.Gateway.submit({
+      method: 'apiGuardarCampana',
+      payload: ERP.Form.collect(['nombre','fecha_inicio','fecha_fin','objetivo_citas','estado']),
+      btnId: 'saveBtn', btnText: '💾 Registrar Campaña', loadingText: 'Guardando...',
+      onSuccess: function(res) {
+        if (res.ok) {
+          ERP.UI.msg('success', '✔ Campaña registrada correctamente.');
+          setTimeout(volver, 2000);
+        } else {
+          ERP.UI.msg('error', (res.errores || ['Error desconocido.']).join('<br>'));
+        }
+      },
+    });
+  }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>

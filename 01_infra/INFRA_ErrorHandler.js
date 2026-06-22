@@ -215,9 +215,35 @@ const ErrorHandler = {
  * @returns {object}         - El resultado de action() o una respuesta de error estructurada.
  */
 function safeExecute(action, context) {
+  const isDebug = (typeof Config !== 'undefined' && Config.DEBUG_MODE);
+  const start = isDebug ? new Date().getTime() : 0;
   try {
-    return action();
+    var res = action();
+    // Sanitizar SIEMPRE: convierte Date → ISO string antes del salto servidor→browser
+    // Sin esto, GAS serializa Date como null y withSuccessHandler recibe null.
+    if (res !== null && res !== undefined && typeof res === 'object') {
+      try { res = JSON.parse(JSON.stringify(res)); } catch(se) {}
+    }
+    if (isDebug && res && typeof res === 'object') {
+      res._debug = {
+        context:   context || 'sin_contexto',
+        exec_ms:   new Date().getTime() - start,
+        timestamp: new Date().toISOString(),
+        user:      (typeof Session !== 'undefined') ? Session.getActiveUser().getEmail() : 'unknown'
+      };
+    }
+    return res;
   } catch (err) {
-    return ErrorHandler.process(err, context || 'sin_contexto');
+    const errorRes = ErrorHandler.process(err, context || 'sin_contexto');
+    if (isDebug && errorRes && typeof errorRes === 'object') {
+      errorRes._debug = {
+        context:   context || 'sin_contexto',
+        exec_ms:   new Date().getTime() - start,
+        timestamp: new Date().toISOString(),
+        user:      (typeof Session !== 'undefined') ? Session.getActiveUser().getEmail() : 'unknown',
+        error:     true
+      };
+    }
+    return errorRes;
   }
 }

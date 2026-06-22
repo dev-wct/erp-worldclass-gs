@@ -46,7 +46,7 @@ const EAM_Setup = {
       if (!sh) { Logger.log('[!] Tabla no existe: ' + tableName); return; }
       if (sh.getLastRow() > 1) { Logger.log('[*] Ya tiene datos: ' + tableName); return; }
       const rows = this.SEED_DATA[tableName];
-      if (rows) rows.forEach(row => sh.appendRow(row));
+      if (rows) sh.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
       Logger.log('[✔] Semilla insertada: ' + tableName);
     });
 

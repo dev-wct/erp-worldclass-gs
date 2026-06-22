@@ -43,6 +43,13 @@ const Config = (() => {
     VERSION:          '4.0.0',
     ERP_NAME:         name,
     STORAGE_PROVIDER: 'GOOGLE_DRIVE',
+    DEBUG_MODE: (() => {
+      try {
+        return PropertiesService.getScriptProperties().getProperty('DEBUG_MODE') === 'true';
+      } catch (e) {
+        return false;
+      }
+    })(),
 
     COLORS: {
       CORE: { primary: '#2C3E50', header: '#1A252F' },

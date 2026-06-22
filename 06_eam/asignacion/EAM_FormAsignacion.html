@@ -1,108 +1,117 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nueva Asignación</title>
-  <?!= include('02_core/CORE_DesignSystem'); ?>
-  <?!= include('02_core/CORE_FormHandler'); ?>
-</head>
-<body>
+<?!= include('02_core/ui/CORE_Shell'); ?>
 
-<div class="sap-container">
-  <div class="sap-card">
-    <div class="sap-card-header">
+<article class="erp-card">
+
+  <header class="erp-card-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" style="padding:4px;border-radius:50%;" onclick="volver()" title="Volver">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+      </button>
+      <div style="width:36px;height:36px;border-radius:6px;background:#e8eaf6;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="link" style="width:18px;height:18px;color:#283593;"></i>
+      </div>
       <div>
-        <div class="sap-card-title">🔗 Nueva Asignación de Activos</div>
-        <div class="sap-card-subtitle">MM - Provisión de Hardware y Conectividad a Agentes</div>
+        <h1 style="font-size:16px;font-weight:600;color:#1d2d3d;margin:0;line-height:1.2;">Nueva Asignación de Activos</h1>
+        <p style="font-size:12px;color:#515f6e;margin:2px 0 0;">EAM — Provisión de hardware y conectividad a agentes</p>
       </div>
     </div>
-    
-    <div class="sap-card-content">
-      <div id="msg" class="sap-message-strip" style="display: none;"></div>
-      
-      <form id="asigForm" onsubmit="guardar(event)">
-        <div class="sap-form-grid">
-    
-          <!-- EMPLEADO -->
-          <div class="sap-section-title">Empleado Receptor</div>
-    
-          <div class="sap-form-group full-width">
-            <label class="sap-label required">Empleado Activo</label>
-            <select id="id_empleado" class="sap-select" required>
-              <option value="">— Seleccionar empleado —</option>
-            </select>
-          </div>
-    
-          <!-- EQUIPO -->
-          <div class="sap-section-title">Equipo (opcional si asigna solo chip)</div>
-    
-          <div class="sap-form-group full-width">
-            <label class="sap-label">Equipo Disponible (En Bodega)</label>
-            <select id="id_equipo" class="sap-select">
-              <option value="">— Sin equipo / Solo chip —</option>
-            </select>
-          </div>
-    
-          <!-- CHIP -->
-          <div class="sap-section-title">Chip SIM (opcional si asigna solo equipo)</div>
-    
-          <div class="sap-form-group full-width">
-            <label class="sap-label">Chip SIM Disponible (En Bodega)</label>
-            <select id="id_chip" class="sap-select">
-              <option value="">— Sin chip / Solo equipo —</option>
-            </select>
-          </div>
-    
-          <div class="sap-message-strip sap-message-strip-warning full-width" style="grid-column: 1 / -1; margin-bottom: 0;">
-            ⚠️ Regla: debe seleccionar al menos un equipo o un chip para crear la asignación.
-          </div>
-    
-          <!-- DATOS DE ASIGNACIÓN -->
-          <div class="sap-section-title">Datos de la Asignación</div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label required">Fecha de Asignación</label>
-            <input type="date" id="fecha_asignacion" class="sap-input" required>
-          </div>
-    
-          <div class="sap-form-group">
-            <label class="sap-label">Estado del Flujo</label>
-            <input type="text" id="estado_flujo" class="sap-input" style="background:#f1f5f9; cursor:not-allowed;" value="PENDIENTE" readonly>
-          </div>
-    
-          <div class="sap-form-group full-width">
-            <label class="sap-label">Enlace Acta de Entrega (Drive)</label>
-            <input type="url" id="link_acta" class="sap-input" placeholder="https://drive.google.com/...">
-          </div>
-    
-          <div class="sap-form-group full-width">
-            <label class="sap-label">Notas / Observaciones</label>
-            <textarea id="notas" class="sap-textarea" rows="3" placeholder="Motivo de la asignación, condiciones especiales..."></textarea>
-          </div>
-    
+    <div id="catalog-status"></div>
+  </header>
+
+  <div class="erp-card-body">
+    <div id="erp-msg" class="erp-msg" style="display:none;" role="alert"></div>
+
+    <form id="asigForm" onsubmit="guardar(event)" novalidate>
+      <div class="erp-form-grid">
+
+        <p class="erp-section-title">Empleado Receptor</p>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="id_empleado">Empleado Activo</label>
+          <div id="sk_empleado" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_empleado" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar empleado —</option>
+          </select>
         </div>
-    
-        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--sap-border-light);">
-          <button type="button" class="sap-btn" onclick="google.script.host.close()">Cancelar</button>
-          <button type="submit" class="sap-btn sap-btn-emphasized" id="saveBtn">📋 Crear Solicitud</button>
+
+        <p class="erp-section-title">Equipo <span style="font-weight:400;color:#515f6e;">(opcional si asigna solo chip)</span></p>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="id_equipo">Equipo Disponible (En Bodega)</label>
+          <div id="sk_equipo" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_equipo" class="erp-select" style="display:none;">
+            <option value="">— Sin equipo / Solo chip —</option>
+          </select>
         </div>
-      </form>
-    </div>
+
+        <p class="erp-section-title">Chip SIM <span style="font-weight:400;color:#515f6e;">(opcional si asigna solo equipo)</span></p>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="id_chip">Chip SIM Disponible (En Bodega)</label>
+          <div id="sk_chip" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_chip" class="erp-select" style="display:none;">
+            <option value="">— Sin chip / Solo equipo —</option>
+          </select>
+        </div>
+
+        <div class="erp-msg erp-msg-warning erp-full" style="display:flex;">
+          ⚠️ Regla: debe seleccionar al menos un equipo o un chip.
+        </div>
+
+        <p class="erp-section-title">Datos de la Asignación</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="fecha_asignacion">Fecha de Asignación</label>
+          <input type="date" id="fecha_asignacion" class="erp-input" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label" for="estado_flujo">Estado del Flujo</label>
+          <input type="text" id="estado_flujo" class="erp-input" style="background:#f5f6f7;cursor:not-allowed;" value="PENDIENTE" readonly>
+        </div>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="link_acta">Enlace Acta de Entrega (Drive)</label>
+          <input type="url" id="link_acta" class="erp-input" placeholder="https://drive.google.com/...">
+        </div>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="notas">Notas / Observaciones</label>
+          <textarea id="notas" class="erp-textarea" rows="3" placeholder="Motivo de la asignación, condiciones especiales..."></textarea>
+        </div>
+
+      </div>
+    </form>
   </div>
-</div>
+
+  <footer class="erp-card-footer">
+    <button type="button" class="erp-btn" onclick="volver()">← Volver</button>
+    <button type="submit" form="asigForm" id="saveBtn" class="erp-btn erp-btn-primary" disabled>
+      <span id="saveSpinner" class="erp-spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span>
+      <span id="saveTxt">Cargando...</span>
+    </button>
+  </footer>
+
+</article>
+
+<?!= include('02_core/ui/CORE_ShellClose'); ?>
 
 <script>
-  var BTN_TEXT = '📋 Crear Solicitud';
+  const _backUrl = '<?= getWebAppUrl() ?>?page=<?= APP_PARAMS.back ? APP_PARAMS.back : 'launchpad' ?>';
+  function volver() { window.open(_backUrl, '_top'); }
 
   window.onload = function() {
     document.getElementById('fecha_asignacion').value = new Date().toISOString().split('T')[0];
     ERP.Gateway.callArgs('apiGetCatalogosAsignacion', [], cargarFormulario, function(err) {
-      ERP.Msg.error('⚠️ Error cargando datos: ' + err.message);
+      ERP.UI.msg('error', '⚠️ Error cargando datos: ' + err.message);
     });
   };
 
   function cargarFormulario(data) {
+    ['empleado','equipo','chip'].forEach(function(k) {
+      document.getElementById('sk_' + k).style.display = 'none';
+      document.getElementById('id_' + k).style.display = 'block';
+    });
     ERP.Select.fill('id_empleado', data.empleados, 'id_empleado',
       function(e) { return e.nombre_completo + ' — ' + (e.email || 'Sin email'); },
       '— Seleccionar empleado —'
@@ -115,42 +124,34 @@
       function(ch) { return ch.codigo_interno + ' — ' + ch.numero + ' (' + (ch.operadora || ch.id_operadora) + ') GTQ ' + ch.costo_mensual + '/mes'; },
       '— Sin chip / Solo equipo —'
     );
+    document.getElementById('saveBtn').disabled = false;
+    document.getElementById('saveSpinner').style.display = 'none';
+    document.getElementById('saveTxt').textContent = '📋 Crear Solicitud';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
   function guardar(e) {
     e.preventDefault();
-
     var idEquipo = document.getElementById('id_equipo').value;
     var idChip   = document.getElementById('id_chip').value;
-
     if (!idEquipo && !idChip) {
-      ERP.Msg.warning('⚠️ Debe seleccionar al menos un equipo o un chip.');
+      ERP.UI.msg('warning', '⚠️ Debe seleccionar al menos un equipo o un chip.');
       return;
     }
-
-    ERP.Btn.loading('saveBtn');
-    ERP.Msg.hide();
-
-    var data = ERP.Form.collect([
-      'id_empleado', 'id_equipo', 'id_chip', 'fecha_asignacion', 'link_acta', 'notas'
-    ]);
-
-    ERP.Gateway.call('apiGuardarAsignacion', data,
-      function(res) {
+    ERP.UI.msgHide();
+    ERP.Gateway.submit({
+      method: 'apiGuardarAsignacion',
+      payload: ERP.Form.collect(['id_empleado','id_equipo','id_chip','fecha_asignacion','link_acta','notas']),
+      btnId: 'saveBtn', btnText: '📋 Crear Solicitud', loadingText: 'Guardando...',
+      onSuccess: function(res) {
         if (res.ok) {
-          ERP.Msg.success('✔ ' + res.mensaje);
-          setTimeout(function() { google.script.host.close(); }, 2000);
+          ERP.UI.msg('success', '✔ ' + res.mensaje);
+          setTimeout(volver, 2000);
         } else {
-          ERP.Msg.error('⚠️ ' + res.errores.join('\n'));
-          ERP.Btn.ready('saveBtn', BTN_TEXT);
+          ERP.UI.msg('error', '⚠️ ' + (res.errores || ['Error desconocido.']).join('<br>'));
         }
       },
-      function(err) {
-        ERP.Msg.error('⚠️ Error del Sistema: ' + err.message);
-        ERP.Btn.ready('saveBtn', BTN_TEXT);
-      }
-    );
+    });
   }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 </script>
-</body>
-</html>

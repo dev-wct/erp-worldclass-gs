@@ -1,0 +1,460 @@
+<!--
+  CORE_DebugBar.html  v2 — ligero, no bloquea, sin Proxy
+-->
+<style>
+#erp-db-btn {
+  position: fixed;
+  bottom: 14px;
+  right: 14px;
+  z-index: 99998;
+  background: rgba(15,23,42,.88);
+  color: #fbbf24;
+  border: 1px solid rgba(251,191,36,.35);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font: 600 11px/1 ui-monospace,monospace;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  backdrop-filter: blur(8px);
+  transition: transform .18s, box-shadow .18s;
+  pointer-events: all;
+}
+#erp-db-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(251,191,36,.18); }
+#erp-db-btn .db-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #34d399;
+  animation: db-pulse 2s infinite;
+}
+@keyframes db-pulse {
+  0%,100%{opacity:1} 50%{opacity:.4}
+}
+
+/* Panel — deslizable desde abajo, NO bloquea el formulario */
+#erp-db-panel {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 99997;
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(13,20,36,.97);
+  border-top: 1px solid rgba(255,255,255,.09);
+  box-shadow: 0 -6px 28px rgba(0,0,0,.35);
+  backdrop-filter: blur(14px);
+  font: 11px/1.5 ui-monospace,monospace;
+  color: #e2e8f0;
+  transform: translateY(100%);
+  transition: transform .22s cubic-bezier(.4,0,.2,1);
+  /* CRÍTICO: no bloquea eventos debajo cuando está cerrado */
+  pointer-events: none;
+}
+#erp-db-panel.db-open {
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+/* Cuando el panel está abierto, bajar el contenido de la página */
+body.db-open-body { padding-bottom: 300px; }
+
+/* Cabecera */
+.db-hdr {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: rgba(30,41,59,.6);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  flex-shrink: 0;
+}
+.db-title { font-weight: 700; color: #f8fafc; letter-spacing: .3px; }
+.db-v { background: rgba(255,255,255,.08); color: #94a3b8; padding: 1px 6px; border-radius: 4px; font-size: 10px; margin-left: 6px; }
+.db-tabs { display: flex; height: 100%; }
+.db-tab {
+  height: 100%; padding: 0 14px;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: #64748b; cursor: pointer; font: inherit; font-size: 11px;
+  display: flex; align-items: center; gap: 5px;
+  transition: color .12s, border-color .12s;
+}
+.db-tab:hover { color: #cbd5e1; }
+.db-tab.on { color: #38bdf8; border-bottom-color: #38bdf8; }
+.db-cnt { background: #38bdf8; color: #0f172a; border-radius: 99px; padding: 1px 5px; font-size: 9px; font-weight: 700; }
+.db-close {
+  background: none; border: none; color: #475569; cursor: pointer;
+  width: 26px; height: 26px; border-radius: 6px; font: inherit;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; transition: color .12s, background .12s;
+}
+.db-close:hover { color: #e2e8f0; background: rgba(255,255,255,.06); }
+
+/* Cuerpo del panel */
+.db-body { flex: 1; overflow: hidden; }
+.db-pane { display: none; height: 100%; overflow-y: auto; }
+.db-pane.on { display: flex; }
+
+/* Pestaña Network — dos columnas */
+.db-net-list { flex: 3; overflow-y: auto; border-right: 1px solid rgba(255,255,255,.05); }
+.db-net-detail {
+  flex: 2; overflow-y: auto; padding: 10px;
+  background: rgba(0,0,0,.25); color: #94a3b8;
+  font-size: 10px;
+}
+.db-tbl { width: 100%; border-collapse: collapse; }
+.db-tbl th {
+  position: sticky; top: 0;
+  background: rgba(15,23,42,.95);
+  color: #475569; font-weight: 600; padding: 6px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  font-size: 9px; text-transform: uppercase; text-align: left;
+}
+.db-tbl td { padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,.025); }
+.db-tbl tbody tr { cursor: pointer; transition: background .1s; }
+.db-tbl tbody tr:hover { background: rgba(255,255,255,.025); }
+.db-tbl tbody tr.sel { background: rgba(56,189,248,.07); }
+.db-empty { text-align: center; padding: 28px 0; color: #475569; }
+
+.db-badge {
+  display: inline-block; padding: 2px 6px; border-radius: 4px;
+  font-size: 9px; font-weight: 700;
+}
+.db-ok  { background: rgba(16,185,129,.15); color: #34d399; }
+.db-err { background: rgba(239,68,68,.15); color: #f87171; }
+.db-pend{ background: rgba(234,179,8,.15); color: #fbbf24; }
+
+/* Pestaña Entorno */
+.db-env-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 14px; }
+.db-card { background: rgba(30,41,59,.4); border: 1px solid rgba(255,255,255,.05); border-radius: 8px; padding: 12px; }
+.db-card h4 { margin: 0 0 10px; color: #f8fafc; font-size: 11px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,.05); padding-bottom: 6px; }
+.db-etbl { width: 100%; border-collapse: collapse; }
+.db-etbl td { padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.02); font-size: 10px; color: #94a3b8; }
+.db-etbl td:last-child { color: #38bdf8; font-family: ui-monospace,monospace; }
+
+/* Pestaña DB */
+.db-db-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); gap: 12px; padding: 12px; }
+.db-db-card { background: rgba(30,41,59,.4); border: 1px solid rgba(255,255,255,.05); border-radius: 8px; padding: 10px; }
+.db-db-card h4 { margin: 0 0 8px; color: #f1f5f9; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
+.db-db-card td { padding: 3px 5px; font-size: 10px; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,.02); }
+.db-db-card td:first-child { color: #e2e8f0; font-weight: 600; }
+</style>
+
+<!-- Botón -->
+<button id="erp-db-btn" onclick="ERP_DB.toggle()" title="DevTools (Ctrl+Shift+D)">
+  <span class="db-dot"></span>
+  DevTools
+</button>
+
+<!-- Panel -->
+<div id="erp-db-panel">
+  <div class="db-hdr">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="db-title">WorldClass DevTools</span>
+      <span class="db-v">v<?= APP_VERSION ?></span>
+    </div>
+    <div class="db-tabs">
+      <button class="db-tab on" onclick="ERP_DB.tab('net',this)">
+        ⚡ Network <span id="db-net-cnt" class="db-cnt">0</span>
+      </button>
+      <button class="db-tab" onclick="ERP_DB.tab('db',this)">🗄 DB</button>
+      <button class="db-tab" onclick="ERP_DB.tab('env',this)">⚙ Entorno</button>
+    </div>
+    <button class="db-close" onclick="ERP_DB.toggle()">✕</button>
+  </div>
+
+  <div class="db-body">
+    <!-- Network -->
+    <div id="db-pane-net" class="db-pane on">
+      <div class="db-net-list">
+        <table class="db-tbl">
+          <thead><tr><th style="width:70px">Status</th><th>Método</th><th style="width:80px;text-align:right">ms</th><th style="width:65px;text-align:right">Hora</th></tr></thead>
+          <tbody id="db-net-body">
+            <tr><td colspan="4" class="db-empty">Sin llamadas aún — abre un formulario.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="db-net-detail" id="db-net-detail">
+        <span style="color:#475569">← Selecciona una llamada para ver el payload</span>
+      </div>
+    </div>
+
+    <!-- DB -->
+    <div id="db-pane-db" class="db-pane">
+      <div class="db-db-grid" id="db-db-grid">
+        <div style="padding:20px;color:#475569;">Cargando datos de catálogos...</div>
+      </div>
+    </div>
+
+    <!-- Entorno -->
+    <div id="db-pane-env" class="db-pane">
+      <div class="db-env-grid">
+        <div class="db-card">
+          <h4>Sesión / Request</h4>
+          <table class="db-etbl">
+            <tr><td>Usuario</td><td><?= APP_USER ?></td></tr>
+            <tr><td>Página</td><td><?= APP_PAGE ?></td></tr>
+            <tr><td>Módulo</td><td><?= SHELL_MODULE ?></td></tr>
+            <tr><td>Modo Shell</td><td><?= SHELL_MODE ?></td></tr>
+          </table>
+        </div>
+        <div class="db-card">
+          <h4>Sistema</h4>
+          <table class="db-etbl">
+            <tr><td>ERP Name</td><td><?= APP_ERP_NAME ?></td></tr>
+            <tr><td>Versión</td><td><?= APP_VERSION ?></td></tr>
+            <tr><td>Debug Mode</td><td style="color:#34d399">ACTIVO ✓</td></tr>
+            <tr><td>URL Params</td><td id="db-params-val">{}</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var ERP_DB = (function() {
+  var _logs = [], _sel = null, _open = false;
+
+  /* ── Toggle panel ── */
+  function toggle() {
+    _open = !_open;
+    var panel = document.getElementById('erp-db-panel');
+    if (_open) {
+      panel.classList.add('db-open');
+      document.body.classList.add('db-open-body');
+    } else {
+      panel.classList.remove('db-open');
+      document.body.classList.remove('db-open-body');
+    }
+  }
+
+  /* ── Cambiar pestaña ── */
+  function tab(id, btn) {
+    document.querySelectorAll('.db-tab').forEach(function(b) { b.classList.remove('on'); });
+    document.querySelectorAll('.db-pane').forEach(function(p) { p.classList.remove('on'); });
+    btn.classList.add('on');
+    var pane = document.getElementById('db-pane-' + id);
+    if (pane) pane.classList.add('on');
+  }
+
+  /* ── Agregar log de red ── */
+  function _log(method) {
+    var id = '_' + Date.now() + Math.floor(Math.random() * 999);
+    var now = new Date();
+    var t = _pad(now.getHours()) + ':' + _pad(now.getMinutes()) + ':' + _pad(now.getSeconds());
+    var entry = { id: id, method: method, status: 'pending', ms: null, time: t, payload: null, start: now.getTime() };
+    _logs.unshift(entry);
+    _render();
+    return id;
+  }
+
+  function _update(id, status, payload) {
+    var entry = _logs.find(function(l) { return l.id === id; });
+    if (!entry) return;
+    entry.status = status;
+    entry.ms = new Date().getTime() - entry.start;
+    entry.payload = payload;
+    _render();
+    if (_sel === id) _showDetail(id);
+  }
+
+  function _pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+  function _render() {
+    var tbody = document.getElementById('db-net-body');
+    if (!tbody) return;
+    document.getElementById('db-net-cnt').textContent = _logs.length;
+    if (!_logs.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="db-empty">Sin llamadas aún.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = _logs.map(function(l) {
+      var badge = l.status === 'pending'
+        ? '<span class="db-badge db-pend">PEND</span>'
+        : l.status === 'ok'
+          ? '<span class="db-badge db-ok">OK</span>'
+          : '<span class="db-badge db-err">ERR</span>';
+      var ms = l.ms !== null ? l.ms + 'ms' : '—';
+      var msColor = l.ms > 1000 ? '#f87171' : l.ms > 500 ? '#fbbf24' : '#34d399';
+      var sel = _sel === l.id ? 'sel' : '';
+      return '<tr class="' + sel + '" onclick="ERP_DB._showDetail(\'' + l.id + '\')">' +
+        '<td>' + badge + '</td>' +
+        '<td style="color:#f1f5f9;font-weight:600">' + l.method + '</td>' +
+        '<td style="text-align:right;color:' + msColor + '">' + ms + '</td>' +
+        '<td style="text-align:right;color:#475569">' + l.time + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function _showDetail(id) {
+    _sel = id;
+    _render();
+    var detail = document.getElementById('db-net-detail');
+    var entry = _logs.find(function(l) { return l.id === id; });
+    if (!detail || !entry) return;
+    var json = '—';
+    if (entry.payload) {
+      try { json = JSON.stringify(entry.payload, null, 2); } catch(e) { json = String(entry.payload); }
+    }
+    var sc = entry.status === 'ok' ? '#34d399' : entry.status === 'pending' ? '#fbbf24' : '#f87171';
+    detail.innerHTML =
+      '<div style="border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:8px;margin-bottom:8px;">' +
+        '<div style="color:#38bdf8;font-weight:700;margin-bottom:3px">' + entry.method + '</div>' +
+        '<div style="color:#64748b;font-size:10px">Status: <b style="color:' + sc + '">' + entry.status.toUpperCase() + '</b>' +
+          '&nbsp;·&nbsp;' + (entry.ms || 0) + 'ms &nbsp;·&nbsp;' + entry.time + '</div>' +
+      '</div>' +
+      '<div style="color:#64748b;font-size:9px;text-transform:uppercase;font-weight:700;margin-bottom:4px">Response Payload</div>' +
+      '<pre style="margin:0;color:#a7f3d0;font-size:10px;overflow-x:auto;white-space:pre-wrap;word-break:break-all">' +
+        _esc(json) + '</pre>';
+  }
+
+  /* ── Inspeccionar tabla en pestaña DB ── */
+  function renderDB(tableName, rows, headers) {
+    var grid = document.getElementById('db-db-grid');
+    if (!grid) return;
+
+    // Crear o reemplazar tarjeta
+    var existing = document.getElementById('db-card-' + tableName);
+    if (!existing) {
+      var card = document.createElement('div');
+      card.id = 'db-card-' + tableName;
+      card.className = 'db-db-card';
+      grid.innerHTML = '';  // primera vez limpia
+      grid.appendChild(card);
+      existing = card;
+    }
+
+    var status = rows && rows.length > 0
+      ? '<span class="db-badge db-ok">OK · ' + rows.length + ' reg</span>'
+      : '<span class="db-badge db-err">VACÍO</span>';
+
+    var keys = rows && rows.length ? Object.keys(rows[0]) : [];
+    var rows_html = keys.map(function(k) {
+      var warn = '';
+      if (headers && headers.length) {
+        if (!headers.includes(k)) {
+          var ci = headers.some(function(h) { return h.toLowerCase() === k.toLowerCase(); });
+          warn = ci
+            ? '<span style="color:#f59e0b;font-size:9px"> ⚠ casing</span>'
+            : '<span style="color:#f87171;font-size:9px"> ✕ missing</span>';
+        }
+      }
+      var val = rows[0][k];
+      var tipo = val instanceof Date ? 'Date' : typeof val;
+      return '<tr><td>' + k + warn + '</td><td style="color:#64748b;text-align:right">' + tipo + '</td></tr>';
+    }).join('');
+
+    existing.innerHTML =
+      '<h4><span>' + tableName + '</span>' + status + '</h4>' +
+      '<table style="width:100%;border-collapse:collapse"><tbody>' + rows_html + '</tbody></table>';
+  }
+
+  function _esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* ── API pública para que CORE_FormHandler la llame ── */
+  return {
+    toggle: toggle,
+    tab: tab,
+    _showDetail: _showDetail,
+    log: _log,
+    update: _update,
+    renderDB: renderDB
+  };
+})();
+
+/* Atajos de teclado — NO interfieren con inputs del formulario */
+document.addEventListener('keydown', function(e) {
+  // Solo activar si el foco NO está en un input/textarea/select
+  var tag = document.activeElement && document.activeElement.tagName;
+  var inField = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+  if (!inField && e.ctrlKey && e.shiftKey && (e.keyCode === 68)) {
+    e.preventDefault();
+    ERP_DB.toggle();
+  }
+  if (e.key === 'Escape') {
+    var panel = document.getElementById('erp-db-panel');
+    if (panel && panel.classList.contains('db-open')) ERP_DB.toggle();
+  }
+}, false);
+
+/* Rellenar params URL */
+(function() {
+  try {
+    var el = document.getElementById('db-params-val');
+    if (!el) return;
+    var p = {};
+    (new URLSearchParams(window.location.search)).forEach(function(v,k) { p[k] = v; });
+    el.textContent = JSON.stringify(p);
+  } catch(e) {}
+})();
+
+/*
+  INTERCEPTAR ERP.Gateway — el punto limpio sin Proxy.
+  Esperamos a que ERP.Gateway esté definido (CORE_FormHandler carga antes en el HTML).
+*/
+(function() {
+  var _wrap = function(orig) {
+    return function(opts) {
+      var method = opts && opts.method ? opts.method : '?';
+      var logId = ERP_DB.log(method);
+
+      var origSuccess = opts.onSuccess;
+      var origError   = opts.onError;
+
+      opts.onSuccess = function(res) {
+        ERP_DB.update(logId, 'ok', res);
+        if (origSuccess) origSuccess(res);
+      };
+      opts.onError = function(res) {
+        ERP_DB.update(logId, 'err', res);
+        if (origError) origError(res);
+      };
+
+      return orig.call(this, opts);
+    };
+  };
+
+  // Esperar a que ERP.Gateway esté disponible
+  var tries = 0;
+  var _patch = function() {
+    if (window.ERP && window.ERP.Gateway && window.ERP.Gateway.submit) {
+      var gw = window.ERP.Gateway;
+      gw.submit = _wrap(gw.submit);
+
+      // También interceptar llamadas sin ERP.Gateway.submit (raw google.script.run)
+      // con un enfoque seguro via ERP.Gateway.call
+      var origCall = gw.call.bind(gw);
+      gw.call = function(method, payload, onSuccess, onFailure) {
+        var logId = ERP_DB.log(method);
+        return origCall(method, payload, function(res) {
+          ERP_DB.update(logId, 'ok', res);
+          if (onSuccess) onSuccess(res);
+        }, function(err) {
+          ERP_DB.update(logId, 'err', err);
+          if (onFailure) onFailure(err);
+        });
+      };
+
+      var origCallArgs = gw.callArgs.bind(gw);
+      gw.callArgs = function(method, args, onSuccess, onFailure) {
+        var logId = ERP_DB.log(method);
+        return origCallArgs(method, args, function(res) {
+          ERP_DB.update(logId, 'ok', res);
+          if (onSuccess) onSuccess(res);
+        }, function(err) {
+          ERP_DB.update(logId, 'err', err);
+          if (onFailure) onFailure(err);
+        });
+      };
+
+    } else if (tries++ < 20) {
+      setTimeout(_patch, 150);
+    }
+  };
+  _patch();
+})();
+</script>
