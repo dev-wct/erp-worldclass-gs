@@ -42,6 +42,7 @@ var GLOBAL_CONTEXT = {};
  */
 var APP_ROUTES = {
   'launchpad':    '02_core/ui/CORE_Launchpad',
+  'inbox':        '02_core/ui/CORE_Inbox',
   'vacante':      '09_erec/vacante/EREC_FormVacante',
   'generar-link': '09_erec/vacante/EREC_FormGenerarLink',
   'ver-links':    '09_erec/vacante/EREC_FormVerLinks',
@@ -62,6 +63,7 @@ var APP_ROUTES = {
  */
 var APP_TITLES = {
   'launchpad':    'ERP WorldClass — Launchpad',
+  'inbox':        'My Inbox — Workflow',
   'vacante':      'Nueva Vacante — E-Recruiting',
   'generar-link': 'Generar Link — E-Recruiting',
   'ver-links':    'Links de Postulación — E-Recruiting',
@@ -227,6 +229,7 @@ function _getUser() {
 function _getModuleLabel(page) {
   var labels = {
     'launchpad':    '',
+    'inbox':        'Mis Tareas',
     'vacante':      'E-Recruiting',
     'generar-link': 'E-Recruiting',
     'ver-links':    'E-Recruiting',
