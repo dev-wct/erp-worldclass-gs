@@ -13,7 +13,8 @@ const CORE_TestSeeder = {
       "Postulantes", "Empleados", "Equipos", "Chips", "Asignaciones", 
       "Campanas", "Leads", "Llamadas", "Citas", "Pagos_Nomina", 
       "Costos_Chips", "EREC_Vacantes", "EREC_Postulantes", 
-      "EREC_EntrevistasNotas", "EREC_LinksPostulacion", "BP_Roles"
+      "EREC_EntrevistasNotas", "EREC_LinksPostulacion", "BP_Roles",
+      "SYS_WorkflowInstances", "SYS_WorkItems"
     ];
 
     tablesToClear.forEach(tableName => {
@@ -223,34 +224,80 @@ const CORE_TestSeeder = {
       }
       DataAdapter.insertBatch("Chips", chipsRecords);
 
-      // --- SEMBRAR 10 ASIGNACIONES ---
-      Logger.log("Sembrando Asignaciones...");
+      // --- SEMBRAR 10 ASIGNACIONES + 3 PENDIENTES CON WORKFLOW ---
+      Logger.log("Sembrando Asignaciones y Workflows...");
       const asignacionesRecords = [];
-      for (let i = 0; i < 10; i++) {
+      const workflowInstRecords = [];
+      const workItemRecords = [];
+
+      for (let i = 0; i < 13; i++) {
+        const isPending = i >= 10;
+        const estadoFlujo = isPending ? "PENDIENTE_APROBACION" : "APROBADO";
+
         asignacionesRecords.push({
           id_equipo: i + 1,
           codigo_equipo: "EQ-" + String(i + 1).padStart(4, '0'),
           id_chip: i + 1,
           codigo_chip: "SIM-" + String(i + 1).padStart(4, '0'),
-          id_empleado: i + 1,
-          empleado: postulantesNombres[i],
+          id_empleado: (i % 20) + 1,
+          empleado: postulantesNombres[i % 20],
           id_empresa: defaultCompanyId,
           empresa: defaultCompanyName,
           id_departamento: 2,
           departamento: "Ventas",
-          estado_flujo: "APROBADO",
+          estado_flujo: estadoFlujo,
           fecha_asignacion: new Date(Date.now() - (15 - i) * 24 * 60 * 60 * 1000),
           fecha_devolucion: "",
           activo: true,
-          link_acta: "https://drive.google.com/acta_" + (i + 1),
+          link_acta: isPending ? "" : "https://drive.google.com/acta_" + (i + 1),
           notas: "Asignación inicial para Call Center.",
           created_at: new Date(),
-          approved_by: user,
-          approved_at: new Date(),
+          approved_by: isPending ? "" : user,
+          approved_at: isPending ? "" : new Date(),
           created_by: user
         });
+
+        if (isPending) {
+          const wfId = "WF_" + (new Date().getTime() + i);
+          const wfType = i === 10 ? "EAM_ASIGNACION_EQUIPO" : (i === 11 ? "EAM_ASIGNACION_CHIP" : "EAM_ASIGNACION_EQUIPO");
+          const wfTitle = (i === 10 ? "Asignación de Laptop" : (i === 11 ? "Asignación de Chip" : "Asignación de Teléfono")) + " para " + postulantesNombres[i % 20];
+          
+          workflowInstRecords.push({
+            id_instancia: wfId,
+            tipo_workflow: wfType,
+            id_documento: i + 1,
+            estado_flujo: "ACTIVO",
+            solicitante: user,
+            payload: JSON.stringify({
+              id_equipo: i + 1,
+              codigo_equipo: "EQ-" + String(i + 1).padStart(4, '0'),
+              id_chip: i + 1,
+              codigo_chip: "SIM-" + String(i + 1).padStart(4, '0'),
+              id_empleado: (i % 20) + 1,
+              empleado: postulantesNombres[i % 20],
+            }),
+            creado_en: new Date(),
+            actualizado_en: new Date()
+          });
+
+          workItemRecords.push({
+            id_workitem: "WI_" + (new Date().getTime() + i),
+            id_instancia: wfId,
+            id_documento: i + 1,
+            titulo_tarea: wfTitle,
+            asignado_a: user,
+            estado_tarea: "PENDIENTE",
+            fecha_creacion: new Date(),
+            fecha_resolucion: "",
+            notas_resolucion: ""
+          });
+        }
       }
       DataAdapter.insertBatch("Asignaciones", asignacionesRecords);
+      if (workflowInstRecords.length > 0) {
+        DataAdapter.insertBatch("SYS_WorkflowInstances", workflowInstRecords);
+        DataAdapter.insertBatch("SYS_WorkItems", workItemRecords);
+      }
 
       // --- SEMBRAR 3 CAMPAÑAS ---
       Logger.log("Sembrando Campañas...");

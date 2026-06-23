@@ -3,11 +3,11 @@
 
   <!-- SHELLBAR -->
   <div class="shellbar">
-    <div class="sb-left">
+    <div class="sb-left" onclick="window.open('<?= getWebAppUrl() ?>?page=launchpad', '_top')" style="cursor:pointer;">
       <div class="sb-logo"><i data-lucide="layers" class="w-4 h-4 text-white"></i></div>
-      <a href="#" class="sb-name">WorldClass ERP</a>
+      <span class="sb-name hover:underline">WorldClass ERP</span>
       <span class="sb-sep">/</span>
-      <a href="#" class="sb-mod hover:underline">My Inbox</a>
+      <span class="sb-mod">My Inbox</span>
     </div>
     <div class="sb-right">
       <div class="sb-status"><div class="sb-dot"></div>Online</div>
