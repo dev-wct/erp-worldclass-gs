@@ -1,0 +1,220 @@
+<?!= include('02_core/ui/CORE_Head'); ?>
+<!-- Tabulator CSS -->
+<link href="https://unpkg.com/tabulator-tables@6.2.1/dist/css/tabulator_bootstrap5.min.css" rel="stylesheet">
+<!-- Tabulator JS -->
+<script type="text/javascript" src="https://unpkg.com/tabulator-tables@6.2.1/dist/js/tabulator.min.js"></script>
+<!-- jsPDF (Para exportar PDF) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+<!-- SheetJS (Para exportar Excel) -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+<body class="bg-canvas text-ink font-sans m-0 p-0 overflow-hidden flex flex-col h-screen">
+
+  <!-- SHELLBAR -->
+  <div class="shellbar shrink-0">
+    <div class="sb-left" onclick="window.open('<?= getWebAppUrl() ?>?page=launchpad', '_top')" style="cursor:pointer;">
+      <div class="sb-logo"><i data-lucide="layers" class="w-4 h-4 text-white"></i></div>
+      <span class="sb-name hover:underline">WorldClass ERP</span>
+      <span class="sb-sep">/</span>
+      <span class="sb-mod">Explorador de Reportes</span>
+    </div>
+    <div class="sb-right">
+      <div class="sb-status"><div class="sb-dot"></div>Online</div>
+      <div class="sb-avatar"><i data-lucide="table" class="w-4 h-4 text-white"></i></div>
+    </div>
+  </div>
+
+  <div class="flex-1 flex overflow-hidden">
+    <!-- MENU LATERAL (Catálogo de Reportes) -->
+    <aside class="w-64 bg-white border-r border-border-subtle flex flex-col overflow-y-auto hidden md:flex shrink-0">
+      <div class="p-4 border-b border-border-subtle">
+        <h2 class="text-xs font-bold text-muted uppercase tracking-wider">Catálogo</h2>
+      </div>
+      <div class="p-3" id="menu-reportes">
+        <div class="text-center text-xs text-muted py-4">Cargando...</div>
+      </div>
+    </aside>
+
+    <!-- AREA PRINCIPAL (Visor) -->
+    <main class="flex-1 flex flex-col bg-slate-50 relative">
+      
+      <!-- Encabezado del Reporte -->
+      <header class="bg-white border-b border-border-subtle p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
+        <div>
+          <h1 id="report-title" class="text-2xl font-bold text-ink leading-tight">Seleccione un reporte</h1>
+          <p id="report-desc" class="text-sm text-muted mt-1">Haga clic en el menú lateral para cargar datos.</p>
+        </div>
+        
+        <!-- Toolbar (Oculto al inicio) -->
+        <div id="report-toolbar" class="hidden flex items-center gap-2">
+          <button onclick="downloadPDF()" class="px-3 py-2 bg-white border border-border-subtle rounded-md text-sm hover:bg-slate-50 transition-colors text-red-700 flex items-center gap-1" title="Exportar PDF">
+            <i data-lucide="file-text" class="w-4 h-4"></i> PDF
+          </button>
+          <button onclick="downloadExcel()" class="px-3 py-2 bg-white border border-border-subtle rounded-md text-sm hover:bg-slate-50 transition-colors text-green-700 flex items-center gap-1" title="Exportar Excel">
+            <i data-lucide="sheet" class="w-4 h-4"></i> Excel
+          </button>
+        </div>
+      </header>
+
+      <!-- Contenedor Tabulator -->
+      <div class="flex-1 p-6 overflow-hidden flex flex-col">
+        <div id="loader-table" class="hidden flex flex-col items-center justify-center py-20 flex-1">
+          <div class="erp-spinner text-primary w-8 h-8"></div>
+          <p class="text-sm text-muted mt-4 font-medium">Ejecutando consultas, por favor espere...</p>
+        </div>
+        
+        <!-- La tabla ocupa el 100% del contenedor -->
+        <div id="report-table" class="flex-1 bg-white border border-border-subtle shadow-sm rounded-lg overflow-hidden"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      loadCatalog();
+    });
+
+    let activeTable = null;
+    let currentConfig = null;
+
+    // 1. Cargar el menú de reportes disponibles
+    function loadCatalog() {
+      google.script.run
+        .withSuccessHandler(renderMenu)
+        .withFailureHandler(err => alert("Error cargando catálogo: " + err))
+        .apiGetReportCatalog();
+    }
+
+    function renderMenu(res) {
+      if (!res.ok) {
+        document.getElementById('menu-reportes').innerHTML = `<p class="text-xs text-danger p-2">${res.errores.join(', ')}</p>`;
+        return;
+      }
+      
+      const reportes = res.data;
+      const menu = document.getElementById('menu-reportes');
+      menu.innerHTML = '';
+
+      if(reportes.length === 0) {
+        menu.innerHTML = `<p class="text-xs text-muted text-center p-2">No hay reportes definidos.</p>`;
+        return;
+      }
+
+      // Agrupar por módulo
+      const modulos = {};
+      reportes.forEach(r => {
+        if (!modulos[r.modulo]) modulos[r.modulo] = [];
+        modulos[r.modulo].push(r);
+      });
+
+      // Dibujar menú
+      for (const mod in modulos) {
+        menu.innerHTML += `<div class="mt-4 mb-1 px-2 text-[10px] font-bold text-muted uppercase tracking-wider">${mod}</div>`;
+        modulos[mod].forEach(r => {
+          menu.innerHTML += `
+            <button onclick="openReport('${r.id}')" class="w-full text-left px-3 py-2 text-sm text-ink hover:bg-slate-100 rounded-md transition-colors flex items-center gap-2 mb-1">
+              <i data-lucide="${r.icono || 'file'}" class="w-4 h-4 text-primary"></i> ${r.titulo}
+            </button>
+          `;
+        });
+      }
+      lucide.createIcons();
+    }
+
+    // 2. Abrir un reporte (Carga metadatos y luego datos)
+    function openReport(reportId) {
+      document.getElementById('report-toolbar').classList.add('hidden');
+      document.getElementById('report-table').classList.add('hidden');
+      document.getElementById('loader-table').classList.remove('hidden');
+      
+      if (activeTable) {
+        activeTable.destroy();
+        activeTable = null;
+      }
+
+      // Traer Metadatos
+      google.script.run
+        .withSuccessHandler(res => {
+          if (!res.ok) { alert("Error: " + res.errores.join(', ')); return; }
+          currentConfig = res.data;
+          
+          document.getElementById('report-title').innerText = currentConfig.titulo;
+          document.getElementById('report-desc').innerText = currentConfig.descripcion;
+          
+          // Ahora traer Datos
+          fetchData(currentConfig.id);
+        })
+        .apiGetReportMetadata(reportId);
+    }
+
+    function fetchData(reportId) {
+      // Nota: En fase 2, aquí se leerán los filtros de un formulario previo.
+      const filters = {}; 
+      
+      google.script.run
+        .withSuccessHandler(res => {
+          document.getElementById('loader-table').classList.add('hidden');
+          
+          if (!res.ok) { 
+            alert("Error ejecutando reporte: " + res.errores.join(', ')); 
+            return; 
+          }
+          
+          document.getElementById('report-table').classList.remove('hidden');
+          document.getElementById('report-toolbar').classList.remove('hidden');
+          renderTable(currentConfig, res.data);
+        })
+        .apiExecuteReport(reportId, filters);
+    }
+
+    // 3. Renderizar Tabulator
+    function renderTable(config, data) {
+      // Ajustes automáticos para Tabulator según nuestros metadatos
+      const tabulatorColumns = config.columnas.map(col => {
+        let tCol = { ...col };
+        if (tCol.type === 'currency') {
+          tCol.formatter = "money";
+          tCol.formatterParams = { symbol: "Q", thousand: ",", decimal: ".", precision: 2 };
+        }
+        return tCol;
+      });
+
+      activeTable = new Tabulator("#report-table", {
+        data: data,
+        layout: "fitColumns",
+        responsiveLayout: "collapse",
+        pagination: "local",
+        paginationSize: 50,
+        paginationSizeSelector: [50, 100, 500, 1000],
+        movableColumns: true,
+        columns: tabulatorColumns,
+        langs:{
+          "default":{
+            "pagination":{ "first":"Primero", "first_title":"Primera Página", "last":"Último", "last_title":"Última Página", "prev":"Anterior", "prev_title":"Página Anterior", "next":"Siguiente", "next_title":"Página Siguiente" },
+          }
+        }
+      });
+    }
+
+    // 4. Exportaciones
+    function downloadPDF() {
+      if(!activeTable) return;
+      activeTable.download("pdf", currentConfig.id + ".pdf", {
+        orientation: "landscape",
+        title: currentConfig.titulo,
+        jsPDF: window.jspdf.jsPDF,
+        autoTable: window.jspdf.jsPDF.API.autotable
+      });
+    }
+
+    function downloadExcel() {
+      if(!activeTable) return;
+      activeTable.download("xlsx", currentConfig.id + ".xlsx", { sheetName: "Reporte" });
+    }
+
+  </script>
+</body>
+</html>
