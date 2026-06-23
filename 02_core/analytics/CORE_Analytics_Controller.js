@@ -50,30 +50,33 @@ function apiGetDashboardData() {
     });
 
     return {
-      kpis: {
-        totalLeads: leads.length,
-        totalVentas: ventasCerradas,
-        totalEmpleados: empleadosActivos,
-        totalEquipos: equipos.length
-      },
-      charts: {
-        funnelVentas: [
-          { x: 'Leads Nuevos', y: leadsNuevos || leads.length },
-          { x: 'Contactados', y: leadsContactados + leadsInteresados + leadsCitas + ventasCerradas },
-          { x: 'Citas', y: leadsCitas + ventasCerradas },
-          { x: 'Ventas Cerradas', y: ventasCerradas }
-        ],
-        equiposDoughnut: [
-          { name: 'Asignados', value: eqAsignados },
-          { name: 'En Bodega', value: eqBodega },
-          { name: 'En Reparación', value: eqReparacion }
-        ],
-        funnelRRHH: [
-          { x: 'Postulados', y: postulantes.length },
-          { x: 'En Entrevista', y: postEntrevista + postPrueba },
-          { x: 'En Prueba', y: postPrueba }
-        ]
+      ok: true,
+      data: {
+        kpis: {
+          totalLeads: leads.length,
+          totalVentas: ventasCerradas,
+          totalEmpleados: empleadosActivos,
+          totalEquipos: equipos.length
+        },
+        charts: {
+          funnelVentas: [
+            { x: 'Leads Nuevos', y: leadsNuevos || leads.length },
+            { x: 'Contactados', y: leadsContactados + leadsInteresados + leadsCitas + ventasCerradas },
+            { x: 'Citas', y: leadsCitas + ventasCerradas },
+            { x: 'Ventas Cerradas', y: ventasCerradas }
+          ],
+          equiposDoughnut: [
+            { name: 'Asignados', value: eqAsignados },
+            { name: 'En Bodega', value: eqBodega },
+            { name: 'En Reparación', value: eqReparacion }
+          ],
+          funnelRRHH: [
+            { x: 'Postulados', y: postulantes.length },
+            { x: 'En Entrevista', y: postEntrevista + postPrueba },
+            { x: 'En Prueba', y: postPrueba }
+          ]
+        }
       }
     };
-  });
+  }, 'Analytics.getDashboardData');
 }
