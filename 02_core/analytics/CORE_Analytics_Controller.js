@@ -4,10 +4,10 @@
  */
 
 function apiGetDashboardData() {
-  return ErrorHandler.execute(() => {
-    Logger.log("Recopilando datos para el Dashboard...");
-
-    // 1. Datos de SD (Ventas y CRM)
+  return safeExecute(() => {
+    Logger.log("Recopilando datos para el Dashboard Gerencial...");
+    
+    // 1. Visión 360° (Tarjetas Rápidas)
     const leads = DataAdapter.findAll("Leads");
     const citas = DataAdapter.findAll("Citas");
     
