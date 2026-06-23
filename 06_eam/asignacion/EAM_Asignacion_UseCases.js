@@ -26,21 +26,25 @@ const AsignacionUseCases = {
     if (!empleado) return { ok: false, errores: ['Empleado no encontrado en el sistema.'] };
     if (!empleado.activo) return { ok: false, errores: ['No se puede asignar a un empleado inactivo.'] };
 
-    // 5. Entity
+    // 5. Entity (El documento nace bloqueado)
+    dto.estado_flujo = 'PENDIENTE_APROBACION';
     const entity = AsignacionEntity.create(dto);
 
     // 6. Repository: persistir
     const user = DataAdapter.getCurrentUser();
     const saved = AsignacionRepo.insert(entity, user);
 
-    // 7. Side-effect: cambiar estado del equipo/chip a "Activo" (id=1)
-    if (dto.id_equipo) EquipoRepo.actualizarEstado(dto.id_equipo, 1);
-    if (dto.id_chip) ChipRepo.actualizarEstado(dto.id_chip, 1);
+    // 7. Event Trigger: Enviar a la bandeja de IT_ADMIN para liberación
+    try {
+      WorkflowEngine.start('EAM_ASIGNACION_EQUIPO', saved.id_asignacion, dto);
+    } catch(err) {
+      Logger_ERP.error('EAM', 'Fallo al iniciar workflow', err);
+    }
 
     return {
       ok: true,
       data: AsignacionDTO.toResponse(saved),
-      mensaje: `Solicitud de asignación #${saved.id_asignacion} creada. Estado: PENDIENTE de aprobación.`
+      mensaje: `Solicitud #${saved.id_asignacion} creada y enviada a aprobación. (Estado: PENDIENTE)`
     };
   }
 };

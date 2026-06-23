@@ -115,6 +115,10 @@ const EventRegistry = (() => {
     _register('PayrollProcessed', typeof HCM_onPayrollProcessed    !== 'undefined' ? HCM_onPayrollProcessed    : null);
     _register('PayrollProcessed', typeof NOTIFY_onPayrollProcessed !== 'undefined' ? NOTIFY_onPayrollProcessed : null);
 
+    // ─── Workflow Events ───────────────────────────────────────────────
+    _register('Workflow_EAM_ASIGNACION_Aprobado', typeof EAM_onAsignacionAprobada !== 'undefined' ? EAM_onAsignacionAprobada : null);
+    _register('Workflow_EAM_ASIGNACION_Rechazado', typeof EAM_onAsignacionRechazada !== 'undefined' ? EAM_onAsignacionRechazada : null);
+
     Logger.log('[EventRegistry] Inicializado. Eventos registrados: ' + Object.keys(_registry).length);
   }
 

@@ -98,7 +98,8 @@ const Bootstrap = {
       Logger.log("    Adapter de notificación: " + AdapterFactory.getActiveAdapterName());
 
       // 1. MDM
-      Logger.log("1/7 Sincronizando MDM (Datos Maestros)...");
+      Logger.log('[Bootstrap] 2. Verificando esquemas de Base de Datos...');
+      if (typeof CORE_Schema !== 'undefined') SetupEngine.syncDatabase(CORE_Schema);
       SetupEngine.syncDatabase(MDM_Schema);
       MDM_Setup.seedCatalogs();
 

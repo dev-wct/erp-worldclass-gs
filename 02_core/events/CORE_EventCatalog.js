@@ -163,6 +163,18 @@ const EventCatalog = (() => {
       listeners   : ['NOTIFY'],
     },
 
+    // ── SYS — System / Workflow ──────────────────────────────────────────
+    'Workflow_EAM_ASIGNACION_Aprobado': {
+      description : 'El workflow de asignación de equipos ha sido aprobado por IT.',
+      owner       : 'SYS',
+      listeners   : ['EAM'],
+    },
+    'Workflow_EAM_ASIGNACION_Rechazado': {
+      description : 'El workflow de asignación de equipos ha sido rechazado por IT.',
+      owner       : 'SYS',
+      listeners   : ['EAM'],
+    },
+
   });
 
   // ── API Pública ──────────────────────────────────────────────────────────

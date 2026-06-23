@@ -82,3 +82,45 @@ function EAM_onEmployeeTerminated(context) {
     throw e;
   }
 }
+
+/**
+ * Reacciona a Workflow de Asignación Aprobado.
+ * Es en este momento donde FÍSICAMENTE el equipo sale de la bodega.
+ */
+function EAM_onAsignacionAprobada(context) {
+  const p = context.payload;
+  Logger_ERP.info('EAM', `Asignación ${p.id_documento} APROBADA por flujo. Liberando equipos...`);
+  
+  try {
+    // 1. Cambiar estado de asignación
+    DataAdapter.update('Asignaciones', p.id_documento, { estado_flujo: 'ACTIVA' });
+    
+    // 2. Descontar inventario (Estado 1 = Asignado)
+    const dto = p.payload;
+    // Asumimos que DataAdapter está disponible globalmente
+    if (dto.id_equipo) DataAdapter.update('Equipos', dto.id_equipo, { id_estado: 1 });
+    if (dto.id_chip) DataAdapter.update('Chips', dto.id_chip, { id_estado: 1 });
+
+    // 3. Notificar al área de soporte / empleado
+    NotificationService.sendEmail({
+      to: 'it-support@worldclasstravel.test', 
+      subject: `Asignación #${p.id_documento} Autorizada`,
+      body: 'La asignación ha sido autorizada. El equipo está listo para entrega.'
+    });
+  } catch (e) {
+    Logger_ERP.error('EAM', 'Error en EAM_onAsignacionAprobada', e);
+  }
+}
+
+/**
+ * Reacciona a Workflow de Asignación Rechazado.
+ */
+function EAM_onAsignacionRechazada(context) {
+  const p = context.payload;
+  Logger_ERP.warn('EAM', `Asignación ${p.id_documento} RECHAZADA. Liberando reserva...`);
+  try {
+    DataAdapter.update('Asignaciones', p.id_documento, { estado_flujo: 'RECHAZADA' });
+  } catch(e) {
+    Logger_ERP.error('EAM', 'Error en EAM_onAsignacionRechazada', e);
+  }
+}
