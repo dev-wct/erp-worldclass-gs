@@ -42,6 +42,7 @@ var GLOBAL_CONTEXT = {};
  */
 var APP_ROUTES = {
   'launchpad':    '02_core/ui/CORE_Launchpad',
+  'analytics':    '02_core/ui/CORE_Analytics',
   'inbox':        '02_core/ui/CORE_Inbox',
   'vacante':      '09_erec/vacante/EREC_FormVacante',
   'generar-link': '09_erec/vacante/EREC_FormGenerarLink',
@@ -63,6 +64,7 @@ var APP_ROUTES = {
  */
 var APP_TITLES = {
   'launchpad':    'ERP WorldClass — Launchpad',
+  'analytics':    'Command Center — ERP WorldClass',
   'inbox':        'My Inbox — Workflow',
   'vacante':      'Nueva Vacante — E-Recruiting',
   'generar-link': 'Generar Link — E-Recruiting',

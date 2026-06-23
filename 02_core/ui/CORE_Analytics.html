@@ -1,0 +1,188 @@
+<?!= include('02_core/ui/CORE_Head'); ?>
+<body class="bg-canvas text-ink font-sans m-0 p-0 overflow-hidden flex flex-col h-screen">
+
+  <!-- SHELLBAR -->
+  <div class="shellbar shrink-0">
+    <div class="sb-left" onclick="window.open('<?= getWebAppUrl() ?>?page=launchpad', '_top')" style="cursor:pointer;">
+      <div class="sb-logo"><i data-lucide="layers" class="w-4 h-4 text-white"></i></div>
+      <span class="sb-name hover:underline">WorldClass ERP</span>
+      <span class="sb-sep">/</span>
+      <span class="sb-mod">Analytics</span>
+    </div>
+    <div class="sb-right">
+      <div class="sb-status"><div class="sb-dot"></div>Online</div>
+      <div class="sb-avatar"><i data-lucide="pie-chart" class="w-4 h-4 text-white"></i></div>
+    </div>
+  </div>
+
+  <div id="app" class="flex-1 overflow-y-auto p-6 sm:p-8 bg-slate-50">
+    <div class="max-w-7xl mx-auto space-y-6">
+      
+      <!-- HEADER -->
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <h1 class="text-2xl font-bold text-ink leading-tight">Command Center</h1>
+          <p class="text-sm text-muted mt-1">Visión 360° en tiempo real de operaciones corporativas.</p>
+        </div>
+        <button onclick="loadDashboard()" class="px-4 py-2 bg-white border border-border-subtle rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm flex items-center gap-2 transition-colors">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Actualizar
+        </button>
+      </div>
+
+      <!-- LOADER -->
+      <div id="loader" class="flex flex-col items-center justify-center py-20">
+        <div class="erp-spinner text-primary w-8 h-8"></div>
+        <p class="text-sm text-muted mt-4 font-medium">Sintetizando datos...</p>
+      </div>
+
+      <!-- DASHBOARD CONTENT (Hidden until loaded) -->
+      <div id="dashboard-content" class="hidden space-y-6">
+        
+        <!-- KPI CARDS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Card 1 -->
+          <div class="bg-white border border-border-subtle rounded-[12px] p-5 shadow-sm hover:shadow-sap transition-all relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i data-lucide="users" class="w-12 h-12 text-[#1565c0]"></i></div>
+            <p class="text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">Total Leads</p>
+            <h3 id="kpi-leads" class="text-3xl font-bold text-ink">0</h3>
+            <p class="text-xs text-success font-medium mt-2 flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> Top of Funnel</p>
+          </div>
+          <!-- Card 2 -->
+          <div class="bg-white border border-border-subtle rounded-[12px] p-5 shadow-sm hover:shadow-sap transition-all relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i data-lucide="check-circle-2" class="w-12 h-12 text-success"></i></div>
+            <p class="text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">Ventas Cerradas</p>
+            <h3 id="kpi-ventas" class="text-3xl font-bold text-ink">0</h3>
+            <p class="text-xs text-success font-medium mt-2 flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> Conversión exitosa</p>
+          </div>
+          <!-- Card 3 -->
+          <div class="bg-white border border-border-subtle rounded-[12px] p-5 shadow-sm hover:shadow-sap transition-all relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i data-lucide="briefcase" class="w-12 h-12 text-[#5d4037]"></i></div>
+            <p class="text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">Headcount (Empleados)</p>
+            <h3 id="kpi-empleados" class="text-3xl font-bold text-ink">0</h3>
+            <p class="text-xs text-muted font-medium mt-2 flex items-center gap-1"><i data-lucide="minus" class="w-3 h-3"></i> Estables</p>
+          </div>
+          <!-- Card 4 -->
+          <div class="bg-white border border-border-subtle rounded-[12px] p-5 shadow-sm hover:shadow-sap transition-all relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i data-lucide="monitor" class="w-12 h-12 text-[#00695c]"></i></div>
+            <p class="text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">Activos Fijos</p>
+            <h3 id="kpi-equipos" class="text-3xl font-bold text-ink">0</h3>
+            <p class="text-xs text-success font-medium mt-2 flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> Registrados</p>
+          </div>
+        </div>
+
+        <!-- CHARTS GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Funnel Ventas -->
+          <div class="bg-white border border-border-subtle rounded-[12px] p-6 shadow-sm">
+            <h3 class="text-sm font-semibold text-ink mb-1">Pipeline de Ventas (SD)</h3>
+            <p class="text-[11px] text-muted mb-4">Eficiencia de conversión del Call Center</p>
+            <div id="chart-ventas" class="h-[280px]"></div>
+          </div>
+
+          <!-- Dona Activos -->
+          <div class="bg-white border border-border-subtle rounded-[12px] p-6 shadow-sm">
+            <h3 class="text-sm font-semibold text-ink mb-1">Control de Inventario (EAM)</h3>
+            <p class="text-[11px] text-muted mb-4">Distribución de hardware corporativo</p>
+            <div id="chart-activos" class="h-[280px] flex items-center justify-center"></div>
+          </div>
+
+          <!-- Funnel RRHH -->
+          <div class="bg-white border border-border-subtle rounded-[12px] p-6 shadow-sm lg:col-span-2">
+            <h3 class="text-sm font-semibold text-ink mb-1">Embudo de Reclutamiento (EREC)</h3>
+            <p class="text-[11px] text-muted mb-4">Tráfico de candidatos activos</p>
+            <div id="chart-rrhh" class="h-[250px]"></div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ApexCharts CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      loadDashboard();
+    });
+
+    let chartVentas, chartActivos, chartRRHH;
+
+    function loadDashboard() {
+      document.getElementById('loader').classList.remove('hidden');
+      document.getElementById('dashboard-content').classList.add('hidden');
+
+      google.script.run
+        .withSuccessHandler(renderDashboard)
+        .withFailureHandler(err => alert("Error: " + err))
+        .apiGetDashboardData();
+    }
+
+    function renderDashboard(res) {
+      if (!res.ok) {
+        alert(res.errores.join(', '));
+        return;
+      }
+
+      const data = res.data;
+      
+      // Update KPIs
+      document.getElementById('kpi-leads').innerText = data.kpis.totalLeads;
+      document.getElementById('kpi-ventas').innerText = data.kpis.totalVentas;
+      document.getElementById('kpi-empleados').innerText = data.kpis.totalEmpleados;
+      document.getElementById('kpi-equipos').innerText = data.kpis.totalEquipos;
+
+      document.getElementById('loader').classList.add('hidden');
+      document.getElementById('dashboard-content').classList.remove('hidden');
+
+      // 1. Chart Ventas (Funnel/Bar)
+      const optionsVentas = {
+        series: [{ name: 'Volumen', data: data.charts.funnelVentas.map(f => f.y) }],
+        chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
+        plotOptions: { bar: { borderRadius: 4, horizontal: true, distributed: true } },
+        colors: ['#e2e8f0', '#cbd5e1', '#94a3b8', '#6a1b9a'], // Morado SD al final
+        dataLabels: { enabled: true },
+        xaxis: { categories: data.charts.funnelVentas.map(f => f.x) },
+        legend: { show: false }
+      };
+
+      if (chartVentas) chartVentas.destroy();
+      chartVentas = new ApexCharts(document.querySelector("#chart-ventas"), optionsVentas);
+      chartVentas.render();
+
+      // 2. Chart Activos (Donut)
+      const optionsActivos = {
+        series: data.charts.equiposDoughnut.map(d => d.value),
+        chart: { type: 'donut', height: 280, fontFamily: 'Inter, sans-serif' },
+        labels: data.charts.equiposDoughnut.map(d => d.name),
+        colors: ['#00695c', '#4db6ac', '#e2e8f0'], // Tonos Teal EAM
+        plotOptions: { pie: { donut: { size: '65%' } } },
+        dataLabels: { enabled: false },
+        legend: { position: 'bottom' }
+      };
+
+      if (chartActivos) chartActivos.destroy();
+      chartActivos = new ApexCharts(document.querySelector("#chart-activos"), optionsActivos);
+      chartActivos.render();
+
+      // 3. Chart RRHH (Bar)
+      const optionsRRHH = {
+        series: [{ name: 'Candidatos', data: data.charts.funnelRRHH.map(f => f.y) }],
+        chart: { type: 'bar', height: 250, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
+        plotOptions: { bar: { borderRadius: 4, columnWidth: '40%', distributed: true } },
+        colors: ['#e3f2fd', '#90caf9', '#1565c0'], // Tonos Azules EREC
+        dataLabels: { enabled: true },
+        xaxis: { categories: data.charts.funnelRRHH.map(f => f.x) },
+        legend: { show: false }
+      };
+
+      if (chartRRHH) chartRRHH.destroy();
+      chartRRHH = new ApexCharts(document.querySelector("#chart-rrhh"), optionsRRHH);
+      chartRRHH.render();
+    }
+  </script>
+</body>
+</html>
