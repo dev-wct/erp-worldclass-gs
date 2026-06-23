@@ -42,6 +42,9 @@ const Bootstrap = {
     'Citas':              '#6a1b9a',
 
     // FICO — verde oscuro (Pagos_Nomina ya está arriba)
+
+    // F6 — Motor de Eventos / Auditoría — gris oscuro
+    'LOG_Eventos':        '#424242',
   },
 
   /**
@@ -87,7 +90,13 @@ const Bootstrap = {
 
     try {
       Logger.log("=== INICIANDO BOOTSTRAP DEL ERP ===");
-      
+
+      // 0. Motor de Eventos — debe inicializarse antes que cualquier módulo
+      Logger.log("0/7 Inicializando Motor de Eventos (F6)...");
+      Logger.log("    Eventos en catálogo: " + EventCatalog.listAll().length);
+      Logger.log("    Eventos con handlers activos: " + EventRegistry.getActiveEvents().join(', '));
+      Logger.log("    Adapter de notificación: " + AdapterFactory.getActiveAdapterName());
+
       // 1. MDM
       Logger.log("1/7 Sincronizando MDM (Datos Maestros)...");
       SetupEngine.syncDatabase(MDM_Schema);

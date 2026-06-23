@@ -10,6 +10,7 @@ const EquipoDTO = {
       modelo:         raw.modelo ? String(raw.modelo).trim() : '',
       serial:         raw.serial ? String(raw.serial).trim().toUpperCase() : '',
       id_empresa:     raw.id_empresa ? Number(raw.id_empresa) : null,
+      id_sucursal:    raw.id_sucursal ? Number(raw.id_sucursal) : null,
       id_estado:      raw.id_estado ? Number(raw.id_estado) : null,
       fecha_compra:   raw.fecha_compra || null,
       garantia_hasta: raw.garantia_hasta || null,

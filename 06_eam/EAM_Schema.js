@@ -48,6 +48,7 @@ const EAM_Schema = {
       'id_tipo', 'tipo', 'id_marca', 'marca',
       'modelo', 'serial',
       'id_empresa', 'empresa',
+      'id_sucursal', 'sucursal',   // referencia suave cross-módulo (MDM)
       'id_estado', 'estado',
       'fecha_compra', 'garantia_hasta', 'valor_compra',
       'link_factura', 'link_foto', 'observaciones',
@@ -57,6 +58,7 @@ const EAM_Schema = {
       id_tipo:    'CAT_TiposEquipo',
       id_marca:   'CAT_Marcas',
       id_empresa: 'CAT_Empresas',  // referencia suave → MDM
+      id_sucursal:'CAT_Sucursales', // referencia suave → MDM
       id_estado:  'CAT_Estados',
     },
   },

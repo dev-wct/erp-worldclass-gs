@@ -68,14 +68,14 @@
 
 ---
 
-## Fase 4 — Enterprise Structure ⏳ PENDIENTE
+## Fase 4 — Enterprise Structure ✅ COMPLETADA
 
 | Ítem | Estado |
 |---|---|
-| Crear `CAT_Sucursales` en MDM | ⏳ |
-| Crear `CAT_UnidadesOrganizativas` en MDM | ⏳ |
-| Agregar `id_sucursal` a tablas transaccionales clave | ⏳ |
-| Actualizar formularios | ⏳ |
+| Crear `CAT_Sucursales` en MDM | ✅ |
+| Crear `CAT_UnidadesOrganizativas` en MDM | ✅ |
+| Agregar `id_sucursal` a tablas transaccionales clave | ✅ |
+| Actualizar formularios | ✅ |
 
 ---
 

@@ -234,7 +234,16 @@ const ErecPostulanteUseCases = {
 
     ErecPostulanteRepo.avanzarEtapa(idPostulante, nuevaEtapa);
 
-    // Si llega a CONTRATADO → crear Empleado en RRHH automáticamente
+    // Publicar cambio de estado para notificaciones y otros módulos
+    EventBus.publishSafe('CandidateStatusChanged', {
+      id_postulante : idPostulante,
+      nombre        : postulante.nombre_completo,
+      email         : postulante.email,
+      telefono      : postulante.telefono,
+      nuevo_estado  : nuevaEtapa,
+    }, { source: 'EREC' });
+
+    // Si llega a CONTRATADO → publicar evento y dejar que HCM reaccione
     if (nuevaEtapa === 'CONTRATADO') {
       return this._convertirAEmpleado(postulante);
     }
@@ -250,37 +259,48 @@ const ErecPostulanteUseCases = {
     try {
       const vacante = VacanteRepo.findById(postulante.id_vacante);
 
-      const dtoEmpleado = {
-        id_postulante_erec: postulante.id_postulante_erec, // trazabilidad origen EREC
-        nombre_completo:    postulante.nombre_completo,
-        dpi:                postulante.documento_identidad,
-        email:              postulante.email,
-        telefono:           postulante.telefono,
-        id_empresa:         vacante ? vacante.id_empresa      : '',
-        id_departamento:    vacante ? vacante.id_departamento : '',
-        id_rol:             vacante ? vacante.id_rol_destino  : '',
-        tipo_contrato:      'TIEMPO_COMPLETO',
-        fecha_ingreso:      new Date(),
-      };
+      // ── Anti Vendor Locking / Desacoplamiento ───────────────────────────
+      // EREC NO llama a EmpleadoUseCases directamente.
+      // Publica el evento CandidateHired y deja que cada módulo reaccione:
+      //   • HCM_onCandidateHired  → crea el Empleado en HCM
+      //   • FICO_onCandidateHired → abre expediente de nómina
+      //   • NOTIFY_onCandidateHired → envía email/WhatsApp de bienvenida
+      // ────────────────────────────────────────────────────────────────────
+      const resultado = EventBus.publish('CandidateHired', {
+        // Identidad del candidato
+        id_postulante_erec : postulante.id_postulante_erec,
+        id_bp              : postulante.id_bp || null,
+        nombre             : postulante.nombre_completo,
+        email              : postulante.email,
+        telefono           : postulante.telefono,
+        documento_identidad: postulante.documento_identidad,
+        // Contexto de la vacante
+        cargo              : vacante ? vacante.titulo        : '',
+        id_empresa         : vacante ? vacante.id_empresa    : '',
+        id_departamento    : vacante ? vacante.id_departamento : '',
+        id_rol             : vacante ? vacante.id_rol_destino : '',
+        tipo_contrato      : 'TIEMPO_COMPLETO',
+        fecha_ingreso      : new Date().toISOString(),
+      }, { source: 'EREC' });
 
-      const resultado = EmpleadoUseCases.contratar(dtoEmpleado);
-
-      if (resultado.ok && vacante) {
+      // Actualizar vacante (conteo de plazas cubiertas)
+      if (vacante) {
         VacanteRepo.incrementarCubiertas(vacante.id_vacante);
       }
 
+      const hayErrores = resultado.errors && resultado.errors.length > 0;
       return {
-        ok:      resultado.ok,
-        mensaje: resultado.ok
-          ? '✔ ' + postulante.nombre_completo + ' fue contratado y su expediente fue creado en RRHH.'
-          : 'Avanzado a CONTRATADO pero falló la creación del expediente: ' + (resultado.errores || []).join(', '),
-        data: resultado.data || null,
+        ok     : !hayErrores,
+        mensaje: !hayErrores
+          ? '✔ ' + postulante.nombre_completo + ' fue contratado. Expediente creado en RRHH.'
+          : 'Candidato marcado como CONTRATADO con errores parciales: ' + resultado.errors.join(', '),
+        eventId: resultado.eventId,
       };
     } catch(e) {
-      Logger.log('[EREC] Error al convertir a empleado: ' + e.message);
+      Logger.log('[EREC] Error al publicar CandidateHired: ' + e.message);
       return {
         ok:      false,
-        errores: ['Avanzado a CONTRATADO pero falló la creación del expediente: ' + e.message],
+        errores: ['Error al procesar contratación: ' + e.message],
       };
     }
   },

@@ -36,12 +36,14 @@ const EmpleadoUseCases = {
     }
 
     try {
-      EmailService.send(saved.email, '¡Bienvenido a ' + Config.ERP_NAME + '!',
-        'Hola ' + saved.nombre_completo + ', tu registro está completo.');
-      WhatsAppService.sendMessage(saved.telefono,
-        'Hola ' + saved.nombre_completo + ', bienvenido! ID: ' + saved.id_empleado);
+      EventBus.publish('EmployeeCreated', {
+        id_empleado: saved.id_empleado,
+        nombre: saved.nombre_completo,
+        email: saved.email,
+        cargo: dto.id_departamento || 'No especificado'
+      });
     } catch(err) {
-      Logger.log('Fallaron las notificaciones iniciales: ' + err.message);
+      Logger_ERP.error('HCM', 'Fallo al publicar EmployeeCreated', err);
     }
 
     return {
@@ -77,6 +79,8 @@ const EmpleadoUseCases = {
       telefono:        dto.telefono,
       id_departamento: dto.id_departamento,
       id_empresa:      dto.id_empresa,
+      id_sucursal:     dto.id_sucursal,
+      id_unidad:       dto.id_unidad,
       tipo_contrato:   dto.tipo_contrato,
       fecha_ingreso:   dto.fecha_ingreso || ex.fecha_ingreso
     });
@@ -107,6 +111,15 @@ const EmpleadoUseCases = {
     if (!ex) return { ok: false, errores: ['El colaborador no existe.'] };
 
     EmpleadoRepo.desactivar(id, fechaSalida || DataAdapter.now());
+
+    try {
+      EventBus.publish('EmployeeTerminated', {
+        id_empleado: id,
+        nombre: ex.nombre_completo
+      });
+    } catch(err) {
+      Logger_ERP.error('HCM', 'Fallo al publicar EmployeeTerminated', err);
+    }
 
     return {
       ok: true,

@@ -10,6 +10,14 @@ const EquipoValidator = {
     if (!dto.modelo || dto.modelo.length < 2) e.push('El Modelo es obligatorio y debe tener al menos 2 caracteres.');
     if (!dto.serial || dto.serial.length < 4) e.push('El Número de Serie (Serial) es obligatorio y debe tener al menos 4 caracteres.');
     if (!dto.id_empresa) e.push('La Empresa Propietaria es obligatoria.');
+    if (dto.id_sucursal) {
+      const sucursal = DataAdapter.findById('CAT_Sucursales', dto.id_sucursal);
+      if (!sucursal) {
+        e.push('La Sucursal seleccionada no existe.');
+      } else if (Number(sucursal.id_empresa) !== Number(dto.id_empresa)) {
+        e.push('La Sucursal seleccionada no pertenece a la empresa propietaria.');
+      }
+    }
     if (!dto.id_estado) e.push('El Estado inicial del activo es obligatorio.');
     
     if (dto.valor_compra !== null && (isNaN(dto.valor_compra) || dto.valor_compra < 0)) {

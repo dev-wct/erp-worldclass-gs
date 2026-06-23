@@ -16,11 +16,12 @@ function abrirFormEquipo() {
 function apiGetCatalogosEquipo() {
   return safeExecute(function() {
     return {
-      tipos:    DataAdapter.findAll('CAT_TiposEquipo', { activo: true }),
-      marcas:   DataAdapter.findAll('CAT_Marcas',      { activo: true }),
-      empresas: DataAdapter.findAll('CAT_Empresas',    { activo: true }),
-      estados:  DataAdapter.findAll('CAT_Estados',     { activo: true }),
-      nextId:   DataAdapter.getNextId('Equipos')
+      tipos:      DataAdapter.findAll('CAT_TiposEquipo', { activo: true }),
+      marcas:     DataAdapter.findAll('CAT_Marcas',      { activo: true }),
+      empresas:   DataAdapter.findAll('CAT_Empresas',    { activo: true }),
+      sucursales: DataAdapter.findAll('CAT_Sucursales',    { activo: true }),
+      estados:    DataAdapter.findAll('CAT_Estados',     { activo: true }),
+      nextId:     DataAdapter.getNextId('Equipos')
     };
   }, 'MM.Equipo.getCatalogos');
 }

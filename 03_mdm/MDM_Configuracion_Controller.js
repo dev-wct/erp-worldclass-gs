@@ -86,7 +86,7 @@ function apiLimpiarYReinstalarMaestros() {
     SetupEngine.syncDatabase(MDM_Schema);
 
     // Orden de borrado relacional seguro
-    const tablesToClear = ['CAT_Departamentos', 'CAT_Empresas', 'BP_MASTER', 'CAT_Paises', 'CAT_Roles'];
+    const tablesToClear = ['CAT_Departamentos', 'CAT_UnidadesOrganizativas', 'CAT_Sucursales', 'CAT_Empresas', 'BP_MASTER', 'CAT_Paises', 'CAT_Roles'];
     tablesToClear.forEach(tableName => {
       const sh = ss.getSheetByName(tableName);
       if (sh && sh.getLastRow() > 1) {
@@ -134,4 +134,85 @@ function apiGuardarPais(idPais, payload) {
       return { ok: true, mensaje: '✔ Nuevo país registrado en la parametrización global.' };
     }
   }, 'MDM.Configuracion.guardarPais');
+}
+
+function apiGetEstructuraOrganizativa(idEmpresa) {
+  return safeExecute(function() {
+    var sucursales = DataAdapter.findByField('CAT_Sucursales', 'id_empresa', Number(idEmpresa)) || [];
+    var unidades   = DataAdapter.findByField('CAT_UnidadesOrganizativas', 'id_empresa', Number(idEmpresa)) || [];
+    return { ok: true, sucursales: sucursales, unidades: unidades };
+  }, 'MDM.Configuracion.getEstructuraOrganizativa');
+}
+
+function apiGuardarSucursal(idSucursal, payload) {
+  return safeExecute(function() {
+    var record = {
+      id_empresa: Number(payload.id_empresa),
+      nombre:     payload.nombre,
+      codigo:     payload.codigo.toUpperCase(),
+      direccion:  payload.direccion || '',
+      telefono:   payload.telefono || '',
+      activo:     payload.activo === true || payload.activo === 'true' || payload.activo === 1,
+      updated_at: new Date()
+    };
+
+    if (idSucursal) {
+      var current = DataAdapter.findById('CAT_Sucursales', idSucursal);
+      if (!current) throw new Error('Sucursal no encontrada.');
+      Object.keys(record).forEach(k => { current[k] = record[k]; });
+      DataAdapter.update('CAT_Sucursales', idSucursal, current);
+      return { ok: true, mensaje: '✔ Sucursal actualizada correctamente.' };
+    } else {
+      record.created_at = new Date();
+      DataAdapter.insert('CAT_Sucursales', record);
+      return { ok: true, mensaje: '✔ Nueva sucursal registrada con éxito.' };
+    }
+  }, 'MDM.Configuracion.guardarSucursal');
+}
+
+function apiGuardarUnidadOrganizativa(idUnidad, payload) {
+  return safeExecute(function() {
+    var record = {
+      id_empresa: Number(payload.id_empresa),
+      nombre:     payload.nombre,
+      codigo:     payload.codigo.toUpperCase(),
+      id_padre:   payload.id_padre ? Number(payload.id_padre) : '',
+      activo:     payload.activo === true || payload.activo === 'true' || payload.activo === 1,
+      updated_at: new Date()
+    };
+
+    if (idUnidad) {
+      var current = DataAdapter.findById('CAT_UnidadesOrganizativas', idUnidad);
+      if (!current) throw new Error('Unidad Organizativa no encontrada.');
+      
+      if (record.id_padre) {
+        if (Number(idUnidad) === Number(record.id_padre)) {
+          throw new Error('Una unidad organizativa no puede tenerse a sí misma como padre.');
+        }
+        
+        // Evitar bucles jerárquicos (ciclos)
+        var currentParentId = record.id_padre;
+        var visited = {};
+        while (currentParentId) {
+          if (Number(currentParentId) === Number(idUnidad)) {
+            throw new Error('Bucle circular detectado: la unidad superior seleccionada es descendiente de la unidad actual.');
+          }
+          if (visited[currentParentId]) {
+            break;
+          }
+          visited[currentParentId] = true;
+          
+          var parentNode = DataAdapter.findById('CAT_UnidadesOrganizativas', currentParentId);
+          currentParentId = (parentNode && parentNode.id_padre) ? parentNode.id_padre : null;
+        }
+      }
+      Object.keys(record).forEach(k => { current[k] = record[k]; });
+      DataAdapter.update('CAT_UnidadesOrganizativas', idUnidad, current);
+      return { ok: true, mensaje: '✔ Unidad organizativa actualizada correctamente.' };
+    } else {
+      record.created_at = new Date();
+      DataAdapter.insert('CAT_UnidadesOrganizativas', record);
+      return { ok: true, mensaje: '✔ Nueva unidad organizativa registrada con éxito.' };
+    }
+  }, 'MDM.Configuracion.guardarUnidadOrganizativa');
 }

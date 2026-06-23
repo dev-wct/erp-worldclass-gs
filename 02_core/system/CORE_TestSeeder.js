@@ -133,6 +133,9 @@ const CORE_TestSeeder = {
         const empCompanyName = companyMap[empIdEmpresa] || "worldclasstravel";
         const emailDomain   = empCompanyName.toLowerCase().replace('erp','').trim().replace(/\s+/g,'').normalize('NFD').replace(/[\u0300-\u036f]/g,'') + '.com';
 
+        const empIdSucursal = empIdEmpresa === 1 ? (i % 2 === 0 ? 1 : 2) : (i % 2 === 0 ? 3 : 4);
+        const empIdUnidad   = empIdEmpresa === 1 ? (i % 3 + 1) : (i % 2 === 0 ? 4 : 5);
+
         empleadosRecords.push({
           id_bp:          bpIds[nombre] || '',
           id_postulante_erec: '',
@@ -142,6 +145,8 @@ const CORE_TestSeeder = {
           telefono: "4444" + String(2000 + i),
           id_departamento: departamentos[i % departamentos.length],
           id_empresa: empIdEmpresa,
+          id_sucursal: empIdSucursal,
+          id_unidad: empIdUnidad,
           id_rol: roles[i % roles.length],
           activo: i < 18,
           fecha_ingreso: new Date(Date.now() - (60 - i) * 24 * 60 * 60 * 1000),
@@ -162,6 +167,9 @@ const CORE_TestSeeder = {
       const equiposRecords = [];
       
       for (let i = 0; i < 20; i++) {
+        const eqIdSucursal = i % 2 === 0 ? 1 : 2;
+        const eqSucursalName = eqIdSucursal === 1 ? "Sucursal Quito Principal" : "Sucursal Guayaquil Urdesa";
+
         equiposRecords.push({
           codigo_interno: "EQ-" + String(i + 1).padStart(4, '0'),
           id_tipo: tipos[i % tipos.length],
@@ -172,6 +180,8 @@ const CORE_TestSeeder = {
           serial: "SN-" + String(9999 + i),
           id_empresa: defaultCompanyId,
           empresa: defaultCompanyName,
+          id_sucursal: eqIdSucursal,
+          sucursal: eqSucursalName,
           id_estado: estadosEq[i % estadosEq.length],
           estado: ["Activo", "En bodega", "En reparación"][i % estadosEq.length],
           fecha_compra: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),

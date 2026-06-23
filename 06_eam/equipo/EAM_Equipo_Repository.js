@@ -23,24 +23,27 @@ const EquipoRepo = new class extends BaseRepository {
    */
   buildRecord(id, entity, now, user) {
     // Resolución de catálogos en memoria (sin XLOOKUP, sin acoplamiento a columnas físicas)
-    const tipo    = entity.id_tipo    ? DataAdapter.findById('CAT_TiposEquipo', entity.id_tipo)    : null;
-    const marca   = entity.id_marca   ? DataAdapter.findById('CAT_Marcas',      entity.id_marca)   : null;
-    const empresa = entity.id_empresa ? DataAdapter.findById('CAT_Empresas',    entity.id_empresa) : null;
-    const estado  = entity.id_estado  ? DataAdapter.findById('CAT_Estados',     entity.id_estado)  : null;
+    const tipo     = entity.id_tipo     ? DataAdapter.findById('CAT_TiposEquipo', entity.id_tipo)     : null;
+    const marca    = entity.id_marca    ? DataAdapter.findById('CAT_Marcas',      entity.id_marca)    : null;
+    const empresa  = entity.id_empresa  ? DataAdapter.findById('CAT_Empresas',    entity.id_empresa)  : null;
+    const sucursal = entity.id_sucursal ? DataAdapter.findById('CAT_Sucursales',  entity.id_sucursal) : null;
+    const estado   = entity.id_estado   ? DataAdapter.findById('CAT_Estados',     entity.id_estado)   : null;
 
     return {
       id_equipo:      id,
       codigo_interno: EquipoService.generarCodigoInterno(id),
       id_tipo:        entity.id_tipo,
-      tipo:           tipo    ? tipo.nombre    : '',
+      tipo:           tipo     ? tipo.nombre     : '',
       id_marca:       entity.id_marca,
-      marca:          marca   ? marca.nombre   : '',
+      marca:          marca    ? marca.nombre    : '',
       modelo:         entity.modelo,
       serial:         entity.serial ? String(entity.serial).trim().toUpperCase() : '',
       id_empresa:     entity.id_empresa,
-      empresa:        empresa ? empresa.nombre  : '',
+      empresa:        empresa  ? empresa.nombre  : '',
+      id_sucursal:    entity.id_sucursal,
+      sucursal:       sucursal ? sucursal.nombre : '',
       id_estado:      entity.id_estado,
-      estado:         estado  ? estado.nombre   : '',
+      estado:         estado   ? estado.nombre   : '',
       fecha_compra:   entity.fecha_compra,
       garantia_hasta: entity.garantia_hasta,
       valor_compra:   entity.valor_compra,

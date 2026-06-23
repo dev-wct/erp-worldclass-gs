@@ -26,13 +26,15 @@ const RRHH_Schema = {
   Empleados: {
     pk: 'id_empleado',
     columns: ['id_empleado','id_bp','id_postulante_erec','nombre_completo','dpi',
-              'email','telefono','id_departamento','id_empresa','id_rol',
+              'email','telefono','id_departamento','id_empresa','id_sucursal','id_unidad','id_rol',
               'activo','fecha_ingreso','fecha_salida','tipo_contrato',
               'created_at','updated_at','created_by'],
     fk: {
       // id_bp → BP_MASTER: referencia suave cross-módulo
       id_departamento: 'CAT_Departamentos',
       id_empresa:      'CAT_Empresas',
+      id_sucursal:     'CAT_Sucursales',            // referencia suave cross-módulo (MDM)
+      id_unidad:       'CAT_UnidadesOrganizativas',  // referencia suave cross-módulo (MDM)
       id_rol:          'CAT_Roles',
     },
   },

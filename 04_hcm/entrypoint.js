@@ -225,7 +225,7 @@ function apiEjecutarDiagnostico() {
 
   var report = "=== DIAGNÓSTICO DE BASE DE DATOS ===\n\n";
 
-  var tables = ['CAT_Paises', 'CAT_Empresas', 'BP_MASTER'];
+  var tables = ['CAT_Paises', 'CAT_Empresas', 'BP_MASTER', 'CAT_Sucursales', 'CAT_UnidadesOrganizativas'];
   tables.forEach(tableName => {
     var sh = ss.getSheetByName(tableName);
     if (!sh) {

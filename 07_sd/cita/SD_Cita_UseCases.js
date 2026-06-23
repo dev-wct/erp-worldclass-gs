@@ -32,6 +32,18 @@ const CitaUseCases = {
       LeadRepo.actualizarEstado(dto.id_lead, 'CITA_AGENDADA');
     }
 
+    try {
+      EventBus.publish('AppointmentScheduled', {
+        id_cita: saved.id_cita,
+        id_lead: dto.id_lead,
+        fecha: saved.fecha_cita,
+        lugar: saved.restaurante,
+        empleado: dto.id_empleado_agendo
+      });
+    } catch(err) {
+      Logger_ERP.error('SD', 'Fallo al publicar AppointmentScheduled', err);
+    }
+
     return {
       ok: true,
       data: CitaDTO.toResponse(saved),

@@ -14,16 +14,14 @@
       </div>
     </div>
     <div id="catalog-status" class="flex items-center gap-3"></div>
-  </div>
-
-  <!-- Navigation Tabs (SPRO Customizing) -->
+  </div>  <!-- Navigation Tabs (SPRO Customizing) -->
   <div id="module-tabs-container" class="mb-2"></div>
+
+  <!-- Company Selector Tabs (shared for Sociedades, Sucursales, and Unidades) -->
+  <div id="company-tabs-container" class="mb-4"></div>
 
   <!-- Vista 1: Sociedades (Empresas) -->
   <div id="view-sociedades" class="space-y-4">
-    <!-- Pestañas de las dos empresas (WorldClass / Rapivisa) -->
-    <div id="company-tabs-container"></div>
-    
     <!-- Formulario de Configuración -->
     <article class="erp-card max-w-2xl mx-auto">
       <header class="erp-card-header">
@@ -124,7 +122,6 @@
 
   <!-- Vista 2: Regionalización (Países) -->
   <div id="view-regionalizacion" class="space-y-4" style="display:none;">
-    
     <!-- Header Regionalización -->
     <div class="flex justify-between items-center bg-white p-4 border border-border rounded-sap shadow-sap">
       <div>
@@ -225,7 +222,165 @@
         </tbody>
       </table>
     </div>
+  </div>
 
+  <!-- Vista 3: Sucursales (Centros) -->
+  <div id="view-sucursales" class="space-y-4" style="display:none;">
+    <div class="flex justify-between items-center bg-white p-4 border border-border rounded-sap shadow-sap">
+      <div>
+        <h2 class="text-md font-semibold text-ink">Centros / Sucursales de Operación</h2>
+        <p class="text-xs text-muted">Configuración de establecimientos físicos de la sociedad (Plant/T001W)</p>
+      </div>
+      <button type="button" class="erp-btn erp-btn-primary erp-btn-sm" onclick="nuevaSucursal()">
+        <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Registrar Sucursal
+      </button>
+    </div>
+
+    <!-- Formulario de Sucursal (Insert/Edit) -->
+    <article class="erp-card max-w-2xl mx-auto" id="branchFormCard" style="display:none;">
+      <header class="erp-card-header">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded bg-primary/15 flex items-center justify-center text-primary">
+            <i data-lucide="map-pin" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 id="branch-card-title" class="text-lg font-semibold text-ink leading-snug">Registrar Sucursal</h2>
+            <p class="text-xs text-muted mt-0.5">Parámetros de ubicación y contacto</p>
+          </div>
+        </div>
+        <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" onclick="cancelarSucursal()">Cancelar</button>
+      </header>
+      
+      <div class="erp-card-body">
+        <div id="erp-msg-branch" class="erp-msg" style="display:none;" role="alert"></div>
+        <form id="branchForm" onsubmit="guardarSucursal(event)" novalidate>
+          <input type="hidden" id="branch_id">
+          <div class="erp-form-grid">
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="b_nombre">Nombre de la Sucursal</label>
+              <input type="text" class="erp-input" id="b_nombre" required placeholder="Ej. Sucursal Quito Principal">
+            </div>
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="b_codigo">Código de Sucursal (Ej. UIO1)</label>
+              <input type="text" class="erp-input" id="b_codigo" required placeholder="Ej. UIO1" maxlength="6" style="text-transform: uppercase;">
+            </div>
+            <div class="erp-field">
+              <label class="erp-label" for="b_telefono">Teléfono</label>
+              <input type="text" class="erp-input" id="b_telefono" placeholder="Ej. +593 2-299-9999">
+            </div>
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="b_activo">Estado</label>
+              <select id="b_activo" class="erp-select" required>
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
+              </select>
+            </div>
+            <div class="erp-field erp-full">
+              <label class="erp-label erp-label-required" for="b_direccion">Dirección Física Completa</label>
+              <textarea class="erp-textarea" id="b_direccion" rows="2" required placeholder="Ej. Av. Amazonas N32-12 y La Niña"></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      <footer class="erp-card-footer">
+        <button type="submit" form="branchForm" id="saveBranchBtn" class="erp-btn erp-btn-primary">
+          <i data-lucide="check" class="w-4 h-4 mr-1"></i> Guardar Sucursal
+        </button>
+      </footer>
+    </article>
+
+    <!-- Tabla de Sucursales -->
+    <div class="bg-white border border-border rounded-sap shadow-sap overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="bg-overlay border-b border-border text-muted font-semibold">
+            <th class="p-3">Código</th>
+            <th class="p-3">Nombre</th>
+            <th class="p-3">Dirección</th>
+            <th class="p-3">Teléfono</th>
+            <th class="p-3">Estado</th>
+            <th class="p-3 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="branches-table-body">
+          <!-- Inyectado dinámicamente -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Vista 4: Estructura Organizativa (Jerarquía de Unidades) -->
+  <div id="view-unidades" class="space-y-4" style="display:none;">
+    <div class="flex justify-between items-center bg-white p-4 border border-border rounded-sap shadow-sap">
+      <div>
+        <h2 class="text-md font-semibold text-ink">Estructura Organizativa</h2>
+        <p class="text-xs text-muted">Jerarquía de unidades organizativas y áreas funcionales (SAP OM-OrgUnit)</p>
+      </div>
+      <button type="button" class="erp-btn erp-btn-primary erp-btn-sm" onclick="nuevaUnidad()">
+        <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Registrar Unidad Org.
+      </button>
+    </div>
+
+    <!-- Formulario de Unidad (Insert/Edit) -->
+    <article class="erp-card max-w-2xl mx-auto" id="unitFormCard" style="display:none;">
+      <header class="erp-card-header">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded bg-primary/15 flex items-center justify-center text-primary">
+            <i data-lucide="network" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 id="unit-card-title" class="text-lg font-semibold text-ink leading-snug">Registrar Unidad Organizativa</h2>
+            <p class="text-xs text-muted mt-0.5">Definición jerárquica de la estructura</p>
+          </div>
+        </div>
+        <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" onclick="cancelarUnidad()">Cancelar</button>
+      </header>
+      
+      <div class="erp-card-body">
+        <div id="erp-msg-unit" class="erp-msg" style="display:none;" role="alert"></div>
+        <form id="unitForm" onsubmit="guardarUnidad(event)" novalidate>
+          <input type="hidden" id="unit_id">
+          <div class="erp-form-grid">
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="u_nombre">Nombre de la Unidad</label>
+              <input type="text" class="erp-input" id="u_nombre" required placeholder="Ej. Dirección de Finanzas">
+            </div>
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="u_codigo">Código (Abreviatura)</label>
+              <input type="text" class="erp-input" id="u_codigo" required placeholder="Ej. DIR-FIN" maxlength="8" style="text-transform: uppercase;">
+            </div>
+            <div class="erp-field">
+              <label class="erp-label" for="u_id_padre">Unidad Superior (Reporta a)</label>
+              <select id="u_id_padre" class="erp-select">
+                <option value="">— Ninguna (Raíz) —</option>
+              </select>
+            </div>
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="u_activo">Estado</label>
+              <select id="u_activo" class="erp-select" required>
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <footer class="erp-card-footer">
+        <button type="submit" form="unitForm" id="saveUnitBtn" class="erp-btn erp-btn-primary">
+          <i data-lucide="check" class="w-4 h-4 mr-1"></i> Guardar Unidad
+        </button>
+      </footer>
+    </article>
+
+    <!-- Visualizador de Jerarquía Org. Premium -->
+    <div class="bg-white border border-border rounded-sap shadow-sap p-6 space-y-4">
+      <h3 class="text-sm font-semibold text-ink border-b border-border pb-2 flex items-center gap-2">
+        <i data-lucide="git-merge" class="w-4 h-4 text-primary"></i> Estructura Jerárquica Activa
+      </h3>
+      <div id="org-tree-container" class="space-y-1 text-xs">
+        <!-- Renderizado recursivo premium de la jerarquía -->
+      </div>
+    </div>
   </div>
 
 </div>
@@ -236,6 +391,8 @@
   // Datos locales
   var _empresas = [];
   var _paises = [];
+  var _sucursales = [];
+  var _unidades = [];
   var _activeEmpresaId = null;
   var _activeModuleTab = 'sociedades';
 
@@ -257,13 +414,11 @@
         ERP.Select.fill('pais_empresa', _paises, 'id_pais', 'nombre', '— Seleccionar país —');
         
         if (_empresas.length > 0) {
-          // Seleccionar la primera empresa por defecto (guardado como String de forma consistente)
           _activeEmpresaId = String(_empresas[0].id_empresa);
           renderTabs();
           cargarDatosEmpresa(_activeEmpresaId);
         }
         
-        // Cargar las pestañas del módulo
         renderModuleTabs();
         switchModuleTab();
         
@@ -281,6 +436,8 @@
   function renderModuleTabs() {
     var tabs = [
       { id: 'sociedades', label: 'Sociedades Legales', icon: 'building-2' },
+      { id: 'sucursales', label: 'Centros / Sucursales', icon: 'map-pin' },
+      { id: 'unidades', label: 'Jerarquía Organizativa', icon: 'network' },
       { id: 'regionalizacion', label: 'Regionalización (Países / T005)', icon: 'globe' }
     ];
     var container = document.getElementById('module-tabs-container');
@@ -300,21 +457,38 @@
     }
   }
 
-  // Alternar visualización de pestañas principales
+  // Alternar visualización de pestañas principales y cargar datos de estructura
   function switchModuleTab() {
     var vSoc = document.getElementById('view-sociedades');
     var vReg = document.getElementById('view-regionalizacion');
-    if (_activeModuleTab === 'sociedades') {
-      vSoc.style.display = 'block';
-      vReg.style.display = 'none';
-    } else {
-      vSoc.style.display = 'none';
+    var vSuc = document.getElementById('view-sucursales');
+    var vUni = document.getElementById('view-unidades');
+    var compTabs = document.getElementById('company-tabs-container');
+
+    vSoc.style.display = 'none';
+    vReg.style.display = 'none';
+    vSuc.style.display = 'none';
+    vUni.style.display = 'none';
+
+    if (_activeModuleTab === 'regionalizacion') {
+      if (compTabs) compTabs.style.display = 'none';
       vReg.style.display = 'block';
       renderCountriesTable();
+    } else {
+      if (compTabs) compTabs.style.display = 'block';
+      cargarEstructuraOrganizativa(_activeEmpresaId);
+
+      if (_activeModuleTab === 'sociedades') {
+        vSoc.style.display = 'block';
+      } else if (_activeModuleTab === 'sucursales') {
+        vSuc.style.display = 'block';
+      } else if (_activeModuleTab === 'unidades') {
+        vUni.style.display = 'block';
+      }
     }
   }
 
-  // Renderizar pestañas
+  // Renderizar pestañas de selección de empresa
   function renderTabs() {
     var tabs = _empresas.map(function(emp) {
       return {
@@ -326,7 +500,6 @@
     var container = document.getElementById('company-tabs-container');
     if (container) {
       container.innerHTML = ERP.UI.tabStrip(tabs, _activeEmpresaId);
-      // Vincular eventos click
       container.querySelectorAll('button[data-tab-id]').forEach(function(btn) {
         btn.addEventListener('click', function() {
           var nextId = String(btn.getAttribute('data-tab-id'));
@@ -334,6 +507,9 @@
             _activeEmpresaId = nextId;
             renderTabs();
             cargarDatosEmpresa(_activeEmpresaId);
+            if (_activeModuleTab !== 'sociedades' && _activeModuleTab !== 'regionalizacion') {
+              cargarEstructuraOrganizativa(_activeEmpresaId);
+            }
           }
         });
       });
@@ -341,13 +517,12 @@
     }
   }
 
-  // Cargar datos al formulario
+  // Cargar datos de la empresa seleccionada al formulario de Sociedades
   function cargarDatosEmpresa(idEmpresa) {
     ERP.UI.msgHide('erp-msg-config');
     var emp = _empresas.find(function(e) { return String(e.id_empresa) === String(idEmpresa); });
     if (!emp) return;
 
-    // Configurar validador según país
     SharedValidator.configure(emp.codigo_iso || emp.id_pais);
 
     document.getElementById('card-title').textContent = emp.nombre;
@@ -357,6 +532,7 @@
     document.getElementById('codigo_empresa').value    = emp.codigo || '';
     document.getElementById('razon_social').value      = emp.razon_social || '';
     document.getElementById('documento_fiscal').value  = emp.ruc || '';
+    
     var valPais = (emp.id_pais !== null && emp.id_pais !== undefined) ? String(emp.id_pais).trim() : '';
     if (/^\d+\.0$/.test(valPais)) {
       valPais = valPais.split('.')[0];
@@ -366,7 +542,6 @@
     document.getElementById('email_corp').value        = emp.email || '';
     document.getElementById('direccion_fiscal').value  = emp.direccion || '';
 
-    // Cargar Logotipo
     var logoUrl = emp.logo_url || '';
     document.getElementById('logo_url').value = logoUrl;
     var previewImg = document.getElementById('logo-preview');
@@ -388,7 +563,6 @@
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
-  // Cambio de país en caliente
   function onPaisChange() {
     var idPais = document.getElementById('pais_empresa').value;
     var emp = _empresas.find(function(e) { return String(e.id_empresa) === String(_activeEmpresaId); });
@@ -401,7 +575,6 @@
     }
   }
 
-  // Carga de Logotipo
   function subirLogo(file) {
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
@@ -445,7 +618,6 @@
     ERP.UI.msg('info', 'Logotipo quitado. Guarda los cambios para aplicar.', 'erp-msg-config');
   }
 
-  // Guardar configuración
   function guardarConfiguracion(e) {
     e.preventDefault();
     ERP.UI.msgHide('erp-msg-config');
@@ -461,11 +633,10 @@
       logo_url:     document.getElementById('logo_url').value.trim()
     };
 
-    // Validaciones
     var validation = SharedValidator.validate(payload, {
       nombre:       ['required'],
       razon_social: ['required'],
-      ruc:          ['required', 'nit'], // 'nit' es la regla corporativa regional
+      ruc:          ['required', 'nit'],
       id_pais:      ['required'],
       email:        ['email'],
       direccion:    ['required']
@@ -498,7 +669,6 @@
       onSuccess: function(res) {
         if (res.ok) {
           ERP.UI.msg('success', res.mensaje || '✔ Configuración guardada.', 'erp-msg-config');
-          // Actualizar datos locales
           var index = _empresas.findIndex(function(e) { return String(e.id_empresa) === String(_activeEmpresaId); });
           var selectedPais = _paises.find(function(p) { return String(p.id_pais) === String(payload.id_pais); });
           
@@ -549,7 +719,7 @@
       return '<tr class="border-b border-border-subtle hover:bg-overlay/20 transition">' +
              '<td class="p-3 font-semibold text-ink">' + _esc(pais.codigo_iso) + '</td>' +
              '<td class="p-3 font-medium">' + _esc(pais.nombre) + '</td>' +
-             '<td class="p-3">' + _esc(pais.moneda_codigo) + ' (' + _esc(pais.moneda_simbolo) + ')</td>' +
+             '<td class="p-3">' + _esc(pais.moneda_codigo) + ' (' + _esc(pais.moneda_simbolo) + ')\u003c/td\u003e' +
              '<td class="p-3">' + _esc(pais.label_documento) + '</td>' +
              '<td class="p-3">' + _esc(pais.label_doc_empresa) + '</td>' +
              '<td class="p-3 font-mono text-xxs">' + _esc(pais.formato_fecha) + '</td>' +
@@ -623,7 +793,6 @@
       activo:            document.getElementById('c_activo').value === 'true'
     };
     
-    // Validar
     if (!payload.nombre || !payload.codigo_iso || !payload.moneda_codigo || !payload.moneda_simbolo || !payload.label_documento || !payload.label_doc_empresa) {
       ERP.UI.msg('error', '⚠️ Todos los campos son obligatorios.', 'erp-msg-country');
       return;
@@ -646,11 +815,279 @@
           ERP.UI.msg('success', res.mensaje || '✔ País guardado con éxito.', 'erp-msg-country');
           setTimeout(function() {
             document.getElementById('countryFormCard').style.display = 'none';
-            // Recargar para refrescar la lista de países y selects de sociedades
             window.location.reload();
           }, 1500);
         } else {
           ERP.UI.msg('error', (res.errores || ['Error al guardar el país.']).join('<br>'), 'erp-msg-country');
+        }
+      }
+    });
+  }
+
+  // --- ESTRUCTURA ORGANIZATIVA (SUCURSALES Y UNIDADES ORG) ---
+
+  function cargarEstructuraOrganizativa(idEmpresa) {
+    if (!idEmpresa) return;
+    ERP.UI.setFormLoading('catalog-status');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (!res || !res.ok) {
+          ERP.UI.setFormError('catalog-status');
+          return;
+        }
+        _sucursales = res.sucursales || [];
+        _unidades   = res.unidades || [];
+        
+        if (_activeModuleTab === 'sucursales') {
+          renderBranchesTable();
+        } else if (_activeModuleTab === 'unidades') {
+          renderOrgTree();
+          ERP.Select.fill('u_id_padre', _unidades, 'id_unidad', 'nombre', '— Ninguna (Raíz) —');
+        }
+        
+        ERP.UI.setFormReady('catalog-status');
+      })
+      .withFailureHandler(function(err) {
+        ERP.UI.setFormError('catalog-status');
+        ERP.UI.msg('error', '⚠️ Error del servidor: ' + err.message, 'erp-msg-config');
+      })
+      .apiGetEstructuraOrganizativa(idEmpresa);
+  }
+
+  function renderBranchesTable() {
+    var tbody = document.getElementById('branches-table-body');
+    if (!tbody) return;
+    
+    if (_sucursales.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-muted">No hay sucursales registradas para esta sociedad.</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = _sucursales.map(function(b) {
+      var statusBadge = b.activo 
+        ? ERP.UI.badge('Activo', 'green')
+        : ERP.UI.badge('Inactivo', 'red');
+        
+      var btnEdit = '<button type="button" class="erp-btn erp-btn-sm erp-btn-ghost p-1" onclick="editarSucursal(' + b.id_sucursal + ')">' +
+                    '<i data-lucide="edit" class="w-3.5 h-3.5"></i>' +
+                    '</button>';
+                    
+      return '<tr class="border-b border-border-subtle hover:bg-overlay/20 transition">' +
+             '<td class="p-3 font-semibold text-ink">' + _esc(b.codigo) + '</td>' +
+             '<td class="p-3 font-medium">' + _esc(b.nombre) + '</td>' +
+             '<td class="p-3">' + _esc(b.direccion) + '</td>' +
+             '<td class="p-3">' + _esc(b.telefono) + '</td>' +
+             '<td class="p-3">' + statusBadge + '</td>' +
+             '<td class="p-3 text-right">' + btnEdit + '</td>' +
+             '</tr>';
+    }).join('');
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [tbody] });
+  }
+
+  function nuevaSucursal() {
+    ERP.UI.msgHide('erp-msg-branch');
+    document.getElementById('branch_id').value = '';
+    document.getElementById('branch-card-title').textContent = 'Registrar Sucursal';
+    document.getElementById('b_nombre').value = '';
+    document.getElementById('b_codigo').value = '';
+    document.getElementById('b_direccion').value = '';
+    document.getElementById('b_telefono').value = '';
+    document.getElementById('b_activo').value = 'true';
+    document.getElementById('branchFormCard').style.display = 'block';
+    document.getElementById('branchFormCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function editarSucursal(idSucursal) {
+    ERP.UI.msgHide('erp-msg-branch');
+    var b = _sucursales.find(function(item) { return item.id_sucursal == idSucursal; });
+    if (!b) return;
+    document.getElementById('branch_id').value = b.id_sucursal;
+    document.getElementById('branch-card-title').textContent = 'Editar Sucursal: ' + b.nombre;
+    document.getElementById('b_nombre').value = b.nombre || '';
+    document.getElementById('b_codigo').value = b.codigo || '';
+    document.getElementById('b_direccion').value = b.direccion || '';
+    document.getElementById('b_telefono').value = b.telefono || '';
+    document.getElementById('b_activo').value = String(b.activo);
+    document.getElementById('branchFormCard').style.display = 'block';
+    document.getElementById('branchFormCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function cancelarSucursal() {
+    document.getElementById('branchFormCard').style.display = 'none';
+    ERP.UI.msgHide('erp-msg-branch');
+  }
+
+  function guardarSucursal(e) {
+    e.preventDefault();
+    ERP.UI.msgHide('erp-msg-branch');
+    var idSucursal = document.getElementById('branch_id').value;
+    var payload = {
+      id_empresa: _activeEmpresaId,
+      nombre:     document.getElementById('b_nombre').value.trim(),
+      codigo:     document.getElementById('b_codigo').value.trim().toUpperCase(),
+      direccion:  document.getElementById('b_direccion').value.trim(),
+      telefono:   document.getElementById('b_telefono').value.trim(),
+      activo:     document.getElementById('b_activo').value === 'true'
+    };
+
+    if (!payload.nombre || !payload.codigo || !payload.direccion) {
+      ERP.UI.msg('error', '⚠️ Nombre, código y dirección son obligatorios.', 'erp-msg-branch');
+      return;
+    }
+
+    ERP.Gateway.submit({
+      method: 'apiGuardarSucursal',
+      args: [idSucursal ? Number(idSucursal) : null, payload],
+      btnId: 'saveBranchBtn',
+      btnText: '<i data-lucide="check" class="w-4 h-4 mr-1"></i> Guardar Sucursal',
+      loadingText: 'Guardando...',
+      msgId: 'erp-msg-branch',
+      onSuccess: function(res) {
+        if (res.ok) {
+          ERP.UI.msg('success', res.mensaje || '✔ Sucursal guardada.', 'erp-msg-branch');
+          setTimeout(function() {
+            document.getElementById('branchFormCard').style.display = 'none';
+            cargarEstructuraOrganizativa(_activeEmpresaId);
+          }, 1500);
+        } else {
+          ERP.UI.msg('error', (res.errores || ['Error al guardar la sucursal.']).join('<br>'), 'erp-msg-branch');
+        }
+      }
+    });
+  }
+
+  function renderOrgTree() {
+    var container = document.getElementById('org-tree-container');
+    if (!container) return;
+    
+    if (_unidades.length === 0) {
+      container.innerHTML = '<div class="p-4 text-center text-muted">No hay unidades organizativas registradas para esta sociedad.</div>';
+      return;
+    }
+    
+    var roots = _unidades.filter(function(u) { return !u.id_padre; });
+    var childrenMap = {};
+    _unidades.forEach(function(u) {
+      if (u.id_padre) {
+        var pid = String(u.id_padre);
+        if (!childrenMap[pid]) childrenMap[pid] = [];
+        childrenMap[pid].push(u);
+      }
+    });
+    
+    function buildNodeHtml(node, depth) {
+      var paddingLeft = depth * 24;
+      var hasChildren = childrenMap[String(node.id_unidad)] && childrenMap[String(node.id_unidad)].length > 0;
+      var iconName = hasChildren ? 'folder' : 'briefcase';
+      var statusBadge = ERP.UI.badge(node.activo ? 'Activo' : 'Inactivo', node.activo ? 'green' : 'red');
+      var borderLeftStyle = depth > 0 ? 'border-left: 2px dashed rgba(0,0,0,0.15); padding-left: 8px;' : '';
+        
+      var html = '<div class="flex items-center justify-between py-2 border-b border-border-subtle hover:bg-overlay/10 px-2 rounded" style="margin-left: ' + paddingLeft + 'px; ' + borderLeftStyle + '">' +
+                 '  <div class="flex items-center gap-2">' +
+                 '    <i data-lucide="' + iconName + '" class="w-4 h-4 text-primary"></i>' +
+                 '    <span class="font-medium text-ink">' + _esc(node.nombre) + '</span>' +
+                 '    <span class="text-muted font-mono bg-overlay px-1.5 py-0.5 rounded text-xxs">' + _esc(node.codigo) + '</span>' +
+                 '  </div>' +
+                 '  <div class="flex items-center gap-3">' +
+                 '    ' + statusBadge +
+                 '    <button type="button" class="erp-btn erp-btn-xs erp-btn-ghost p-0.5" onclick="editarUnidad(' + node.id_unidad + ')">' +
+                 '      <i data-lucide="edit" class="w-3.5 h-3.5"></i>' +
+                 '    </button>' +
+                 '  </div>' +
+                 '</div>';
+                 
+      if (hasChildren) {
+        childrenMap[String(node.id_unidad)].forEach(function(child) {
+          html += buildNodeHtml(child, depth + 1);
+        });
+      }
+      return html;
+    }
+    
+    var html = '';
+    roots.forEach(function(root) {
+      html += buildNodeHtml(root, 0);
+    });
+    
+    container.innerHTML = html;
+    if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [container] });
+  }
+
+  function nuevaUnidad() {
+    ERP.UI.msgHide('erp-msg-unit');
+    document.getElementById('unit_id').value = '';
+    document.getElementById('unit-card-title').textContent = 'Registrar Unidad Organizativa';
+    document.getElementById('u_nombre').value = '';
+    document.getElementById('u_codigo').value = '';
+    document.getElementById('u_activo').value = 'true';
+    
+    ERP.Select.fill('u_id_padre', _unidades, 'id_unidad', 'nombre', '— Ninguna (Raíz) —');
+    
+    document.getElementById('unitFormCard').style.display = 'block';
+    document.getElementById('unitFormCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function editarUnidad(idUnidad) {
+    ERP.UI.msgHide('erp-msg-unit');
+    var u = _unidades.find(function(item) { return item.id_unidad == idUnidad; });
+    if (!u) return;
+    document.getElementById('unit_id').value = u.id_unidad;
+    document.getElementById('unit-card-title').textContent = 'Editar Unidad: ' + u.nombre;
+    document.getElementById('u_nombre').value = u.nombre || '';
+    document.getElementById('u_codigo').value = u.codigo || '';
+    document.getElementById('u_activo').value = String(u.activo);
+    
+    var validParents = _unidades.filter(function(item) { return item.id_unidad != idUnidad; });
+    ERP.Select.fill('u_id_padre', validParents, 'id_unidad', 'nombre', '— Ninguna (Raíz) —');
+    document.getElementById('u_id_padre').value = u.id_padre || '';
+    
+    document.getElementById('unitFormCard').style.display = 'block';
+    document.getElementById('unitFormCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function cancelarUnidad() {
+    document.getElementById('unitFormCard').style.display = 'none';
+    ERP.UI.msgHide('erp-msg-unit');
+  }
+
+  function guardarUnidad(e) {
+    e.preventDefault();
+    ERP.UI.msgHide('erp-msg-unit');
+    var idUnidad = document.getElementById('unit_id').value;
+    var payload = {
+      id_empresa: _activeEmpresaId,
+      nombre:     document.getElementById('u_nombre').value.trim(),
+      codigo:     document.getElementById('u_codigo').value.trim().toUpperCase(),
+      id_padre:   document.getElementById('u_id_padre').value,
+      activo:     document.getElementById('u_activo').value === 'true'
+    };
+
+    if (!payload.nombre || !payload.codigo) {
+      ERP.UI.msg('error', '⚠️ Nombre y código son obligatorios.', 'erp-msg-unit');
+      return;
+    }
+
+    ERP.Gateway.submit({
+      method: 'apiGuardarUnidadOrganizativa',
+      args: [idUnidad ? Number(idUnidad) : null, payload],
+      btnId: 'saveUnitBtn',
+      btnText: '<i data-lucide="check" class="w-4 h-4 mr-1"></i> Guardar Unidad',
+      loadingText: 'Guardando...',
+      msgId: 'erp-msg-unit',
+      onSuccess: function(res) {
+        if (res.ok) {
+          ERP.UI.msg('success', res.mensaje || '✔ Unidad organizativa guardada.', 'erp-msg-unit');
+          setTimeout(function() {
+            document.getElementById('unitFormCard').style.display = 'none';
+            cargarEstructuraOrganizativa(_activeEmpresaId);
+          }, 1500);
+        } else {
+          ERP.UI.msg('error', (res.errores || ['Error al guardar la unidad organizativa.']).join('<br>'), 'erp-msg-unit');
         }
       }
     });
@@ -662,6 +1099,5 @@
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
   }
 </script>

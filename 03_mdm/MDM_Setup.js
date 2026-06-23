@@ -58,6 +58,21 @@ const MDM_Setup = {
       [2, 'Supervisor',    2, true],
       [3, 'Consulta',      3, true],
     ],
+
+    CAT_Sucursales: [
+      [1, 1, 'Sucursal Quito Principal',    'UIO01', 'Av. Amazonas N32-12 y La Niña',           '+593 2-299-9999', true, new Date(), new Date()],
+      [2, 1, 'Sucursal Guayaquil Urdesa',    'GYE01', 'Av. Victor Emilio Estrada 400',            '+593 4-299-9991', true, new Date(), new Date()],
+      [3, 2, 'Sucursal Guayaquil Terminal',  'GYE02', 'Terminal Terrestre Guayaquil Boletería 15', '+593 4-299-9992', true, new Date(), new Date()],
+      [4, 2, 'Sucursal Quito Norte Carcelén','UIO02', 'Terminal Carcelén Boletería 5',             '+593 2-299-9993', true, new Date(), new Date()],
+    ],
+
+    CAT_UnidadesOrganizativas: [
+      [1, 'Dirección General',          'DIR-GEN', 1, '', true, new Date(), new Date()],
+      [2, 'Dirección HCM (HR)',         'DIR-HCM', 1, 1,  true, new Date(), new Date()],
+      [3, 'Dirección Operaciones (WCT)','DIR-OPE', 1, 1,  true, new Date(), new Date()],
+      [4, 'Dirección General',          'DIR-GEN', 2, '', true, new Date(), new Date()],
+      [5, 'Dirección Operaciones (RAPI)','DIR-OPE', 2, 4,  true, new Date(), new Date()],
+    ],
   },
 
   /** Inserta los datos semilla de forma idempotente */
@@ -67,7 +82,7 @@ const MDM_Setup = {
     Logger.log("=== [MDM] Iniciando carga de datos semilla para Catálogos Maestros (Idempotente) ===");
 
     // Orden explícito — BP_MASTER debe existir antes de CAT_Empresas (FK id_bp)
-    const ORDER = ['CAT_Paises', 'BP_MASTER', 'BP_Roles', 'CAT_Empresas', 'CAT_Departamentos', 'CAT_Roles'];
+    const ORDER = ['CAT_Paises', 'BP_MASTER', 'BP_Roles', 'CAT_Empresas', 'CAT_Sucursales', 'CAT_UnidadesOrganizativas', 'CAT_Departamentos', 'CAT_Roles'];
 
     ORDER.forEach(tableName => {
       const sh = ss.getSheetByName(tableName);

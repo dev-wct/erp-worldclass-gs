@@ -78,9 +78,9 @@
             
             <p class="erp-section-title">Organización</p>
             
-            <div class="erp-field">
+             <div class="erp-field">
               <label class="erp-label erp-label-required" for="id_empresa">Empresa</label>
-              <select id="id_empresa" class="erp-select" required onchange="filtrarDepartamentos()">
+              <select id="id_empresa" class="erp-select" required onchange="onEmpresaChange()">
                 <option value="">— Seleccionar empresa —</option>
               </select>
             </div>
@@ -88,6 +88,20 @@
             <div class="erp-field">
               <label class="erp-label erp-label-required" for="id_departamento">Departamento</label>
               <select id="id_departamento" class="erp-select" required>
+                <option value="">— Seleccionar empresa primero —</option>
+              </select>
+            </div>
+
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="id_sucursal">Centro / Sucursal</label>
+              <select id="id_sucursal" class="erp-select" required>
+                <option value="">— Seleccionar empresa primero —</option>
+              </select>
+            </div>
+
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="id_unidad">Unidad Organizativa</label>
+              <select id="id_unidad" class="erp-select" required>
                 <option value="">— Seleccionar empresa primero —</option>
               </select>
             </div>
@@ -166,6 +180,8 @@
   var _empleados = [];
   var _empresas = [];
   var _deptos = [];
+  var _sucursales = [];
+  var _unidades = [];
   var _paises = [];
   var _roles = [];
   
@@ -182,6 +198,8 @@
         _empleados = data.empleados || [];
         _empresas = data.empresas || [];
         _deptos = data.departamentos || [];
+        _sucursales = data.sucursales || [];
+        _unidades = data.unidades || [];
         _paises = data.paises || [];
         _roles = data.roles || [];
         
@@ -381,7 +399,7 @@
     // Resetear formulario
     _selectedId = null;
     _selectedBajaId = null;
-    ERP.Form.reset(['nombre_completo', 'dpi', 'email', 'telefono', 'id_empresa', 'id_departamento', 'tipo_contrato', 'fecha_ingreso']);
+    ERP.Form.reset(['nombre_completo', 'dpi', 'email', 'telefono', 'id_empresa', 'id_departamento', 'id_sucursal', 'id_unidad', 'tipo_contrato', 'fecha_ingreso']);
     ERP.UI.msgHide('erp-msg-form');
     ERP.UI.msgHide('erp-msg-baja');
     
@@ -410,7 +428,7 @@
       // Valores por defecto
       document.getElementById('fecha_ingreso').value = ERP.Form.today();
       document.getElementById('tipo_contrato').value = 'PLANILLA';
-      filtrarDepartamentos(); // Resetear
+      onEmpresaChange(); // Resetear
     } else {
       titleEl.textContent = 'Editar Colaborador (ID: ' + id + ')';
       subtitleEl.textContent = 'Modificar expediente de personal';
@@ -419,7 +437,7 @@
       // Buscar datos
       var emp = _empleados.find(function(e) { return String(e.id_empleado) === String(id); });
       if (emp) {
-        ERP.Form.populate(['nombre_completo', 'dpi', 'email', 'telefono', 'id_empresa', 'id_departamento', 'tipo_contrato'], emp);
+        ERP.Form.populate(['nombre_completo', 'dpi', 'email', 'telefono', 'id_empresa', 'id_departamento', 'id_sucursal', 'id_unidad', 'tipo_contrato'], emp);
         
         if (emp.fecha_ingreso) {
           var d = new Date(emp.fecha_ingreso);
@@ -428,7 +446,7 @@
           }
         }
         
-        filtrarDepartamentos(emp.id_departamento);
+        onEmpresaChange(emp.id_departamento, emp.id_sucursal, emp.id_unidad);
       }
     }
     
@@ -451,19 +469,38 @@
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
-  // Filtrado de departamentos y configuración regional
-  function filtrarDepartamentos(selectedDeptoId) {
+  // Filtrado de departamentos, sucursales, unidades y configuración regional
+  function onEmpresaChange(selectedDeptoId, selectedSucursalId, selectedUnidadId) {
     var idEmpresa = document.getElementById('id_empresa').value;
-    var f = _deptos.filter(function(d) { return String(d.id_empresa) === String(idEmpresa); });
     
-    ERP.Select.fill('id_departamento', f, 'id_departamento', 'nombre',
-      f.length ? '— Seleccionar departamento —' : 'Sin departamentos para esta empresa'
+    // 1. Filtrar Departamentos
+    var fDeptos = _deptos.filter(function(d) { return String(d.id_empresa) === String(idEmpresa); });
+    ERP.Select.fill('id_departamento', fDeptos, 'id_departamento', 'nombre',
+      fDeptos.length ? '— Seleccionar departamento —' : 'Sin departamentos para esta empresa'
     );
-    
     if (selectedDeptoId) {
       document.getElementById('id_departamento').value = selectedDeptoId;
     }
 
+    // 2. Filtrar Sucursales
+    var fSucs = _sucursales.filter(function(s) { return String(s.id_empresa) === String(idEmpresa); });
+    ERP.Select.fill('id_sucursal', fSucs, 'id_sucursal', 'nombre',
+      fSucs.length ? '— Seleccionar centro / sucursal —' : 'Sin sucursales para esta empresa'
+    );
+    if (selectedSucursalId) {
+      document.getElementById('id_sucursal').value = selectedSucursalId;
+    }
+
+    // 3. Filtrar Unidades Organizativas
+    var fUnis = _unidades.filter(function(u) { return String(u.id_empresa) === String(idEmpresa); });
+    ERP.Select.fill('id_unidad', fUnis, 'id_unidad', 'nombre',
+      fUnis.length ? '— Seleccionar unidad organizativa —' : 'Sin unidades organizativas'
+    );
+    if (selectedUnidadId) {
+      document.getElementById('id_unidad').value = selectedUnidadId;
+    }
+
+    // 4. Configuración regional del ID
     var label = document.getElementById('dpi-label');
     var input = document.getElementById('dpi');
 
@@ -489,7 +526,7 @@
     e.preventDefault();
     ERP.UI.msgHide('erp-msg-form');
 
-    var payload = ERP.Form.collect(['nombre_completo', 'dpi', 'email', 'telefono', 'id_empresa', 'id_departamento', 'tipo_contrato', 'fecha_ingreso']);
+    var payload = ERP.Form.collect(['nombre_completo', 'dpi', 'email', 'telefono', 'id_empresa', 'id_departamento', 'id_sucursal', 'id_unidad', 'tipo_contrato', 'fecha_ingreso']);
     
     // Validación regional
     var validation = SharedValidator.validate(payload, {
@@ -498,6 +535,8 @@
       email:           ['email'],
       id_empresa:      ['required'],
       id_departamento: ['required'],
+      id_sucursal:     ['required'],
+      id_unidad:       ['required'],
       fecha_ingreso:   ['required']
     });
 
@@ -517,6 +556,8 @@
       if (validation.errors.email)           errs.push('Email: ' + validation.errors.email);
       if (validation.errors.id_empresa)       errs.push('Empresa: ' + validation.errors.id_empresa);
       if (validation.errors.id_departamento)  errs.push('Departamento: ' + validation.errors.id_departamento);
+      if (validation.errors.id_sucursal)      errs.push('Centro / Sucursal: ' + validation.errors.id_sucursal);
+      if (validation.errors.id_unidad)        errs.push('Unidad Organizativa: ' + validation.errors.id_unidad);
       if (validation.errors.fecha_ingreso)   errs.push('Fecha de ingreso: ' + validation.errors.fecha_ingreso);
       ERP.UI.msg('error', errs.join('<br>'), 'erp-msg-form');
       return;

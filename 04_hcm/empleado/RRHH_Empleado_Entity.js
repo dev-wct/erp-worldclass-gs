@@ -9,6 +9,8 @@ const EmpleadoEntity = {
       telefono:        props.telefono,
       id_departamento: props.id_departamento,
       id_empresa:      props.id_empresa,
+      id_sucursal:     props.id_sucursal || null,
+      id_unidad:       props.id_unidad || null,
       id_rol:          props.id_rol,
       activo:          props.activo,
       fecha_ingreso:   props.fecha_ingreso,

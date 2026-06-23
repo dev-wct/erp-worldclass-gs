@@ -35,9 +35,8 @@ const DataAdapter = (() => {
    */
   function _sanitize(records) {
     try {
-      return JSON.parse(JSON.stringify(records));
-    } catch(e) {
-      Logger.log('[DataAdapter._sanitize] Error: ' + e.message);
+      return JSON.parse(JSON.stringify(records));    } catch(e) {
+      Logger_ERP.error('INFRA', '[DataAdapter._sanitize] Error: ' + e.message, e);
       return records;
     }
   }
@@ -172,7 +171,7 @@ const DataAdapter = (() => {
           fixed++;
         }
       }
-      Logger.log('[DataAdapter.repairIds] ' + table + ': ' + fixed + ' IDs reparados');
+      Logger_ERP.info('INFRA', '[DataAdapter.repairIds] ' + table + ': ' + fixed + ' IDs reparados');
       return { table: table, fixed: fixed };
     },
 
@@ -192,6 +191,6 @@ const DataAdapter = (() => {
 function repararIdsCatalogos() {
   var tablas = ['CAT_Empresas', 'CAT_Departamentos', 'CAT_Roles'];
   var resultado = tablas.map(function(t) { return DataAdapter.repairIds(t); });
-  Logger.log('repararIdsCatalogos → ' + JSON.stringify(resultado));
+  Logger_ERP.info('INFRA', 'repararIdsCatalogos → ' + JSON.stringify(resultado));
   return resultado;
 }

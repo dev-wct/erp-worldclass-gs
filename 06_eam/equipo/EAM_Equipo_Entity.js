@@ -15,6 +15,8 @@ const EquipoEntity = {
       serial:                 props.serial,
       id_empresa:             props.id_empresa,
       empresa:                props.empresa || '',
+      id_sucursal:            props.id_sucursal || null,
+      sucursal:               props.sucursal || '',
       id_estado:              props.id_estado,
       estado:                 props.estado || '',
       fecha_compra:           props.fecha_compra ? new Date(props.fecha_compra) : null,

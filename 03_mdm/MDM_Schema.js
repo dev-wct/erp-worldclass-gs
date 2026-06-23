@@ -86,6 +86,21 @@ const MDM_Schema = {
     },
   },
 
+  CAT_Sucursales: {
+    pk: 'id_sucursal',
+    columns: ['id_sucursal', 'id_empresa', 'nombre', 'codigo', 'direccion', 'telefono', 'activo', 'created_at', 'updated_at'],
+    fk: { id_empresa: 'CAT_Empresas' }
+  },
+
+  CAT_UnidadesOrganizativas: {
+    pk: 'id_unidad',
+    columns: ['id_unidad', 'nombre', 'codigo', 'id_empresa', 'id_padre', 'activo', 'created_at', 'updated_at'],
+    fk: {
+      id_empresa: 'CAT_Empresas',
+      id_padre:   'CAT_UnidadesOrganizativas'
+    }
+  },
+
   CAT_Departamentos: {
     pk: 'id_departamento',
     columns: ['id_departamento', 'nombre', 'id_empresa', 'activo', 'created_at', 'updated_at'],

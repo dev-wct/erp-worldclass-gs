@@ -31,6 +31,24 @@ const EmpleadoValidator = {
       if (!empresa) {
         errores.push("La empresa seleccionada no existe en el sistema.");
       }
+
+      if (dto.id_sucursal) {
+        const sucursal = DataAdapter.findById("CAT_Sucursales", dto.id_sucursal);
+        if (!sucursal) {
+          errores.push("La sucursal seleccionada no existe.");
+        } else if (Number(sucursal.id_empresa) !== Number(dto.id_empresa)) {
+          errores.push("La sucursal seleccionada no pertenece a la empresa elegida.");
+        }
+      }
+
+      if (dto.id_unidad) {
+        const unidad = DataAdapter.findById("CAT_UnidadesOrganizativas", dto.id_unidad);
+        if (!unidad) {
+          errores.push("La unidad organizativa seleccionada no existe.");
+        } else if (Number(unidad.id_empresa) !== Number(dto.id_empresa)) {
+          errores.push("La unidad organizativa seleccionada no pertenece a la empresa elegida.");
+        }
+      }
     }
 
     return { valido: errores.length === 0, errores: errores };

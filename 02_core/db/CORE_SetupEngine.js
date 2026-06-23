@@ -128,6 +128,8 @@ const SetupEngine = {
         tableName.indexOf("BP_MASTER") === 0 || 
         tableName.indexOf("BP_Roles") === 0 || 
         tableName.indexOf("CAT_Empresas") === 0 || 
+        tableName.indexOf("CAT_Sucursales") === 0 || 
+        tableName.indexOf("CAT_UnidadesOrganizativas") === 0 || 
         tableName.indexOf("CAT_Departamentos") === 0 || 
         tableName.indexOf("CAT_Roles") === 0) {
       return "#7F8C8D"; // Gris

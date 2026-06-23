@@ -40,6 +40,17 @@ const LeadUseCases = {
       Logger.log('[LeadUseCases] BP no creado (no bloquea): ' + bpErr.message);
     }
 
+    try {
+      EventBus.publish('LeadCreated', {
+        id_lead: saved.id_lead,
+        nombre: saved.nombre_completo,
+        telefono: saved.telefono,
+        email: saved.email
+      });
+    } catch(err) {
+      Logger_ERP.error('SD', 'Fallo al publicar LeadCreated', err);
+    }
+
     return {
       ok:      true,
       data:    LeadDTO.toResponse(saved),

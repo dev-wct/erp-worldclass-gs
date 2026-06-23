@@ -17,6 +17,8 @@ function apiGetCatalogosEmpleado() {
     return {
       empresas:      DataAdapter.findAll('CAT_Empresas',      { activo: true }),
       departamentos: DataAdapter.findAll('CAT_Departamentos', { activo: true }),
+      sucursales:    DataAdapter.findAll('CAT_Sucursales',    { activo: true }),
+      unidades:      DataAdapter.findAll('CAT_UnidadesOrganizativas', { activo: true }),
       roles:         DataAdapter.findAll('CAT_Roles',         { activo: true }),
       paises:        DataAdapter.findAll('CAT_Paises'),
       empleados:     EmpleadoRepo.findAll()

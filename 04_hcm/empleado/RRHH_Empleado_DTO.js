@@ -7,6 +7,8 @@ const EmpleadoDTO = {
       telefono:        String(raw.telefono || '').trim(),
       id_departamento: Number(raw.id_departamento),
       id_empresa:      Number(raw.id_empresa),
+      id_sucursal:     raw.id_sucursal ? Number(raw.id_sucursal) : null,
+      id_unidad:       raw.id_unidad ? Number(raw.id_unidad) : null,
       id_rol:          raw.id_rol ? Number(raw.id_rol) : null,
       activo:          true,
       fecha_ingreso:   raw.fecha_ingreso || null,

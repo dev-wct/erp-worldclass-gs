@@ -62,8 +62,15 @@
         <div class="erp-field">
           <label class="erp-label erp-label-required" for="id_empresa">Empresa Propietaria</label>
           <div id="sk_empresa" class="erp-skeleton" style="height:42px;"></div>
-          <select id="id_empresa" class="erp-select" style="display:none;" required>
+          <select id="id_empresa" class="erp-select" style="display:none;" required onchange="onEmpresaChange()">
             <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_sucursal">Centro / Sucursal</label>
+          <select id="id_sucursal" class="erp-select" required>
+            <option value="">— Seleccionar empresa primero —</option>
           </select>
         </div>
 
@@ -128,6 +135,8 @@
   const _backUrl = '<?= getWebAppUrl() ?>?page=<?= APP_PARAMS.back ? APP_PARAMS.back : 'launchpad' ?>';
   function volver() { window.open(_backUrl, '_top'); }
 
+  var _sucursales = [];
+
   window.onload = function() {
     ERP.Gateway.callArgs('apiGetCatalogosEquipo', [], cargarFormulario, function(err) {
       ERP.UI.msg('error', '⚠️ Error cargando catálogos: ' + err.message);
@@ -135,6 +144,7 @@
   };
 
   function cargarFormulario(data) {
+    _sucursales = data.sucursales || [];
     ['tipo','marca','empresa','estado'].forEach(function(k) {
       document.getElementById('sk_' + k).style.display = 'none';
       document.getElementById('id_' + k).style.display = 'block';
@@ -151,12 +161,20 @@
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
+  function onEmpresaChange() {
+    var idEmpresa = document.getElementById('id_empresa').value;
+    var filtered = _sucursales.filter(function(s) { return String(s.id_empresa) === String(idEmpresa); });
+    ERP.Select.fill('id_sucursal', filtered, 'id_sucursal', 'nombre',
+      filtered.length ? '— Seleccionar centro / sucursal —' : 'Sin sucursales para esta empresa'
+    );
+  }
+
   function guardar(e) {
     e.preventDefault();
     ERP.UI.msgHide();
     ERP.Gateway.submit({
       method: 'apiGuardarEquipo',
-      payload: ERP.Form.collect(['id_tipo','id_marca','modelo','serial','id_empresa','id_estado','fecha_compra','garantia_hasta','valor_compra','link_factura','link_foto','observaciones']),
+      payload: ERP.Form.collect(['id_tipo','id_marca','modelo','serial','id_empresa','id_sucursal','id_estado','fecha_compra','garantia_hasta','valor_compra','link_factura','link_foto','observaciones']),
       btnId: 'saveBtn', btnText: '💾 Guardar Equipo', loadingText: 'Guardando...',
       onSuccess: function(res) {
         if (res.ok) {
