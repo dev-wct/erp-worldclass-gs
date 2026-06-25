@@ -1,0 +1,217 @@
+<?!= include('00_portal/ui/PORTAL_Shell'); ?>
+
+<article class="erp-card">
+
+  <header class="erp-card-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" style="padding:4px;border-radius:50%;" onclick="volver()" title="Volver">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+      </button>
+      <div style="width:36px;height:36px;border-radius:6px;background:#e3f2fd;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="clipboard-list" style="width:18px;height:18px;color:#1565c0;"></i>
+      </div>
+      <div>
+        <h1 style="font-size:16px;font-weight:600;color:#1d2d3d;margin:0;line-height:1.2;">Nueva Vacante</h1>
+        <p style="font-size:12px;color:#515f6e;margin:2px 0 0;">E-Recruiting — Abrir posición para proceso de selección</p>
+      </div>
+    </div>
+    <div id="catalog-status"></div>
+  </header>
+
+  <div class="erp-card-body">
+    <div id="erp-msg" class="erp-msg" style="display:none;" role="alert"></div>
+
+    <div id="retry-banner" class="erp-msg erp-msg-warning" style="display:none;" role="alert">
+      <span style="flex-shrink:0;">⚠️</span>
+      <div style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <span id="retry-text" style="font-size:13px;">No se pudieron cargar las listas.</span>
+        <button type="button" onclick="cargarCatalogos()" class="erp-btn erp-btn-sm" style="border-color:#e9730c;color:#e9730c;">↺ Reintentar</button>
+      </div>
+    </div>
+
+
+    <form id="vacanteForm" onsubmit="guardar(event)" novalidate>
+      <div class="erp-form-grid">
+
+        <p class="erp-section-title">Información de la Posición</p>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="titulo">Título del Puesto</label>
+          <input type="text" id="titulo" class="erp-input" placeholder="Ej. Agente de Call Center" autocomplete="off" required>
+        </div>
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="descripcion">Descripción del Puesto</label>
+          <textarea id="descripcion" class="erp-textarea" rows="3" placeholder="Responsabilidades principales..." required></textarea>
+        </div>
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="requisitos">Requisitos Mínimos</label>
+          <textarea id="requisitos" class="erp-textarea" rows="2" placeholder="Experiencia, habilidades..."></textarea>
+        </div>
+
+        <p class="erp-section-title">Organización</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_empresa">Empresa</label>
+          <div id="sk_empresa" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_empresa" class="erp-select" style="display:none;" required onchange="onEmpresaChange()">
+            <option value="">— Seleccionar empresa —</option>
+          </select>
+        </div>
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_departamento">Departamento</label>
+          <div id="sk_departamento" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_departamento" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar empresa primero —</option>
+          </select>
+        </div>
+        <div class="erp-field">
+          <label class="erp-label" for="id_rol_destino">Rol Destino</label>
+          <div id="sk_rol" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_rol_destino" class="erp-select" style="display:none;">
+            <option value="">— Sin rol específico —</option>
+          </select>
+        </div>
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="plazas_disponibles">Plazas Disponibles</label>
+          <input type="number" id="plazas_disponibles" class="erp-input" min="1" value="1" required>
+        </div>
+
+        <p class="erp-section-title">Fechas y Estado</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="fecha_apertura">Fecha de Apertura</label>
+          <input type="date" id="fecha_apertura" class="erp-input" required>
+        </div>
+        <div class="erp-field">
+          <label class="erp-label" for="fecha_cierre">Fecha de Cierre</label>
+          <input type="date" id="fecha_cierre" class="erp-input">
+        </div>
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="estado">Estado Inicial</label>
+          <select id="estado" class="erp-select">
+            <option value="BORRADOR">Borrador — no visible para candidatos</option>
+            <option value="ABIERTA" selected>Abierta — recibiendo postulaciones</option>
+          </select>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <footer class="erp-card-footer">
+    <button type="button" class="erp-btn" onclick="window.open('<?= getWebAppUrl() ?>?page=launchpad', '_top')">← Volver</button>
+    <button type="submit" form="vacanteForm" id="saveBtn" class="erp-btn erp-btn-primary" disabled>
+      <span id="saveSpinner" class="erp-spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span>
+      <span id="saveTxt">Cargando listas...</span>
+    </button>
+  </footer>
+
+</article>
+
+<?!= include('00_portal/ui/PORTAL_ShellClose'); ?>
+
+<script>
+  const _backUrl = '<?= getWebAppUrl() ?>?page=<?= APP_PARAMS.back ? APP_PARAMS.back : "launchpad" ?>';
+  function volver() { window.open(_backUrl, '_top'); }
+
+  var _deptos = [], _intentos = 0, MAX_R = 3;
+
+  window.onload = function() {
+    document.getElementById('fecha_apertura').value = new Date().toISOString().split('T')[0];
+    cargarCatalogos();
+  };
+
+  function cargarCatalogos() {
+    _intentos++;
+    document.getElementById('retry-banner').style.display = 'none';
+    _sk(true); _btn('loading');
+    _badge('⏳ Cargando...', '#515f6e');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        _sk(false);
+
+
+        if (!res || res.ok === false) { _fallo(res ? ERP.Msg.extractError(res) : 'Sin datos del servidor.'); return; }
+        var emp = res.empresas || [], dep = res.departamentos || [], rol = res.roles || [];
+        if (!emp.length) { _fallo('Sin empresas. Ejecuta Bootstrap.'); return; }
+
+        ERP.Select.fill('id_empresa',     emp, 'id_empresa', 'nombre', '— Seleccionar empresa —');
+        ERP.Select.fill('id_rol_destino', rol, 'id_rol',     'nombre', '— Sin rol específico —');
+        _deptos = dep;
+        if (emp.length === 1) document.getElementById('id_empresa').value = String(emp[0].id_empresa);
+        onEmpresaChange();
+        _intentos = 0; _btn('ready');
+        _badge('● Listo', '#107e3e');
+      })
+      .withFailureHandler(function(err) {
+        _sk(false); _fallo(err && err.message ? err.message : 'Error.');
+      })
+      .apiGetCatalogosVacante();
+  }
+
+  function _fallo(msg) {
+    if (_intentos < MAX_R) { setTimeout(cargarCatalogos, _intentos * 1500); return; }
+    document.getElementById('retry-text').textContent = msg;
+    document.getElementById('retry-banner').style.display = 'flex';
+    _btn('ready'); _badge('⚠️ Error', '#bb0000');
+  }
+
+  function onEmpresaChange() {
+    var id = document.getElementById('id_empresa').value;
+    var f  = _deptos.filter(function(d) { return String(d.id_empresa) === String(id); });
+    ERP.Select.fill('id_departamento', f, 'id_departamento', 'nombre',
+      f.length ? '— Seleccionar departamento —' : '— Sin departamentos —');
+  }
+
+  function guardar(e) {
+    e.preventDefault();
+    ERP.UI.msgHide();
+    var t = document.getElementById('titulo').value.trim();
+    var d = document.getElementById('descripcion').value.trim();
+    var emp = document.getElementById('id_empresa').value;
+    var dep = document.getElementById('id_departamento').value;
+    var err = [];
+    if (!t)        err.push('Título requerido.');
+    if (!d)        err.push('Descripción requerida.');
+    if (emp === '') err.push('Selecciona empresa.');
+    if (dep === '') err.push('Selecciona departamento.');
+    if (err.length) { ERP.UI.msg('error', err.join('<br>')); return; }
+    ERP.Gateway.submit({
+      method: 'apiCrearVacante',
+      payload: ERP.Form.collect(['titulo','descripcion','requisitos','id_empresa','id_departamento','id_rol_destino','plazas_disponibles','fecha_apertura','fecha_cierre','estado']),
+      btnId: 'saveBtn', btnText: '✔ Crear Vacante', loadingText: 'Creando...',
+      onSuccess: function(res) {
+        ERP.UI.msg('success', res.mensaje || '✔ Vacante creada.');
+        setTimeout(volver, 2000);
+      },
+    });
+  }
+
+  function _sk(show) {
+    [['empresa','id_empresa'],['departamento','id_departamento'],['rol','id_rol_destino']].forEach(function(p) {
+      var sk = document.getElementById('sk_' + p[0]);
+      var sel = document.getElementById(p[1]);
+      if (sk)  sk.style.display  = show ? 'block' : 'none';
+      if (sel) sel.style.display = show ? 'none'  : 'block';
+    });
+  }
+
+  function _btn(estado) {
+    var btn = document.getElementById('saveBtn');
+    var sp  = document.getElementById('saveSpinner');
+    var txt = document.getElementById('saveTxt');
+    if (!btn) return;
+    if (estado === 'loading') {
+      btn.disabled = true; sp.style.display = 'inline-block'; txt.textContent = 'Cargando listas...';
+    } else {
+      btn.disabled = false; sp.style.display = 'none'; txt.textContent = '✔ Crear Vacante';
+    }
+  }
+
+  function _badge(text, color) {
+    var el = document.getElementById('catalog-status');
+    if (!el) return;
+    el.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:500;background:' + color + '22;color:' + color + ';">' + text + '</span>';
+  }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>

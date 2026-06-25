@@ -1,0 +1,277 @@
+<!--
+  CORE_Shell.html
+  ─────────────────────────────────────────────────────────────────────────
+  Wrapper de layout unificado con navegación lateral (Sidebar) y Shellbar.
+  Evita la duplicación de cabeceras, pies de página y menús en cada módulo.
+  
+  Uso: include('00_portal/ui/PORTAL_Shell'); al inicio de la página.
+  Cierre: include('00_portal/ui/PORTAL_ShellClose'); al final de la página.
+  ─────────────────────────────────────────────────────────────────────────
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <?!= include('00_portal/ui/PORTAL_Head'); ?>
+  <style>
+    /* Estructura del layout con Sidebar */
+    .app-layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background: #f5f6f7;
+    }
+    .app-viewport {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+    .app-sidebar {
+      width: 240px;
+      background: #1d2b3a;
+      color: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid rgba(255,255,255,.05);
+      transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
+      z-index: 1000;
+    }
+    .app-sidebar.collapsed {
+      width: 52px;
+    }
+    .app-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px 96px;
+      display: flex;
+      flex-direction: column;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      color: rgba(255,255,255,.55);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: color 0.15s, background 0.15s;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      border-left: 3px solid transparent;
+    }
+    .nav-item:hover {
+      background: rgba(255,255,255,.05);
+      color: #ffffff;
+    }
+    .nav-item.active {
+      background: rgba(10,110,209,.15);
+      color: #38bdf8;
+      border-left-color: #0a6ed1;
+    }
+    .nav-text {
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+    .app-sidebar.collapsed .nav-text {
+      opacity: 0;
+      pointer-events: none;
+      width: 0;
+    }
+    .app-sidebar.collapsed .nav-item {
+      padding: 10px 14px;
+    }
+    .app-sidebar.collapsed .nav-header {
+      display: none !important;
+    }
+    
+    /* Botón colapsar */
+    .sidebar-toggle-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,.4);
+      cursor: pointer;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      width: 100%;
+      text-align: left;
+      font-size: 11px;
+    }
+    .sidebar-toggle-btn:hover {
+      color: #ffffff;
+      background: rgba(255,255,255,.02);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .app-sidebar {
+        position: fixed;
+        left: 0;
+        top: 48px;
+        bottom: 0;
+        width: 240px;
+        transform: translateX(-100%);
+      }
+      .app-sidebar.mobile-open {
+        transform: translateX(0);
+        box-shadow: 4px 0 24px rgba(0,0,0,0.25);
+      }
+      .app-sidebar.collapsed {
+        width: 240px;
+      }
+      .sidebar-toggle-btn {
+        display: none;
+      }
+      .app-content {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="app-layout">
+    <? if (APP_MAINTENANCE_BANNER_ACTIVE) { ?>
+      <!-- Banner de Mantenimiento -->
+      <div class="w-full text-xxs font-semibold flex items-center justify-center gap-2 py-2 px-4 select-none shrink-0 border-b 
+        <?= APP_MAINTENANCE_BANNER_SEVERITY === 'critical' ? 'bg-[#fde8e8] text-[#9b1c1c] border-[#f8b4b4]' : 
+            (APP_MAINTENANCE_BANNER_SEVERITY === 'warning' ? 'bg-[#fef8e7] text-[#8a5b00] border-[#fde8a1]' : 
+                                                             'bg-[#e1effe] text-[#1e429f] border-[#b3d1ff]') ?>">
+        <i data-lucide="<?= APP_MAINTENANCE_BANNER_SEVERITY === 'critical' ? 'alert-octagon' : 
+                         (APP_MAINTENANCE_BANNER_SEVERITY === 'warning' ? 'alert-triangle' : 'info') ?>" style="width:14px;height:14px;" class="shrink-0"></i>
+        <span><?= APP_MAINTENANCE_BANNER_MSG ?></span>
+      </div>
+    <? } ?>
+    
+    <!-- Shellbar (Header Fijo) -->
+    <header class="shellbar">
+      <div class="sb-left flex items-center min-w-0">
+        <!-- Hamburguesa móvil -->
+        <button type="button" class="md:hidden text-white mr-2 hover:bg-slate-800 p-1.5 rounded cursor-pointer" onclick="toggleMobileSidebar()" aria-label="Menú">
+          <i data-lucide="menu" style="width:20px;height:20px;"></i>
+        </button>
+        
+        <nav class="flex text-[13px] items-center min-w-0" aria-label="Breadcrumb">
+          <ol class="inline-flex items-center space-x-1 md:space-x-1.5 min-w-0">
+            <li class="inline-flex items-center shrink-0">
+              <a href="<?= getWebAppUrl() ?>?page=launchpad" target="_top" class="inline-flex items-center text-white font-semibold hover:text-white/80 transition-colors">
+                <? if (APP_ERP_LOGO_URL) { ?>
+                  <img src="<?= APP_ERP_LOGO_URL ?>" alt="Logo" class="w-[26px] h-[26px] rounded object-contain mr-1.5 bg-white border border-white/20 p-[1px]">
+                <? } else { ?>
+                  <i data-lucide="home" class="w-4 h-4 mr-1.5 text-white/80"></i>
+                <? } ?>
+                <span class="hidden sm:inline"><?= APP_ERP_NAME ?></span>
+              </a>
+            </li>
+            <li class="flex items-center shrink-0">
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-white/30"></i>
+              <span class="ml-1 md:ml-1.5 text-white/60 font-medium select-none"><?= SHELL_MODULE ?></span>
+            </li>
+            <li class="flex items-center min-w-0" aria-current="page">
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-white/30"></i>
+              <span class="ml-1 md:ml-1.5 text-white font-medium select-none truncate" id="shell-page-title"><?= APP_TITLES[APP_PAGE] || 'Inicio' ?></span>
+            </li>
+          </ol>
+        </nav>
+      </div>
+      <div class="sb-right">
+        <div class="sb-status"><div class="sb-dot"></div><span>Conectado</span></div>
+        <? if (APP_USER) { ?><span class="sb-email"><?= APP_USER ?></span><? } ?>
+        <div class="sb-avatar"><i data-lucide="user" style="width:14px;height:14px;color:rgba(255,255,255,.8);"></i></div>
+      </div>
+    </header>
+    
+    <div class="app-viewport">
+      
+      <!-- Sidebar Lateral -->
+      <aside class="app-sidebar" id="app-sidebar">
+        <!-- Toggle en Desktop -->
+        <button type="button" class="sidebar-toggle-btn hidden md:flex" onclick="toggleSidebar()">
+          <i data-lucide="chevrons-left" id="toggle-icon" style="width:16px;height:16px;"></i>
+          <span class="nav-text font-semibold">Colapsar menú</span>
+        </button>
+        
+        <!-- Enlaces -->
+        <nav class="flex-1 py-2 overflow-y-auto">
+          <a href="<?= getWebAppUrl() ?>?page=launchpad" target="_top" class="nav-item <?= APP_PAGE === 'launchpad' ? 'active' : '' ?>">
+            <i data-lucide="layout-grid" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Launchpad Home</span>
+          </a>
+          
+          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Personal</div>
+          <a href="<?= getWebAppUrl() ?>?page=empleado" target="_top" class="nav-item <?= APP_PAGE === 'empleado' ? 'active' : '' ?>">
+            <i data-lucide="users" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Colaboradores</span>
+          </a>
+          
+          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Reclutamiento</div>
+          <a href="<?= getWebAppUrl() ?>?page=vacante" target="_top" class="nav-item <?= APP_PAGE === 'vacante' ? 'active' : '' ?>">
+            <i data-lucide="clipboard-list" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Vacantes</span>
+          </a>
+          <a href="<?= getWebAppUrl() ?>?page=generar-link" target="_top" class="nav-item <?= APP_PAGE === 'generar-link' ? 'active' : '' ?>">
+            <i data-lucide="link-2" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Generar Link</span>
+          </a>
+          <a href="<?= getWebAppUrl() ?>?page=ver-links" target="_top" class="nav-item <?= APP_PAGE === 'ver-links' ? 'active' : '' ?>">
+            <i data-lucide="link" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Links de Postulación</span>
+          </a>
+          
+          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Ventas</div>
+          <a href="<?= getWebAppUrl() ?>?page=lead" target="_top" class="nav-item <?= APP_PAGE === 'lead' ? 'active' : '' ?>">
+            <i data-lucide="user-check" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Leads / Clientes</span>
+          </a>
+          <a href="<?= getWebAppUrl() ?>?page=campana" target="_top" class="nav-item <?= APP_PAGE === 'campana' ? 'active' : '' ?>">
+            <i data-lucide="megaphone" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Campañas Mkt</span>
+          </a>
+          <a href="<?= getWebAppUrl() ?>?page=llamada" target="_top" class="nav-item <?= APP_PAGE === 'llamada' ? 'active' : '' ?>">
+            <i data-lucide="phone-call" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Registrar Llamada</span>
+          </a>
+          <a href="<?= getWebAppUrl() ?>?page=cita" target="_top" class="nav-item <?= APP_PAGE === 'cita' ? 'active' : '' ?>">
+            <i data-lucide="calendar" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Agendar Cita</span>
+          </a>
+          
+          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Activos</div>
+          <a href="<?= getWebAppUrl() ?>?page=equipo" target="_top" class="nav-item <?= APP_PAGE === 'equipo' ? 'active' : '' ?>">
+            <i data-lucide="monitor" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Equipos</span>
+          </a>
+          <a href="<?= getWebAppUrl() ?>?page=chip" target="_top" class="nav-item <?= APP_PAGE === 'chip' ? 'active' : '' ?>">
+            <i data-lucide="sim-card" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Chips / Líneas</span>
+          </a>
+          <a href="<?= getWebAppUrl() ?>?page=asignacion" target="_top" class="nav-item <?= APP_PAGE === 'asignacion' ? 'active' : '' ?>">
+            <i data-lucide="arrow-left-right" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Asignar Activos</span>
+          </a>
+
+          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Finanzas</div>
+          <a href="<?= getWebAppUrl() ?>?page=nomina" target="_top" class="nav-item <?= APP_PAGE === 'nomina' ? 'active' : '' ?>">
+            <i data-lucide="banknote" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Pagos de Nómina</span>
+          </a>
+
+          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Configuración</div>
+          <a href="<?= getWebAppUrl() ?>?page=configuracion" target="_top" class="nav-item <?= APP_PAGE === 'configuracion' ? 'active' : '' ?>">
+            <i data-lucide="settings" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Datos de Empresa</span>
+          </a>
+        </nav>
+      </aside>
+      
+      <!-- Contenedor Principal del Formulario -->
+      <main class="app-content">

@@ -1,0 +1,625 @@
+<?!= include('00_portal/ui/PORTAL_Shell'); ?>
+
+<div class="space-y-4 max-w-6xl mx-auto w-full">
+
+  <!-- Header Panel -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 border border-border rounded-sap shadow-sap">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-sap bg-primary/10 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="users" class="w-6 h-6 text-primary"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold text-ink leading-tight">Colaboradores</h1>
+        <p class="text-xs text-muted">Gestión de expedientes de personal y altas/bajas laborales</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3" id="form-status">
+      <!-- Badge de estado se renderiza dinámicamente -->
+    </div>
+  </div>
+
+  <!-- Dashboard Stats Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="stats-container">
+    <!-- Rendered dynamically -->
+  </div>
+
+  <!-- Vista 1: Listado de Colaboradores -->
+  <div id="view-list" class="space-y-4">
+    <!-- Pestañas de Filtro (Todos / Activos / Bajas) -->
+    <div id="tabs-container"></div>
+    
+    <!-- Filtros y Botón Nuevo -->
+    <div id="search-container"></div>
+    
+    <!-- Listado (Tabla / Empty State) -->
+    <div id="table-container"></div>
+  </div>
+
+  <!-- Vista 2: Formulario Alta / Modificación -->
+  <div id="view-form" class="hidden">
+    <article class="erp-card max-w-2xl mx-auto">
+      <header class="erp-card-header">
+        <div class="flex items-center gap-3">
+          <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm p-1 rounded-full" onclick="mostrarListado()" title="Volver al listado">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+          </button>
+          <div>
+            <h2 id="form-title" class="text-lg font-semibold text-ink leading-snug">Registrar Colaborador</h2>
+            <p id="form-subtitle" class="text-xs text-muted mt-0.5">Crear nuevo expediente en la organización</p>
+          </div>
+        </div>
+      </header>
+      
+      <div class="erp-card-body">
+        <div id="erp-msg-form" class="erp-msg" style="display:none;" role="alert"></div>
+        <form id="empForm" onsubmit="guardarFormulario(event)" novalidate>
+          <div class="erp-form-grid">
+            <p class="erp-section-title">Datos Personales</p>
+            
+            <div class="erp-field erp-full">
+              <label class="erp-label erp-label-required" for="nombre_completo">Nombre Completo</label>
+              <input type="text" class="erp-input" id="nombre_completo" placeholder="Ej. Juan Pérez" autocomplete="off" required>
+            </div>
+            
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="dpi" id="dpi-label">DPI (Documento de Identificación)</label>
+              <input type="text" class="erp-input" id="dpi" placeholder="CUI de 13 dígitos" autocomplete="off" required>
+            </div>
+            
+            <div class="erp-field">
+              <label class="erp-label" for="email">Email Personal</label>
+              <input type="email" class="erp-input" id="email" placeholder="juan.perez@mail.com">
+            </div>
+            
+            <div class="erp-field">
+              <label class="erp-label" for="telefono">Teléfono Móvil</label>
+              <input type="text" class="erp-input" id="telefono" placeholder="Ej. 55551234">
+            </div>
+            
+            <p class="erp-section-title">Organización</p>
+            
+             <div class="erp-field">
+              <label class="erp-label erp-label-required" for="id_empresa">Empresa</label>
+              <select id="id_empresa" class="erp-select" required onchange="onEmpresaChange()">
+                <option value="">— Seleccionar empresa —</option>
+              </select>
+            </div>
+            
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="id_departamento">Departamento</label>
+              <select id="id_departamento" class="erp-select" required>
+                <option value="">— Seleccionar empresa primero —</option>
+              </select>
+            </div>
+
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="id_sucursal">Centro / Sucursal</label>
+              <select id="id_sucursal" class="erp-select" required>
+                <option value="">— Seleccionar empresa primero —</option>
+              </select>
+            </div>
+
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="id_unidad">Unidad Organizativa</label>
+              <select id="id_unidad" class="erp-select" required>
+                <option value="">— Seleccionar empresa primero —</option>
+              </select>
+            </div>
+            
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="tipo_contrato">Tipo de Contrato</label>
+              <select id="tipo_contrato" class="erp-select" required>
+                <option value="PLANILLA">Planilla (Fijo)</option>
+                <option value="SERVICIOS">Servicios Profesionales</option>
+                <option value="TEMPORAL">Temporal</option>
+              </select>
+            </div>
+            
+            <div class="erp-field">
+              <label class="erp-label erp-label-required" for="fecha_ingreso">Fecha de Ingreso</label>
+              <input type="date" class="erp-input" id="fecha_ingreso" required>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <footer class="erp-card-footer">
+        <button type="button" class="erp-btn" onclick="mostrarListado()">Cancelar</button>
+        <button type="submit" form="empForm" id="saveBtn" class="erp-btn erp-btn-primary">
+          <i data-lucide="check" class="w-4 h-4 mr-1"></i> Guardar Colaborador
+        </button>
+      </footer>
+    </article>
+  </div>
+
+  <!-- Vista 3: Confirmación de Baja Laboral -->
+  <div id="view-baja" class="hidden">
+    <article class="erp-card max-w-md mx-auto border-error/30">
+      <header class="erp-card-header bg-error/5 border-b border-error/10">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-error/10 flex items-center justify-center text-error">
+            <i data-lucide="user-minus" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-semibold text-error">Procesar Baja Laboral</h2>
+            <p class="text-xs text-muted" id="baja-emp-nombre"></p>
+          </div>
+        </div>
+      </header>
+      
+      <div class="erp-card-body space-y-4">
+        <div id="erp-msg-baja" class="erp-msg" style="display:none;" role="alert"></div>
+        <div class="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded text-xs leading-relaxed flex gap-2">
+          <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+          <span>Esta acción marcará al colaborador como <strong>Inactivo</strong> en los sistemas. Se registrará la fecha de salida y el Business Partner perderá su vinculación laboral activa.</span>
+        </div>
+        
+        <form id="bajaForm" onsubmit="guardarBaja(event)" novalidate>
+          <div class="erp-field">
+            <label class="erp-label erp-label-required" for="fecha_salida">Fecha de Salida</label>
+            <input type="date" class="erp-input" id="fecha_salida" required>
+          </div>
+        </form>
+      </div>
+      
+      <footer class="erp-card-footer">
+        <button type="button" class="erp-btn" onclick="mostrarListado()">Cancelar</button>
+        <button type="submit" form="bajaForm" id="bajaSubmitBtn" class="erp-btn erp-btn-danger">
+          Confirmar Baja
+        </button>
+      </footer>
+    </article>
+  </div>
+
+</div>
+
+<?!= include('00_portal/ui/PORTAL_ShellClose'); ?>
+
+<script>
+  // Datos locales
+  var _empleados = [];
+  var _empresas = [];
+  var _deptos = [];
+  var _sucursales = [];
+  var _unidades = [];
+  var _paises = [];
+  var _roles = [];
+  
+  var _activeTab = 'todos';
+  var _searchText = '';
+  var _selectedId = null; // null = Nuevo, number = Editar
+  var _selectedBajaId = null;
+
+  // Carga inicial
+  window.onload = function() {
+    ERP.UI.setFormLoading();
+    ERP.Gateway.callArgs('apiGetCatalogosEmpleado', [],
+      function(data) {
+        _empleados = data.empleados || [];
+        _empresas = data.empresas || [];
+        _deptos = data.departamentos || [];
+        _sucursales = data.sucursales || [];
+        _unidades = data.unidades || [];
+        _paises = data.paises || [];
+        _roles = data.roles || [];
+        
+        // Poblar selects
+        ERP.Select.fill('id_empresa', _empresas, 'id_empresa', 'nombre', '— Seleccionar empresa —');
+        
+        // Renderizar componentes iniciales
+        renderStats();
+        renderTabs();
+        renderSearchBar();
+        renderTable();
+        
+        ERP.UI.setFormReady();
+      },
+      function(err) {
+        ERP.UI.setFormError();
+        ERP.UI.msg('error', '⚠️ Error cargando colaboradores y catálogos: ' + err.message);
+      }
+    );
+  };
+
+  // Renderizadores dinámicos
+  function renderStats() {
+    var container = document.getElementById('stats-container');
+    if (!container) return;
+    
+    var total = _empleados.length;
+    var activos = _empleados.filter(function(e) { return e.activo; }).length;
+    var inactivos = total - activos;
+    
+    container.innerHTML = 
+      '<div class="bg-white p-4 border border-border rounded-sap shadow-sap flex items-center justify-between">' +
+      '  <div>' +
+      '    <p class="text-xs text-muted font-medium uppercase tracking-wider">Total Colaboradores</p>' +
+      '    <p class="text-2xl font-bold text-ink mt-1">' + total + '</p>' +
+      '  </div>' +
+      '  <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">' +
+           ERP.UI.icon('users', 'w-5 h-5') +
+      '  </div>' +
+      '</div>' +
+      '<div class="bg-white p-4 border border-border rounded-sap shadow-sap flex items-center justify-between">' +
+      '  <div>' +
+      '    <p class="text-xs text-muted font-medium uppercase tracking-wider">Activos</p>' +
+      '    <p class="text-2xl font-bold text-success mt-1">' + activos + '</p>' +
+      '  </div>' +
+      '  <div class="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center text-success">' +
+           ERP.UI.icon('check-circle', 'w-5 h-5') +
+      '  </div>' +
+      '</div>' +
+      '<div class="bg-white p-4 border border-border rounded-sap shadow-sap flex items-center justify-between">' +
+      '  <div>' +
+      '    <p class="text-xs text-muted font-medium uppercase tracking-wider">Bajas</p>' +
+      '    <p class="text-2xl font-bold text-error mt-1">' + inactivos + '</p>' +
+      '  </div>' +
+      '  <div class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center text-error">' +
+           ERP.UI.icon('x-circle', 'w-5 h-5') +
+      '  </div>' +
+      '</div>';
+      
+    if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [container] });
+  }
+
+  function renderTabs() {
+    var tabs = [
+      { id: 'todos', label: 'Todos (' + _empleados.length + ')' },
+      { id: 'activos', label: 'Activos (' + _empleados.filter(function(e) { return e.activo; }).length + ')', icon: 'check-circle' },
+      { id: 'inactivos', label: 'Bajas (' + _empleados.filter(function(e) { return !e.activo; }).length + ')', icon: 'x-circle' }
+    ];
+    var container = document.getElementById('tabs-container');
+    if (container) {
+      container.innerHTML = ERP.UI.tabStrip(tabs, _activeTab);
+      // Vincular eventos click
+      container.querySelectorAll('button[data-tab-id]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          _activeTab = btn.getAttribute('data-tab-id');
+          renderTabs();
+          renderTable();
+        });
+      });
+      if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [container] });
+    }
+  }
+
+  function renderSearchBar() {
+    var container = document.getElementById('search-container');
+    if (container) {
+      container.innerHTML = ERP.UI.searchBar({
+        placeholder: 'Buscar colaborador por nombre, email, documento...',
+        btnLabel: 'Registrar Colaborador',
+        btnIcon: 'user-plus',
+        btnId: 'btn-add-empleado',
+        inputId: 'search-input'
+      });
+      
+      // Vincular buscador
+      var searchInput = document.getElementById('search-input');
+      if (searchInput) {
+        searchInput.value = _searchText;
+        searchInput.addEventListener('input', function(e) {
+          _searchText = e.target.value.toLowerCase().trim();
+          renderTable();
+        });
+      }
+      
+      // Vincular botón nuevo
+      var addBtn = document.getElementById('btn-add-empleado');
+      if (addBtn) {
+        addBtn.addEventListener('click', function() {
+          abrirFormulario(null);
+        });
+      }
+      if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [container] });
+    }
+  }
+
+  function renderTable() {
+    var container = document.getElementById('table-container');
+    if (!container) return;
+    
+    // Filtrar lista
+    var filtered = _empleados.filter(function(emp) {
+      // Filtro de pestaña
+      if (_activeTab === 'activos' && !emp.activo) return false;
+      if (_activeTab === 'inactivos' && emp.activo) return false;
+      
+      // Filtro de búsqueda
+      if (_searchText) {
+        var match = false;
+        var nom = (emp.nombre_completo || '').toLowerCase();
+        var email = (emp.email || '').toLowerCase();
+        var dpi = (emp.dpi || '').toLowerCase();
+        var tel = (emp.telefono || '').toLowerCase();
+        if (nom.indexOf(_searchText) !== -1) match = true;
+        if (email.indexOf(_searchText) !== -1) match = true;
+        if (dpi.indexOf(_searchText) !== -1) match = true;
+        if (tel.indexOf(_searchText) !== -1) match = true;
+        return match;
+      }
+      return true;
+    });
+
+    var rows = filtered.map(function(emp) {
+      // Lookup empresa
+      var empObj = _empresas.find(function(e) { return String(e.id_empresa) === String(emp.id_empresa); });
+      var nomEmpresa = empObj ? empObj.nombre : '—';
+      
+      // Lookup depto
+      var deptoObj = _deptos.find(function(d) { return String(d.id_departamento) === String(emp.id_departamento); });
+      var nomDepto = deptoObj ? deptoObj.nombre : '—';
+      
+      // Badges
+      var estadoBadge = emp.activo 
+        ? ERP.UI.badge('Activo', 'green')
+        : ERP.UI.badge('Baja', 'red');
+
+      // Acciones
+      var editBtn = '<button onclick="abrirFormulario(' + emp.id_empleado + ')" class="erp-btn erp-btn-sm erp-btn-ghost text-primary" style="padding:4px;" title="Ver / Editar">' + 
+                    ERP.UI.icon('pencil', 'w-4 h-4') + 
+                    '</button>';
+                    
+      var bajaBtn = emp.activo
+        ? '<button onclick="abrirBaja(' + emp.id_empleado + ')" class="erp-btn erp-btn-sm erp-btn-ghost text-error" style="padding:4px;" title="Dar de baja">' + 
+          ERP.UI.icon('user-minus', 'w-4 h-4') + 
+          '</button>'
+        : '';
+        
+      var acciones = '<div class="flex items-center gap-1">' + editBtn + bajaBtn + '</div>';
+      
+      return [
+        String(emp.id_empleado),
+        '<strong>' + (emp.nombre_completo || '') + '</strong>',
+        '<code>' + (emp.dpi || '—') + '</code>',
+        emp.email || '<span class="text-muted italic">Sin correo</span>',
+        emp.telefono || '<span class="text-muted italic">Sin teléfono</span>',
+        nomEmpresa,
+        nomDepto,
+        estadoBadge,
+        acciones
+      ];
+    });
+
+    container.innerHTML = ERP.UI.table({
+      headers: ['ID', 'Nombre Completo', 'Documento', 'Email', 'Teléfono', 'Empresa', 'Departamento', 'Estado', 'Acciones'],
+      rows: rows
+    });
+
+    if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [container] });
+  }
+
+  // Navegación entre vistas
+  function mostrarListado() {
+    document.getElementById('view-list').classList.remove('hidden');
+    document.getElementById('view-form').classList.add('hidden');
+    document.getElementById('view-baja').classList.add('hidden');
+    document.getElementById('shell-page-title').textContent = 'Directorio de Colaboradores';
+    
+    // Resetear formulario
+    _selectedId = null;
+    _selectedBajaId = null;
+    ERP.Form.reset(['nombre_completo', 'dpi', 'email', 'telefono', 'id_empresa', 'id_departamento', 'id_sucursal', 'id_unidad', 'tipo_contrato', 'fecha_ingreso']);
+    ERP.UI.msgHide('erp-msg-form');
+    ERP.UI.msgHide('erp-msg-baja');
+    
+    // Volver a renderizar contadores y tabla
+    renderStats();
+    renderTabs();
+    renderTable();
+  }
+
+  function abrirFormulario(id) {
+    _selectedId = id;
+    ERP.UI.msgHide('erp-msg-form');
+    
+    document.getElementById('view-list').classList.add('hidden');
+    document.getElementById('view-form').classList.remove('hidden');
+    document.getElementById('view-baja').classList.add('hidden');
+    
+    var titleEl = document.getElementById('form-title');
+    var subtitleEl = document.getElementById('form-subtitle');
+    
+    if (id === null) {
+      titleEl.textContent = 'Registrar Colaborador';
+      subtitleEl.textContent = 'Crear nuevo expediente en la organización';
+      document.getElementById('shell-page-title').textContent = 'Registrar Colaborador';
+      
+      // Valores por defecto
+      document.getElementById('fecha_ingreso').value = ERP.Form.today();
+      document.getElementById('tipo_contrato').value = 'PLANILLA';
+      onEmpresaChange(); // Resetear
+    } else {
+      titleEl.textContent = 'Editar Colaborador (ID: ' + id + ')';
+      subtitleEl.textContent = 'Modificar expediente de personal';
+      document.getElementById('shell-page-title').textContent = 'Editar Colaborador';
+      
+      // Buscar datos
+      var emp = _empleados.find(function(e) { return String(e.id_empleado) === String(id); });
+      if (emp) {
+        ERP.Form.populate(['nombre_completo', 'dpi', 'email', 'telefono', 'id_empresa', 'id_departamento', 'id_sucursal', 'id_unidad', 'tipo_contrato'], emp);
+        
+        if (emp.fecha_ingreso) {
+          var d = new Date(emp.fecha_ingreso);
+          if (!isNaN(d.getTime())) {
+            document.getElementById('fecha_ingreso').value = d.toISOString().split('T')[0];
+          }
+        }
+        
+        onEmpresaChange(emp.id_departamento, emp.id_sucursal, emp.id_unidad);
+      }
+    }
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function abrirBaja(id) {
+    _selectedBajaId = id;
+    var emp = _empleados.find(function(e) { return String(e.id_empleado) === String(id); });
+    if (!emp) return;
+    
+    document.getElementById('view-list').classList.add('hidden');
+    document.getElementById('view-form').classList.add('hidden');
+    document.getElementById('view-baja').classList.remove('hidden');
+    document.getElementById('shell-page-title').textContent = 'Procesar Baja Laboral';
+    
+    document.getElementById('baja-emp-nombre').innerHTML = 'Baja para: <strong>' + emp.nombre_completo + '</strong>';
+    document.getElementById('fecha_salida').value = ERP.Form.today();
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  // Filtrado de departamentos, sucursales, unidades y configuración regional
+  function onEmpresaChange(selectedDeptoId, selectedSucursalId, selectedUnidadId) {
+    var idEmpresa = document.getElementById('id_empresa').value;
+    
+    // 1. Filtrar Departamentos
+    var fDeptos = _deptos.filter(function(d) { return String(d.id_empresa) === String(idEmpresa); });
+    ERP.Select.fill('id_departamento', fDeptos, 'id_departamento', 'nombre',
+      fDeptos.length ? '— Seleccionar departamento —' : 'Sin departamentos para esta empresa'
+    );
+    if (selectedDeptoId) {
+      document.getElementById('id_departamento').value = selectedDeptoId;
+    }
+
+    // 2. Filtrar Sucursales
+    var fSucs = _sucursales.filter(function(s) { return String(s.id_empresa) === String(idEmpresa); });
+    ERP.Select.fill('id_sucursal', fSucs, 'id_sucursal', 'nombre',
+      fSucs.length ? '— Seleccionar centro / sucursal —' : 'Sin sucursales para esta empresa'
+    );
+    if (selectedSucursalId) {
+      document.getElementById('id_sucursal').value = selectedSucursalId;
+    }
+
+    // 3. Filtrar Unidades Organizativas
+    var fUnis = _unidades.filter(function(u) { return String(u.id_empresa) === String(idEmpresa); });
+    ERP.Select.fill('id_unidad', fUnis, 'id_unidad', 'nombre',
+      fUnis.length ? '— Seleccionar unidad organizativa —' : 'Sin unidades organizativas'
+    );
+    if (selectedUnidadId) {
+      document.getElementById('id_unidad').value = selectedUnidadId;
+    }
+
+    // 4. Configuración regional del ID
+    var label = document.getElementById('dpi-label');
+    var input = document.getElementById('dpi');
+
+    var emp = _empresas.find(function(e) { return String(e.id_empresa) === String(idEmpresa); });
+    if (emp) {
+      var pais = _paises.find(function(p) { return String(p.id_pais) === String(emp.id_pais); });
+      if (pais) {
+        SharedValidator.configure(pais.codigo_iso);
+        if (label) label.textContent = pais.label_documento + ' (Documento de Identificación)';
+        if (input) input.placeholder = 'Número de ' + pais.label_documento;
+        return;
+      }
+    }
+
+    // Fallback/Default
+    SharedValidator.configure('GT');
+    if (label) label.textContent = 'DPI (Documento de Identificación)';
+    if (input) input.placeholder = 'CUI de 13 dígitos';
+  }
+
+  // Operaciones de guardado
+  function guardarFormulario(e) {
+    e.preventDefault();
+    ERP.UI.msgHide('erp-msg-form');
+
+    var payload = ERP.Form.collect(['nombre_completo', 'dpi', 'email', 'telefono', 'id_empresa', 'id_departamento', 'id_sucursal', 'id_unidad', 'tipo_contrato', 'fecha_ingreso']);
+    
+    // Validación regional
+    var validation = SharedValidator.validate(payload, {
+      nombre_completo: ['required'],
+      dpi:             ['required', 'dpi'],
+      email:           ['email'],
+      id_empresa:      ['required'],
+      id_departamento: ['required'],
+      id_sucursal:     ['required'],
+      id_unidad:       ['required'],
+      fecha_ingreso:   ['required']
+    });
+
+    if (!validation.isValid) {
+      var errs = [];
+      if (validation.errors.nombre_completo) errs.push('Nombre completo: ' + validation.errors.nombre_completo);
+      if (validation.errors.dpi) {
+        var docLabel = 'DPI';
+        var idEmp = document.getElementById('id_empresa').value;
+        var emp = _empresas.find(function(e) { return String(e.id_empresa) === String(idEmp); });
+        if (emp) {
+          var pais = _paises.find(function(p) { return String(p.id_pais) === String(emp.id_pais); });
+          if (pais) docLabel = pais.label_documento;
+        }
+        errs.push(docLabel + ': ' + validation.errors.dpi);
+      }
+      if (validation.errors.email)           errs.push('Email: ' + validation.errors.email);
+      if (validation.errors.id_empresa)       errs.push('Empresa: ' + validation.errors.id_empresa);
+      if (validation.errors.id_departamento)  errs.push('Departamento: ' + validation.errors.id_departamento);
+      if (validation.errors.id_sucursal)      errs.push('Centro / Sucursal: ' + validation.errors.id_sucursal);
+      if (validation.errors.id_unidad)        errs.push('Unidad Organizativa: ' + validation.errors.id_unidad);
+      if (validation.errors.fecha_ingreso)   errs.push('Fecha de ingreso: ' + validation.errors.fecha_ingreso);
+      ERP.UI.msg('error', errs.join('<br>'), 'erp-msg-form');
+      return;
+    }
+
+    var isEdit = _selectedId !== null;
+    var method = isEdit ? 'apiActualizarEmpleado' : 'apiGuardarEmpleado';
+    var args = isEdit ? [_selectedId, payload] : [payload];
+
+    ERP.Gateway.submit({
+      method: method,
+      args: args,
+      btnId: 'saveBtn',
+      btnText: '✔ Guardar Colaborador',
+      loadingText: 'Guardando...',
+      msgId: 'erp-msg-form',
+      onSuccess: function(res) {
+        if (res.ok) {
+          ERP.UI.msg('success', res.mensaje || 'Colaborador guardado con éxito.', 'erp-msg-form');
+          
+          // Refrescar lista local
+          ERP.Gateway.callArgs('apiGetEmpleados', [], function(empleados) {
+            _empleados = empleados || [];
+            setTimeout(mostrarListado, 1500);
+          });
+        } else {
+          ERP.UI.msg('error', (res.errores || ['Error al guardar.']).join('<br>'), 'erp-msg-form');
+        }
+      }
+    });
+  }
+
+  function guardarBaja(e) {
+    e.preventDefault();
+    if (!_selectedBajaId) return;
+    
+    var fechaSalida = document.getElementById('fecha_salida').value;
+    if (!fechaSalida) {
+      ERP.UI.msg('error', 'La fecha de salida es requerida.', 'erp-msg-baja');
+      return;
+    }
+
+    ERP.Gateway.submit({
+      method: 'apiDarBajaEmpleado',
+      args: [_selectedBajaId, fechaSalida],
+      btnId: 'bajaSubmitBtn',
+      btnText: 'Confirmar Baja',
+      loadingText: 'Procesando...',
+      msgId: 'erp-msg-baja',
+      onSuccess: function(res) {
+        if (res.ok) {
+          ERP.UI.msg('success', res.mensaje || 'Baja procesada.', 'erp-msg-baja');
+          
+          // Refrescar lista local
+          ERP.Gateway.callArgs('apiGetEmpleados', [], function(empleados) {
+            _empleados = empleados || [];
+            setTimeout(mostrarListado, 1500);
+          });
+        } else {
+          ERP.UI.msg('error', (res.errores || ['Error al procesar baja.']).join('<br>'), 'erp-msg-baja');
+        }
+      }
+    });
+  }
+</script>

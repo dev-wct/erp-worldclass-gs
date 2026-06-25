@@ -1,0 +1,209 @@
+<?!= include('00_portal/ui/PORTAL_Shell'); ?>
+
+<article class="erp-card">
+
+  <header class="erp-card-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" style="padding:4px;border-radius:50%;" onclick="volver()" title="Volver">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+      </button>
+      <div style="width:36px;height:36px;border-radius:6px;background:#e8f5e9;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="banknote" style="width:18px;height:18px;color:#2e7d32;"></i>
+      </div>
+      <div>
+        <h1 style="font-size:16px;font-weight:600;color:#1d2d3d;margin:0;line-height:1.2;">Pago de Nómina</h1>
+        <p style="font-size:12px;color:#515f6e;margin:2px 0 0;">FICO — Dispersión quincenal y liquidación de comisiones</p>
+      </div>
+    </div>
+    <div id="catalog-status"></div>
+  </header>
+
+  <div class="erp-card-body">
+    <div id="erp-msg" class="erp-msg" style="display:none;" role="alert"></div>
+
+    <form id="pagoForm" onsubmit="guardar(event)" novalidate>
+      <div class="erp-form-grid">
+
+        <p class="erp-section-title">Empleado</p>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="id_empleado">Empleado (Agente)</label>
+          <div id="sk_empleado" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_empleado" class="erp-select" style="display:none;" onchange="actualizarComisiones()" required>
+            <option value="">— Seleccionar empleado —</option>
+          </select>
+        </div>
+
+        <p class="erp-section-title">Período</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="anio">Año</label>
+          <input type="number" class="erp-input" id="anio" min="2020" max="2035" onchange="actualizarComisiones()" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="mes">Mes</label>
+          <select id="mes" class="erp-select" onchange="actualizarComisiones()" required>
+            <option value="0">Enero</option><option value="1">Febrero</option>
+            <option value="2">Marzo</option><option value="3">Abril</option>
+            <option value="4">Mayo</option><option value="5">Junio</option>
+            <option value="6">Julio</option><option value="7">Agosto</option>
+            <option value="8">Septiembre</option><option value="9">Octubre</option>
+            <option value="10">Noviembre</option><option value="11">Diciembre</option>
+          </select>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="quincena">Quincena</label>
+          <select id="quincena" class="erp-select" onchange="actualizarComisiones()" required>
+            <option value="1">1ra Quincena (1 al 15)</option>
+            <option value="2">2da Quincena (16 al fin)</option>
+          </select>
+        </div>
+
+        <p class="erp-section-title">Montos</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="sueldo_base">Sueldo Base</label>
+          <input type="number" class="erp-input" id="sueldo_base" min="0" step="0.01" value="3500" oninput="previewTotalNeto()" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="comisiones">Comisiones (Citas VIP)</label>
+          <input type="number" class="erp-input" id="comisiones" min="0" step="0.01" value="0" oninput="previewTotalNeto()" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="bonos">Bonos Adicionales</label>
+          <input type="number" class="erp-input" id="bonos" min="0" step="0.01" value="0" oninput="previewTotalNeto()" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="deducciones">Deducciones (Anticipos/IGSS)</label>
+          <input type="number" class="erp-input" id="deducciones" min="0" step="0.01" value="0" oninput="previewTotalNeto()" required>
+        </div>
+
+        <p class="erp-section-title">Pago</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="metodo_pago">Método de Pago</label>
+          <select id="metodo_pago" class="erp-select">
+            <option value="TRANSFERENCIA" selected>Transferencia</option>
+            <option value="EFECTIVO">Efectivo</option>
+            <option value="CHEQUE">Cheque</option>
+          </select>
+        </div>
+
+        <div class="erp-field" style="display:flex;align-items:center;gap:10px;padding-top:24px;">
+          <input type="checkbox" id="pagado" onchange="togglePagadoFields()" style="width:18px;height:18px;cursor:pointer;">
+          <label class="erp-label" for="pagado" style="margin:0;cursor:pointer;">¿Pago ya realizado y liquidado?</label>
+        </div>
+
+        <div class="erp-field erp-full" id="fechaPagoGroup" style="display:none;">
+          <label class="erp-label" for="fecha_pago">Fecha de Pago</label>
+          <input type="date" class="erp-input" id="fecha_pago">
+        </div>
+
+        <div class="total-neto-card erp-full" id="totalNetoLabel">
+          Estimado (preview): Q3,500.00
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <footer class="erp-card-footer">
+    <button type="button" class="erp-btn" onclick="volver()">← Volver</button>
+    <button type="submit" form="pagoForm" id="saveBtn" class="erp-btn erp-btn-primary" disabled>
+      <span id="saveSpinner" class="erp-spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span>
+      <span id="saveTxt">Cargando...</span>
+    </button>
+  </footer>
+
+</article>
+
+<?!= include('00_portal/ui/PORTAL_ShellClose'); ?>
+
+<script>
+  const _backUrl = '<?= getWebAppUrl() ?>?page=<?= APP_PARAMS.back ? APP_PARAMS.back : 'launchpad' ?>';
+  function volver() { window.open(_backUrl, '_top'); }
+
+  window.onload = function() {
+    var hoy = new Date();
+    document.getElementById('anio').value       = hoy.getFullYear();
+    document.getElementById('mes').value        = hoy.getMonth();
+    document.getElementById('fecha_pago').value = hoy.toISOString().split('T')[0];
+
+    ERP.Gateway.callArgs('apiGetCatalogosPagoNomina', [],
+      function(catalogos) {
+        document.getElementById('sk_empleado').style.display = 'none';
+        document.getElementById('id_empleado').style.display = 'block';
+        var emps = catalogos.empleados || [];
+        ERP.Select.fill('id_empleado', emps, 'id', 'nombre',
+          emps.length ? '— Seleccionar Empleado —' : 'No hay empleados activos'
+        );
+        document.getElementById('saveBtn').disabled = false;
+        document.getElementById('saveSpinner').style.display = 'none';
+        document.getElementById('saveTxt').textContent = '💾 Registrar Pago';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      },
+      function(err) { ERP.UI.msg('error', 'Error cargando empleados: ' + err.message); }
+    );
+  };
+
+  function togglePagadoFields() {
+    var pagado = document.getElementById('pagado').checked;
+    document.getElementById('fechaPagoGroup').style.display = pagado ? 'block' : 'none';
+  }
+
+  function actualizarComisiones() {
+    var idEmp = document.getElementById('id_empleado').value;
+    var anio  = document.getElementById('anio').value;
+    var mes   = document.getElementById('mes').value;
+    var quin  = document.getElementById('quincena').value;
+    if (!idEmp || !anio || !quin) return;
+    ERP.Gateway.callArgs('apiCalcularComisionAgente', [idEmp, anio, mes, quin],
+      function(res) {
+        if (res.ok) {
+          document.getElementById('comisiones').value = res.total_comisiones;
+          previewTotalNeto();
+          if (res.ventas_concretadas > 0) {
+            ERP.UI.msg('success', '<strong>¡Comisiones VIP!</strong> ' + res.ventas_concretadas + ' ventas en esta quincena.');
+          }
+        }
+      },
+      function(err) { console.error('Error calculando comisiones:', err); }
+    );
+  }
+
+  function previewTotalNeto() {
+    var s = parseFloat(document.getElementById('sueldo_base').value)  || 0;
+    var c = parseFloat(document.getElementById('comisiones').value)   || 0;
+    var b = parseFloat(document.getElementById('bonos').value)        || 0;
+    var d = parseFloat(document.getElementById('deducciones').value)  || 0;
+    var estimado = s + c + b - d;
+    document.getElementById('totalNetoLabel').textContent =
+      'Estimado (preview): ' + ERP.Form.formatGTQ(estimado);
+  }
+
+  function guardar(e) {
+    e.preventDefault();
+    ERP.UI.msgHide();
+    var data = ERP.Form.collect(['id_empleado','anio','quincena','sueldo_base','comisiones','bonos','deducciones','pagado','fecha_pago','metodo_pago']);
+    if (!data.pagado) data.fecha_pago = '';
+    ERP.Gateway.submit({
+      method: 'apiGuardarPagoNomina',
+      payload: data,
+      btnId: 'saveBtn', btnText: '💾 Registrar Pago', loadingText: 'Guardando...',
+      onSuccess: function(res) {
+        if (res.ok) {
+          ERP.UI.msg('success', '✔ Pago registrado correctamente.');
+          setTimeout(volver, 2000);
+        } else {
+          ERP.UI.msg('error', (res.errores || ['Error desconocido.']).join('<br>'));
+        }
+      },
+    });
+  }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>

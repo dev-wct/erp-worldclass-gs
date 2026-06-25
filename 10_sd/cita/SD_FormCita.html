@@ -1,0 +1,132 @@
+<?!= include('00_portal/ui/PORTAL_Shell'); ?>
+
+<article class="erp-card">
+
+  <header class="erp-card-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" style="padding:4px;border-radius:50%;" onclick="volver()" title="Volver">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+      </button>
+      <div style="width:36px;height:36px;border-radius:6px;background:#f3e5f5;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="calendar-check" style="width:18px;height:18px;color:#6a1b9a;"></i>
+      </div>
+      <div>
+        <h1 style="font-size:16px;font-weight:600;color:#1d2d3d;margin:0;line-height:1.2;">Agendar Cita VIP</h1>
+        <p style="font-size:12px;color:#515f6e;margin:2px 0 0;">SD — Programación de presentación VIP en restaurantes asociados</p>
+      </div>
+    </div>
+    <div id="catalog-status"></div>
+  </header>
+
+  <div class="erp-card-body">
+    <div id="erp-msg" class="erp-msg" style="display:none;" role="alert"></div>
+
+    <form id="citaForm" onsubmit="guardar(event)" novalidate>
+      <div class="erp-form-grid">
+
+        <p class="erp-section-title">Participantes</p>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="id_lead">Lead (Prospecto)</label>
+          <div id="sk_lead" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_lead" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar prospecto —</option>
+          </select>
+        </div>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="id_empleado_agendo">Agente que Agenda</label>
+          <div id="sk_empleado" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_empleado_agendo" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar agente —</option>
+          </select>
+        </div>
+
+        <p class="erp-section-title">Detalles de la Cita</p>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="restaurante">Restaurante / Lugar de Reunión</label>
+          <input type="text" class="erp-input" id="restaurante" placeholder="Ej. Portal del Ángel, Las Margaritas" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="fecha_cita">Fecha de la Cita</label>
+          <input type="date" class="erp-input" id="fecha_cita" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="hora_cita">Hora de la Cita</label>
+          <input type="time" class="erp-input" id="hora_cita" required>
+        </div>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="num_acompanantes">Número de Acompañantes</label>
+          <input type="number" class="erp-input" id="num_acompanantes" min="0" value="1" required>
+        </div>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="notas">Notas Especiales / Comentarios</label>
+          <textarea id="notas" class="erp-textarea" rows="2" placeholder="Ej. Mesa en terraza, prefiere vino tinto..."></textarea>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <footer class="erp-card-footer">
+    <button type="button" class="erp-btn" onclick="volver()">← Volver</button>
+    <button type="submit" form="citaForm" id="saveBtn" class="erp-btn erp-btn-primary" disabled>
+      <span id="saveSpinner" class="erp-spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span>
+      <span id="saveTxt">Cargando...</span>
+    </button>
+  </footer>
+
+</article>
+
+<?!= include('00_portal/ui/PORTAL_ShellClose'); ?>
+
+<script>
+  const _backUrl = '<?= getWebAppUrl() ?>?page=<?= APP_PARAMS.back ? APP_PARAMS.back : 'launchpad' ?>';
+  function volver() { window.open(_backUrl, '_top'); }
+
+  window.onload = function() {
+    ERP.Gateway.callArgs('apiGetCatalogosCita', [],
+      function(catalogos) {
+        ['lead','empleado'].forEach(function(k) {
+          document.getElementById('sk_' + k).style.display = 'none';
+        });
+        document.getElementById('id_lead').style.display = 'block';
+        document.getElementById('id_empleado_agendo').style.display = 'block';
+        ERP.Select.fill('id_lead', catalogos.leads || [], 'id', 'nombre',
+          catalogos.leads && catalogos.leads.length ? '— Seleccionar Lead —' : 'No hay leads elegibles');
+        ERP.Select.fill('id_empleado_agendo', catalogos.empleados || [], 'id', 'nombre',
+          catalogos.empleados && catalogos.empleados.length ? '— Seleccionar Agente —' : 'No hay agentes');
+        document.getElementById('saveBtn').disabled = false;
+        document.getElementById('saveSpinner').style.display = 'none';
+        document.getElementById('saveTxt').textContent = '💾 Agendar Cita';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      },
+      function(err) { ERP.UI.msg('error', 'Error cargando catálogos: ' + err.message); }
+    );
+  };
+
+  function guardar(e) {
+    e.preventDefault();
+    ERP.UI.msgHide();
+
+    ERP.Gateway.submit({
+      method: 'apiGuardarCita',
+      payload: ERP.Form.collect(['id_lead','id_empleado_agendo','restaurante','fecha_cita','hora_cita','num_acompanantes','notas']),
+      btnId: 'saveBtn', btnText: '💾 Agendar Cita', loadingText: 'Guardando...',
+      onSuccess: function(res) {
+        if (res.ok) {
+          ERP.UI.msg('success', '✔ Cita agendada correctamente.');
+          setTimeout(volver, 2000);
+        } else {
+          ERP.UI.msg('error', (res.errores || ['Error desconocido.']).join('<br>'));
+        }
+      },
+    });
+  }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>

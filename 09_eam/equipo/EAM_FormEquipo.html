@@ -1,0 +1,190 @@
+<?!= include('00_portal/ui/PORTAL_Shell'); ?>
+
+<article class="erp-card">
+
+  <header class="erp-card-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" style="padding:4px;border-radius:50%;" onclick="volver()" title="Volver">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+      </button>
+      <div style="width:36px;height:36px;border-radius:6px;background:#e8eaf6;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="laptop" style="width:18px;height:18px;color:#283593;"></i>
+      </div>
+      <div>
+        <h1 style="font-size:16px;font-weight:600;color:#1d2d3d;margin:0;line-height:1.2;">Registrar Equipo Informático</h1>
+        <p style="font-size:12px;color:#515f6e;margin:2px 0 0;">EAM — Catálogo de activos en inventario</p>
+      </div>
+    </div>
+    <div id="catalog-status"></div>
+  </header>
+
+  <div class="erp-card-body">
+    <div id="erp-msg" class="erp-msg" style="display:none;" role="alert"></div>
+
+    <form id="equipoForm" onsubmit="guardar(event)" novalidate>
+      <div class="erp-form-grid">
+
+        <p class="erp-section-title">Identificación del Activo</p>
+
+        <div class="erp-field">
+          <label class="erp-label" for="codigo_interno">Código Interno</label>
+          <input type="text" id="codigo_interno" class="erp-input" style="background:#f5f6f7;cursor:not-allowed;" readonly placeholder="Cargando...">
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_tipo">Tipo de Equipo</label>
+          <div id="sk_tipo" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_tipo" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_marca">Marca</label>
+          <div id="sk_marca" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_marca" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="modelo">Modelo</label>
+          <input type="text" id="modelo" class="erp-input" placeholder="Ej. Latitude 5420" required>
+        </div>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="serial">Número de Serie (Serial)</label>
+          <input type="text" id="serial" class="erp-input" placeholder="Ej. S1N2G3H45" style="text-transform:uppercase;" required>
+        </div>
+
+        <p class="erp-section-title">Propiedad e Inventario</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_empresa">Empresa Propietaria</label>
+          <div id="sk_empresa" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_empresa" class="erp-select" style="display:none;" required onchange="onEmpresaChange()">
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_sucursal">Centro / Sucursal</label>
+          <select id="id_sucursal" class="erp-select" required>
+            <option value="">— Seleccionar empresa primero —</option>
+          </select>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_estado">Estado del Activo</label>
+          <div id="sk_estado" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_estado" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+
+        <p class="erp-section-title">Adquisición e Historial</p>
+
+        <div class="erp-field">
+          <label class="erp-label" for="fecha_compra">Fecha de Compra</label>
+          <input type="date" id="fecha_compra" class="erp-input">
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label" for="garantia_hasta">Garantía Vence</label>
+          <input type="date" id="garantia_hasta" class="erp-input">
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label" for="valor_compra">Valor de Compra (GTQ)</label>
+          <input type="number" id="valor_compra" class="erp-input" placeholder="0.00" min="0" step="0.01">
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label" for="link_factura">Enlace Factura (Drive)</label>
+          <input type="url" id="link_factura" class="erp-input" placeholder="https://drive.google.com/...">
+        </div>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="link_foto">Fotografía del Equipo (Drive)</label>
+          <input type="url" id="link_foto" class="erp-input" placeholder="https://drive.google.com/...">
+        </div>
+
+        <p class="erp-section-title">Observaciones</p>
+
+        <div class="erp-field erp-full">
+          <textarea id="observaciones" class="erp-textarea" rows="3" placeholder="Notas adicionales (ej. cargador entregado, estado estético)..."></textarea>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <footer class="erp-card-footer">
+    <button type="button" class="erp-btn" onclick="volver()">← Volver</button>
+    <button type="submit" form="equipoForm" id="saveBtn" class="erp-btn erp-btn-primary" disabled>
+      <span id="saveSpinner" class="erp-spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span>
+      <span id="saveTxt">Cargando...</span>
+    </button>
+  </footer>
+
+</article>
+
+<?!= include('00_portal/ui/PORTAL_ShellClose'); ?>
+
+<script>
+  const _backUrl = '<?= getWebAppUrl() ?>?page=<?= APP_PARAMS.back ? APP_PARAMS.back : 'launchpad' ?>';
+  function volver() { window.open(_backUrl, '_top'); }
+
+  var _sucursales = [];
+
+  window.onload = function() {
+    ERP.Gateway.callArgs('apiGetCatalogosEquipo', [], cargarFormulario, function(err) {
+      ERP.UI.msg('error', '⚠️ Error cargando catálogos: ' + err.message);
+    });
+  };
+
+  function cargarFormulario(data) {
+    _sucursales = data.sucursales || [];
+    ['tipo','marca','empresa','estado'].forEach(function(k) {
+      document.getElementById('sk_' + k).style.display = 'none';
+      document.getElementById('id_' + k).style.display = 'block';
+    });
+    ERP.Select.fill('id_tipo',    data.tipos,    'id_tipo',    'nombre', '— Seleccionar —');
+    ERP.Select.fill('id_marca',   data.marcas,   'id_marca',   'nombre', '— Seleccionar —');
+    ERP.Select.fill('id_empresa', data.empresas, 'id_empresa', 'nombre', '— Seleccionar —');
+    ERP.Select.fill('id_estado',  data.estados,  'id_estado',  'nombre', '— Seleccionar —');
+    ERP.Select.autoSelect('id_estado', 'bodega');
+    document.getElementById('codigo_interno').value = 'EQ-' + String(data.nextId).padStart(4, '0');
+    document.getElementById('saveBtn').disabled = false;
+    document.getElementById('saveSpinner').style.display = 'none';
+    document.getElementById('saveTxt').textContent = '💾 Guardar Equipo';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function onEmpresaChange() {
+    var idEmpresa = document.getElementById('id_empresa').value;
+    var filtered = _sucursales.filter(function(s) { return String(s.id_empresa) === String(idEmpresa); });
+    ERP.Select.fill('id_sucursal', filtered, 'id_sucursal', 'nombre',
+      filtered.length ? '— Seleccionar centro / sucursal —' : 'Sin sucursales para esta empresa'
+    );
+  }
+
+  function guardar(e) {
+    e.preventDefault();
+    ERP.UI.msgHide();
+    ERP.Gateway.submit({
+      method: 'apiGuardarEquipo',
+      payload: ERP.Form.collect(['id_tipo','id_marca','modelo','serial','id_empresa','id_sucursal','id_estado','fecha_compra','garantia_hasta','valor_compra','link_factura','link_foto','observaciones']),
+      btnId: 'saveBtn', btnText: '💾 Guardar Equipo', loadingText: 'Guardando...',
+      onSuccess: function(res) {
+        if (res.ok) {
+          ERP.UI.msg('success', '✔ ' + res.mensaje);
+          setTimeout(volver, 1500);
+        } else {
+          ERP.UI.msg('error', '⚠️ ' + (res.errores || ['Error desconocido.']).join('<br>'));
+        }
+      },
+    });
+  }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>

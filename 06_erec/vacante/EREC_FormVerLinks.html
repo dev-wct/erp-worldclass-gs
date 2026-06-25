@@ -1,0 +1,127 @@
+<?!= include('00_portal/ui/PORTAL_Shell'); ?>
+
+<div style="max-width:900px;margin:0 auto;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <h2 style="font-size:18px;font-weight:600;color:#1d2d3d;margin-bottom:2px;">Links de Postulación</h2>
+        <p style="font-size:13px;color:#515f6e;">Links generados para vacantes activas.</p>
+      </div>
+    </div>
+
+    <div id="erp-msg" class="erp-msg" style="display:none;" role="alert"></div>
+
+    <!-- Skeleton mientras carga -->
+    <div id="skeleton-area">
+      <div class="erp-skeleton" style="height:44px;margin-bottom:6px;"></div>
+      <div class="erp-skeleton" style="height:44px;margin-bottom:6px;opacity:.7;"></div>
+      <div class="erp-skeleton" style="height:44px;margin-bottom:6px;opacity:.5;"></div>
+    </div>
+
+    <!-- Tabla -->
+    <div id="table-area" style="display:none;">
+      <div style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;overflow:hidden;">
+        <table class="links-table">
+          <thead>
+            <tr>
+              <th>Candidato / Tipo</th>
+              <th>Vacante</th>
+              <th>Link</th>
+              <th>Expira</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="links-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="empty-area" style="display:none;text-align:center;padding:48px 24px;">
+      <div style="width:56px;height:56px;border-radius:50%;background:#f5f6f7;
+                  display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+        <i data-lucide="link-2-off" style="width:26px;height:26px;color:#515f6e;"></i>
+      </div>
+      <h3 style="font-size:15px;font-weight:600;color:#1d2d3d;margin-bottom:6px;">Sin links generados</h3>
+      <p style="font-size:13px;color:#515f6e;margin-bottom:16px;">
+        Crea una vacante primero y luego genera un link de postulación.
+      </p>
+      <a href="<?= getWebAppUrl() ?>?page=generar-link" target="_top" class="erp-btn erp-btn-primary"
+         style="text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
+        <i data-lucide="plus" style="width:16px;height:16px;"></i> Generar primer link
+      </a>
+    </div>
+
+  </div>
+
+<?!= include('00_portal/ui/PORTAL_ShellClose'); ?>
+
+<script>
+  window.onload = function() {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        document.getElementById('skeleton-area').style.display = 'none';
+
+        if (!res || !res.ok || !res.links || res.links.length === 0) {
+          document.getElementById('empty-area').style.display = 'block';
+          return;
+        }
+
+        var tbody = document.getElementById('links-tbody');
+        var ahora = new Date();
+
+        res.links.forEach(function(link) {
+          var estado  = String(link.estado || '').toUpperCase();
+          var expira  = link.expira_at ? new Date(link.expira_at) : null;
+          if (estado === 'PENDIENTE' && expira && ahora > expira) estado = 'EXPIRADO';
+
+          var estadoBadge = estado === 'PENDIENTE'
+            ? '<span class="badge badge-green">Activo</span>'
+            : estado === 'USADO'
+              ? '<span class="badge badge-gray">Usado</span>'
+              : '<span class="badge badge-red">Expirado</span>';
+
+          var modoBadge = link.modo === 'PUBLICO'
+            ? '<span class="badge badge-blue">Público</span>'
+            : '<span class="badge badge-purple">Individual</span>';
+
+          var candidato = link.nombre_destino || link.email_destino || '—';
+          var linkUrl   = link.link_url || '';
+          var linkCell  = linkUrl && estado !== 'EXPIRADO'
+            ? '<a href="' + linkUrl + '" target="_blank" style="font-size:11px;color:#0a6ed1;' +
+              'word-break:break-all;display:block;max-width:220px;">' +
+              linkUrl.substring(0, 40) + '...</a>' +
+              '<button class="copy-btn" onclick="copiar(\'' + linkUrl.replace(/'/g,"&#39;") + '\')">' +
+              'Copiar</button>'
+            : '<span style="color:#aaa;font-size:11px;">' + (linkUrl ? 'Expirado' : 'Sin URL') + '</span>';
+
+          var tr = document.createElement('tr');
+          tr.innerHTML =
+            '<td><div style="font-weight:500;color:#1d2d3d;">' + candidato + '</div>' +
+            '<div style="margin-top:3px;">' + modoBadge + '</div></td>' +
+            '<td style="font-size:12px;color:#515f6e;">' + (link.id_vacante || '—') + '</td>' +
+            '<td>' + linkCell + '</td>' +
+            '<td style="font-size:12px;color:#515f6e;white-space:nowrap;">' +
+            (expira ? expira.toLocaleDateString('es-GT') : '—') + '</td>' +
+            '<td>' + estadoBadge + '</td>';
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById('table-area').style.display = 'block';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      })
+      .withFailureHandler(function(err) {
+        document.getElementById('skeleton-area').style.display = 'none';
+        ERP.UI.msg('error', 'Error cargando links: ' + (err && err.message ? err.message : 'sin detalle'));
+      })
+      .apiGetLinksPostulacion();
+  };
+
+  function copiar(url) {
+    navigator.clipboard.writeText(url).then(function() {
+      ERP.UI.msg('success', '✔ Link copiado al portapapeles.');
+    });
+  }
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>

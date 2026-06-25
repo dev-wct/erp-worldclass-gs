@@ -1,0 +1,157 @@
+<?!= include('00_portal/ui/PORTAL_Shell'); ?>
+
+<article class="erp-card">
+
+  <header class="erp-card-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" style="padding:4px;border-radius:50%;" onclick="volver()" title="Volver">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+      </button>
+      <div style="width:36px;height:36px;border-radius:6px;background:#e8eaf6;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="link" style="width:18px;height:18px;color:#283593;"></i>
+      </div>
+      <div>
+        <h1 style="font-size:16px;font-weight:600;color:#1d2d3d;margin:0;line-height:1.2;">Nueva Asignación de Activos</h1>
+        <p style="font-size:12px;color:#515f6e;margin:2px 0 0;">EAM — Provisión de hardware y conectividad a agentes</p>
+      </div>
+    </div>
+    <div id="catalog-status"></div>
+  </header>
+
+  <div class="erp-card-body">
+    <div id="erp-msg" class="erp-msg" style="display:none;" role="alert"></div>
+
+    <form id="asigForm" onsubmit="guardar(event)" novalidate>
+      <div class="erp-form-grid">
+
+        <p class="erp-section-title">Empleado Receptor</p>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="id_empleado">Empleado Activo</label>
+          <div id="sk_empleado" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_empleado" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar empleado —</option>
+          </select>
+        </div>
+
+        <p class="erp-section-title">Equipo <span style="font-weight:400;color:#515f6e;">(opcional si asigna solo chip)</span></p>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="id_equipo">Equipo Disponible (En Bodega)</label>
+          <div id="sk_equipo" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_equipo" class="erp-select" style="display:none;">
+            <option value="">— Sin equipo / Solo chip —</option>
+          </select>
+        </div>
+
+        <p class="erp-section-title">Chip SIM <span style="font-weight:400;color:#515f6e;">(opcional si asigna solo equipo)</span></p>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="id_chip">Chip SIM Disponible (En Bodega)</label>
+          <div id="sk_chip" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_chip" class="erp-select" style="display:none;">
+            <option value="">— Sin chip / Solo equipo —</option>
+          </select>
+        </div>
+
+        <div class="erp-msg erp-msg-warning erp-full" style="display:flex;">
+          ⚠️ Regla: debe seleccionar al menos un equipo o un chip.
+        </div>
+
+        <p class="erp-section-title">Datos de la Asignación</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="fecha_asignacion">Fecha de Asignación</label>
+          <input type="date" id="fecha_asignacion" class="erp-input" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label" for="estado_flujo">Estado del Flujo</label>
+          <input type="text" id="estado_flujo" class="erp-input" style="background:#f5f6f7;cursor:not-allowed;" value="PENDIENTE" readonly>
+        </div>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="link_acta">Enlace Acta de Entrega (Drive)</label>
+          <input type="url" id="link_acta" class="erp-input" placeholder="https://drive.google.com/...">
+        </div>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="notas">Notas / Observaciones</label>
+          <textarea id="notas" class="erp-textarea" rows="3" placeholder="Motivo de la asignación, condiciones especiales..."></textarea>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <footer class="erp-card-footer">
+    <button type="button" class="erp-btn" onclick="volver()">← Volver</button>
+    <button type="submit" form="asigForm" id="saveBtn" class="erp-btn erp-btn-primary" disabled>
+      <span id="saveSpinner" class="erp-spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span>
+      <span id="saveTxt">Cargando...</span>
+    </button>
+  </footer>
+
+</article>
+
+<?!= include('00_portal/ui/PORTAL_ShellClose'); ?>
+
+<script>
+  const _backUrl = '<?= getWebAppUrl() ?>?page=<?= APP_PARAMS.back ? APP_PARAMS.back : 'launchpad' ?>';
+  function volver() { window.open(_backUrl, '_top'); }
+
+  window.onload = function() {
+    document.getElementById('fecha_asignacion').value = new Date().toISOString().split('T')[0];
+    ERP.Gateway.callArgs('apiGetCatalogosAsignacion', [], cargarFormulario, function(err) {
+      ERP.UI.msg('error', '⚠️ Error cargando datos: ' + err.message);
+    });
+  };
+
+  function cargarFormulario(data) {
+    ['empleado','equipo','chip'].forEach(function(k) {
+      document.getElementById('sk_' + k).style.display = 'none';
+      document.getElementById('id_' + k).style.display = 'block';
+    });
+    ERP.Select.fill('id_empleado', data.empleados, 'id_empleado',
+      function(e) { return e.nombre_completo + ' — ' + (e.email || 'Sin email'); },
+      '— Seleccionar empleado —'
+    );
+    ERP.Select.fill('id_equipo', data.equipos, 'id_equipo',
+      function(eq) { return eq.codigo_interno + ' — ' + (eq.marca || eq.id_marca) + ' ' + eq.modelo + ' (' + eq.serial + ')'; },
+      '— Sin equipo / Solo chip —'
+    );
+    ERP.Select.fill('id_chip', data.chips, 'id_chip',
+      function(ch) { return ch.codigo_interno + ' — ' + ch.numero + ' (' + (ch.operadora || ch.id_operadora) + ') GTQ ' + ch.costo_mensual + '/mes'; },
+      '— Sin chip / Solo equipo —'
+    );
+    document.getElementById('saveBtn').disabled = false;
+    document.getElementById('saveSpinner').style.display = 'none';
+    document.getElementById('saveTxt').textContent = '📋 Crear Solicitud';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function guardar(e) {
+    e.preventDefault();
+    var idEquipo = document.getElementById('id_equipo').value;
+    var idChip   = document.getElementById('id_chip').value;
+    if (!idEquipo && !idChip) {
+      ERP.UI.msg('warning', '⚠️ Debe seleccionar al menos un equipo o un chip.');
+      return;
+    }
+    ERP.UI.msgHide();
+    ERP.Gateway.submit({
+      method: 'apiGuardarAsignacion',
+      payload: ERP.Form.collect(['id_empleado','id_equipo','id_chip','fecha_asignacion','link_acta','notas']),
+      btnId: 'saveBtn', btnText: '📋 Crear Solicitud', loadingText: 'Guardando...',
+      onSuccess: function(res) {
+        if (res.ok) {
+          ERP.UI.msg('success', '✔ ' + res.mensaje);
+          setTimeout(volver, 2000);
+        } else {
+          ERP.UI.msg('error', '⚠️ ' + (res.errores || ['Error desconocido.']).join('<br>'));
+        }
+      },
+    });
+  }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>

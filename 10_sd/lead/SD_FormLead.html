@@ -1,0 +1,172 @@
+<?!= include('00_portal/ui/PORTAL_Shell'); ?>
+
+<article class="erp-card">
+
+  <header class="erp-card-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" style="padding:4px;border-radius:50%;" onclick="volver()" title="Volver">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+      </button>
+      <div style="width:36px;height:36px;border-radius:6px;background:#fff3e0;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="user-search" style="width:18px;height:18px;color:#e65100;"></i>
+      </div>
+      <div>
+        <h1 style="font-size:16px;font-weight:600;color:#1d2d3d;margin:0;line-height:1.2;">Registrar Nuevo Lead</h1>
+        <p style="font-size:12px;color:#515f6e;margin:2px 0 0;">SD — Clientes potenciales de Call Center para perfilamiento VIP</p>
+      </div>
+    </div>
+    <div id="catalog-status"></div>
+  </header>
+
+  <div class="erp-card-body">
+    <div id="erp-msg" class="erp-msg" style="display:none;" role="alert"></div>
+
+    <form id="leadForm" onsubmit="guardar(event)" novalidate>
+      <div class="erp-form-grid">
+
+        <p class="erp-section-title">Datos del Prospecto</p>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label erp-label-required" for="nombre_completo">Nombre Completo</label>
+          <input type="text" class="erp-input" id="nombre_completo" placeholder="Ej. Carlos Mendoza" autocomplete="off" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="telefono">Teléfono</label>
+          <input type="tel" class="erp-input" id="telefono" placeholder="Ej. 55554433" required>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label" for="email">Correo Electrónico</label>
+          <input type="email" class="erp-input" id="email" placeholder="Ej. carlos@mail.com">
+        </div>
+
+        <p class="erp-section-title">Perfil Financiero</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="tipo_tdc">Tarjeta de Crédito</label>
+          <select id="tipo_tdc" class="erp-select">
+            <option value="NINGUNA" selected>Ninguna</option>
+            <option value="VISA">Visa</option>
+            <option value="MASTERCARD">Mastercard</option>
+            <option value="AMERICAN EXPRESS">American Express</option>
+            <option value="DISCOVER">Discover</option>
+            <option value="DINERS CLUB">Diners Club</option>
+          </select>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label" for="banco_emisor">Banco Emisor</label>
+          <input type="text" class="erp-input" id="banco_emisor" placeholder="Ej. BAC / BI">
+        </div>
+
+        <p class="erp-section-title">Origen</p>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="id_campana">Campaña de Origen</label>
+          <div id="sk_campana" class="erp-skeleton" style="height:42px;"></div>
+          <select id="id_campana" class="erp-select" style="display:none;" required>
+            <option value="">— Seleccionar campaña —</option>
+          </select>
+        </div>
+
+        <div class="erp-field">
+          <label class="erp-label erp-label-required" for="fuente">Fuente del Lead</label>
+          <select id="fuente" class="erp-select">
+            <option value="FACEBOOK" selected>Facebook</option>
+            <option value="INSTAGRAM">Instagram</option>
+            <option value="REFERIDO">Referido</option>
+            <option value="LLAMADA EN FRIO">Llamada en Frío</option>
+            <option value="WEB">Sitio Web</option>
+            <option value="OTRO">Otro</option>
+          </select>
+        </div>
+
+        <div class="erp-field erp-full">
+          <label class="erp-label" for="notas">Notas / Observaciones de Perfilamiento</label>
+          <textarea id="notas" class="erp-textarea" rows="3" placeholder="Detalles de interés, comentarios del perfil..."></textarea>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <footer class="erp-card-footer">
+    <button type="button" class="erp-btn" onclick="volver()">← Volver</button>
+    <button type="submit" form="leadForm" id="saveBtn" class="erp-btn erp-btn-primary" disabled>
+      <span id="saveSpinner" class="erp-spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span>
+      <span id="saveTxt">Cargando...</span>
+    </button>
+  </footer>
+
+</article>
+
+<?!= include('00_portal/ui/PORTAL_ShellClose'); ?>
+
+<script>
+  const _backUrl = '<?= getWebAppUrl() ?>?page=<?= APP_PARAMS.back ? APP_PARAMS.back : 'launchpad' ?>';
+  function volver() { window.open(_backUrl, '_top'); }
+
+  window.onload = function() {
+    ERP.Gateway.callArgs('apiGetCatalogosLead', [],
+      function(catalogos) {
+        var campanas = catalogos.campanas || [];
+        document.getElementById('sk_campana').style.display = 'none';
+        document.getElementById('id_campana').style.display = 'block';
+        ERP.Select.fill('id_campana', campanas, 'id', 'nombre',
+          campanas.length ? '— Seleccionar campaña —' : 'No hay campañas activas'
+        );
+        document.getElementById('saveBtn').disabled = false;
+        document.getElementById('saveSpinner').style.display = 'none';
+        document.getElementById('saveTxt').textContent = '💾 Registrar Lead';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      },
+      function() {
+        document.getElementById('sk_campana').style.display = 'none';
+        document.getElementById('id_campana').style.display = 'block';
+        document.getElementById('id_campana').innerHTML = '<option value="">Error cargando campañas</option>';
+        ERP.UI.msg('error', 'Error cargando catálogos.');
+      }
+    );
+  };
+
+  function guardar(e) {
+    e.preventDefault();
+    ERP.UI.msgHide();
+
+    var payload = ERP.Form.collect(['nombre_completo','telefono','email','tipo_tdc','banco_emisor','id_campana','fuente','notas']);
+    var validation = SharedValidator.validate(payload, {
+      nombre_completo: ['required'],
+      telefono:        ['required', 'telefono'],
+      email:           ['email'],
+      id_campana:      ['required'],
+      fuente:          ['required']
+    });
+
+    if (!validation.isValid) {
+      var errs = [];
+      if (validation.errors.nombre_completo) errs.push('Nombre completo: ' + validation.errors.nombre_completo);
+      if (validation.errors.telefono)        errs.push('Teléfono: ' + validation.errors.telefono);
+      if (validation.errors.email)           errs.push('Email: ' + validation.errors.email);
+      if (validation.errors.id_campana)      errs.push('Campaña: ' + validation.errors.id_campana);
+      if (validation.errors.fuente)          errs.push('Fuente: ' + validation.errors.fuente);
+      ERP.UI.msg('error', errs.join('<br>'));
+      return;
+    }
+
+    ERP.Gateway.submit({
+      method: 'apiGuardarLead',
+      payload: payload,
+      btnId: 'saveBtn', btnText: '💾 Registrar Lead', loadingText: 'Guardando...',
+      onSuccess: function(res) {
+        if (res.ok) {
+          ERP.UI.msg('success', '✔ Lead registrado correctamente.');
+          setTimeout(volver, 2000);
+        } else {
+          ERP.UI.msg('error', (res.errores || ['Error desconocido.']).join('<br>'));
+        }
+      },
+    });
+  }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>
