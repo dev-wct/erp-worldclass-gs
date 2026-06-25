@@ -28,17 +28,70 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- ── Carga Inmediata del Tema para Evitar Parpadeos (FOUC) ── -->
+  <script>
+    (function() {
+      try {
+        var theme = localStorage.getItem('erp-theme') || 'light';
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+
+  <!-- ── Definición de Variables CSS de Temas (Light / Dark) ── -->
+  <style>
+    :root {
+      /* Tema Claro (Por Defecto SAP Horizon Horizon-like) */
+      --color-canvas: #f5f6f7;
+      --color-surface: #ffffff;
+      --color-ink: #1d2d3d;
+      --color-muted: #515f6e;
+      --color-border: #d9d9d9;
+      --color-border-subtle: #ebebeb;
+      --color-shell: #1d2b3a;
+      --color-primary: #0a6ed1;
+      --color-primary-hover: #0854a0;
+      --color-primary-light: #e8f1fb;
+      --color-success: #107e3e;
+      --color-success-light: #eef7f2;
+      --color-warning: #e9730c;
+      --color-warning-light: #fff3e6;
+      --color-error: #bb0000;
+      --color-error-light: #fdf2f2;
+      --color-info: #0a6ed1;
+      --color-info-light: #f2f7fd;
+    }
+    
+    html.dark {
+      /* Tema Oscuro (Zafiro & Vidrio Esmerilado Premium) */
+      --color-canvas: #080c14;
+      --color-surface: #111827;
+      --color-ink: #f8fafc;
+      --color-muted: #94a3b8;
+      --color-border: #1e293b;
+      --color-border-subtle: rgba(30, 41, 59, 0.5);
+      --color-shell: #0d1527;
+      --color-primary: #3b82f6;
+      --color-primary-hover: #2563eb;
+      --color-primary-light: rgba(59, 130, 246, 0.1);
+      --color-success: #10b981;
+      --color-success-light: rgba(16, 185, 129, 0.1);
+      --color-warning: #f59e0b;
+      --color-warning-light: rgba(245, 158, 11, 0.1);
+      --color-error: #ef4444;
+      --color-error-light: rgba(239, 68, 68, 0.1);
+      --color-info: #3b82f6;
+      --color-info-light: rgba(59, 130, 246, 0.1);
+    }
+  </style>
+
   <!-- ── Tailwind Play CDN ───────────────────────────────────────────── -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    /**
-     * Tokens corporativos WorldClass / SAP Horizon.
-     * Fuente única de verdad visual — toda clase Tailwind de color, sombra
-     * y fuente en los formularios deriva de aquí.
-     *
-     * Anti vendor lock-in: si se migra a SvelteKit, este objeto se convierte
-     * en tailwind.config.js sin cambiar ningún nombre de clase.
-     */
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -47,27 +100,26 @@
             sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
           },
           colors: {
-            /* ── Marca ──────────────────────────────────────────────── */
-            primary:   { DEFAULT: '#3b82f6', hover: '#2563eb', light: 'rgba(59, 130, 246, 0.1)' },
-            success:   { DEFAULT: '#10b981', light: 'rgba(16, 185, 129, 0.1)' },
-            warning:   { DEFAULT: '#f59e0b', light: 'rgba(245, 158, 11, 0.1)' },
-            error:     { DEFAULT: '#ef4444', light: 'rgba(239, 68, 68, 0.1)' },
-            info:      { DEFAULT: '#3b82f6', light: 'rgba(59, 130, 246, 0.1)' },
+            primary:   { DEFAULT: 'var(--color-primary)', hover: 'var(--color-primary-hover)', light: 'var(--color-primary-light)' },
+            success:   { DEFAULT: 'var(--color-success)', light: 'var(--color-success-light)' },
+            warning:   { DEFAULT: 'var(--color-warning)', light: 'var(--color-warning-light)' },
+            error:     { DEFAULT: 'var(--color-error)', light: 'var(--color-error-light)' },
+            info:      { DEFAULT: 'var(--color-info)', light: 'var(--color-info-light)' },
 
             /* ── Semánticos de superficie ───────────────────────────── */
-            shell:     '#0d1527',   /* shellbar / nav top                  */
-            canvas:    '#080c14',   /* fondo de página                     */
-            surface:   '#111827',   /* fondo de card / panel               */
-            overlay:   '#1f2937',   /* hover de fila / fondo sutil         */
+            shell:     'var(--color-shell)',
+            canvas:    'var(--color-canvas)',
+            surface:   'var(--color-surface)',
+            overlay:   'rgba(59, 130, 246, 0.05)',
 
             /* ── Texto ──────────────────────────────────────────────── */
-            ink:       '#f8fafc',   /* texto principal                     */
-            muted:     '#94a3b8',   /* texto secundario / labels           */
-            placeholder: '#64748b', /* placeholder de inputs               */
+            ink:       'var(--color-ink)',
+            muted:     'var(--color-muted)',
+            placeholder: 'var(--color-muted)',
 
             /* ── Bordes ─────────────────────────────────────────────── */
-            border:    '#1e293b',
-            'border-subtle': '#1e293b90',
+            border:    'var(--color-border)',
+            'border-subtle': 'var(--color-border-subtle)',
           },
           boxShadow: {
             'sap':       '0 4px 12px rgba(29,45,61,.04), 0 1px 2px rgba(29,45,61,.06)',
@@ -136,14 +188,14 @@
       .sb-mod { @apply text-white/60 text-[13px] no-underline hover:underline hover:text-white/80 transition-colors; }
       .sb-page { @apply text-white/90 text-[13px] font-medium; }
       .sb-right { @apply flex items-center gap-2.5 shrink-0; }
-      .sb-status { @apply flex items-center gap-1.5 px-2.5 py-[3px] rounded-full bg-success/20 text-success text-[11px] font-medium; }
+      .sb-status { @apply flex items-center gap-1.5 px-2.5 py-[3px] rounded-full bg-success-light text-success text-[11px] font-medium; }
       .sb-dot { @apply w-[7px] h-[7px] rounded-full bg-success shrink-0; }
       .sb-email { @apply text-white/50 text-[12px] max-w-[160px] truncate; }
       .sb-avatar { @apply w-[29px] h-[29px] rounded-full bg-white/10 flex items-center justify-center border-[1.5px] border-white/20; }
 
       /* ── Inputs / Selects / Textareas ─────────────────────────────── */
       .erp-input, .erp-select, .erp-textarea {
-        @apply block w-full px-3 py-2.5 text-[14px] text-ink bg-surface border border-border rounded-sap transition-all duration-150 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 hover:border-muted disabled:bg-canvas disabled:text-muted disabled:cursor-not-allowed disabled:border-border-subtle;
+        @apply block w-full px-3 py-2.5 text-[14px] text-ink bg-surface border border-border rounded-sap transition-all duration-150 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary-light hover:border-muted disabled:bg-canvas disabled:text-muted disabled:cursor-not-allowed disabled:border-border-subtle;
       }
       .erp-input::placeholder, .erp-textarea::placeholder { @apply text-placeholder; }
       .erp-select {
@@ -159,7 +211,7 @@
 
       /* ── Botones ──────────────────────────────────────────────────── */
       .erp-btn {
-        @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 text-[14px] font-medium border border-border rounded-sap bg-surface text-ink cursor-pointer transition-all duration-150 whitespace-nowrap outline-none focus-visible:ring-[3px] focus-visible:ring-primary/30 focus-visible:border-primary hover:bg-overlay hover:border-muted active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+        @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 text-[14px] font-medium border border-border rounded-sap bg-surface text-ink cursor-pointer transition-all duration-150 whitespace-nowrap outline-none focus-visible:ring-[3px] focus-visible:ring-primary-light focus-visible:border-primary hover:bg-overlay hover:border-muted active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
       }
       .erp-btn-primary { @apply bg-primary border-primary text-white hover:bg-primary-hover hover:border-primary-hover; }
       .erp-btn-success { @apply bg-success border-success text-white hover:opacity-90; }

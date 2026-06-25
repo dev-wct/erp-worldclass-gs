@@ -44,6 +44,11 @@
       }
     });
 
+    function toggleTheme() {
+      var isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('erp-theme', isDark ? 'dark' : 'light');
+    }
+
     if (typeof lucide !== 'undefined') {
       lucide.createIcons();
     }

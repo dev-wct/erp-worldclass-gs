@@ -34,6 +34,10 @@
         </ol>
       </nav>
     <div class="sb-right">
+      <button type="button" class="text-white/80 hover:text-white mr-1.5 p-1 rounded transition-colors focus:outline-none" onclick="toggleTheme()" id="theme-toggle-btn" aria-label="Cambiar Tema">
+        <i data-lucide="moon" class="w-4 h-4 hidden dark:block"></i>
+        <i data-lucide="sun" class="w-4 h-4 block dark:hidden"></i>
+      </button>
       <div class="sb-status"><div class="sb-dot"></div><span>Conectado</span></div>
       <? if (APP_USER) { ?><span class="sb-email"><?= APP_USER ?></span><? } ?>
       <div class="sb-avatar"><i data-lucide="user" class="w-4 h-4 text-white/80"></i></div>
@@ -332,6 +336,11 @@
   </div>
 
 <script>
+  function toggleTheme() {
+    var isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('erp-theme', isDark ? 'dark' : 'light');
+  }
+
   function nav(page) {
     var tile = event && event.currentTarget;
     if (tile) { tile.style.opacity = '.6'; tile.style.pointerEvents = 'none'; }
