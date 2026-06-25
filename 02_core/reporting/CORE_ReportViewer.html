@@ -9,15 +9,162 @@
 <!-- SheetJS (Para exportar Excel) -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
+<style>
+  /*
+   * ── CORE_ReportViewer — Estilos Tabulator ────────────────────────────────
+   * Tokens derivados del Design System (CORE_Head).
+   * Mobile-first: base compacto, desktop escalado.
+   */
+  :root {
+    --rv-font-size-cell:    12px;
+    --rv-font-size-header:  11px;
+    --rv-cell-padding-v:    5px;
+    --rv-cell-padding-h:    8px;
+    --rv-header-padding-v:  5px;
+    --rv-header-padding-h:  8px;
+    --rv-footer-padding:    6px 10px;
+    --rv-header-bg:         #f8fafc;
+    --rv-header-border:     #ebebeb;
+    --rv-header-color:      #515f6e;
+    --rv-cell-border:       #ebebeb;
+    --rv-row-hover:         #f0f4f8;
+    --rv-row-stripe:        #fafbfc;
+    --rv-footer-bg:         #ffffff;
+    --rv-footer-border:     #ebebeb;
+    --rv-page-btn-padding:  3px 8px;
+    --rv-page-btn-radius:   4px;
+  }
+  .tabulator {
+    font-size: var(--rv-font-size-cell) !important;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    border: none !important; border-radius: 0 !important; background: transparent !important;
+  }
+  .tabulator-header {
+    background-color: var(--rv-header-bg) !important;
+    border-bottom: 2px solid var(--rv-header-border) !important;
+  }
+  .tabulator .tabulator-col-content { padding: var(--rv-header-padding-v) var(--rv-header-padding-h) !important; }
+  .tabulator .tabulator-col-title {
+    font-size: var(--rv-font-size-header) !important; font-weight: 600 !important;
+    text-transform: uppercase !important; letter-spacing: 0.04em !important;
+    color: var(--rv-header-color) !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tabulator .tabulator-header-filter input {
+    font-size: 11px !important; padding: 2px 6px !important; border-radius: 3px !important;
+    border: 1px solid #d9d9d9 !important; outline: none; width: 100%; font-family: inherit !important;
+  }
+  .tabulator .tabulator-header-filter input:focus {
+    border-color: #0a6ed1 !important; box-shadow: 0 0 0 2px rgba(10,110,209,.2) !important;
+  }
+  .tabulator-row .tabulator-cell {
+    padding: var(--rv-cell-padding-v) var(--rv-cell-padding-h) !important;
+    border-right: 1px solid var(--rv-cell-border) !important;
+    font-size: var(--rv-font-size-cell) !important; line-height: 1.5 !important;
+    color: #1d2d3d; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .tabulator-row .tabulator-cell:last-child { border-right: none !important; }
+  .tabulator-row { border-bottom: 1px solid var(--rv-cell-border) !important; }
+  .tabulator-row:hover .tabulator-cell { background-color: var(--rv-row-hover) !important; }
+  .tabulator-row.tabulator-row-even { background-color: var(--rv-row-stripe) !important; }
+  .tabulator-footer {
+    padding: var(--rv-footer-padding) !important;
+    background-color: var(--rv-footer-bg) !important;
+    border-top: 1px solid var(--rv-footer-border) !important;
+    display: flex !important; align-items: center !important;
+    justify-content: center !important; flex-wrap: wrap !important;
+    gap: 4px !important; font-size: 11px !important;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  }
+  .tabulator-footer .tabulator-paginator {
+    display: flex !important; align-items: center !important;
+    justify-content: center !important; flex-wrap: wrap !important; gap: 4px !important; width: 100% !important;
+  }
+  .tabulator-footer .tabulator-pages {
+    display: flex !important; align-items: center !important;
+    gap: 2px !important; flex-wrap: wrap !important; justify-content: center !important;
+  }
+  .tabulator-footer .tabulator-page {
+    padding: var(--rv-page-btn-padding) !important; font-size: 11px !important; margin: 0 !important;
+    border-radius: var(--rv-page-btn-radius) !important; border: 1px solid #d9d9d9 !important;
+    background: #fff !important; color: #1d2d3d !important; cursor: pointer;
+    transition: background 150ms, border-color 150ms; font-family: inherit !important;
+  }
+  .tabulator-footer .tabulator-page:hover:not([disabled]) { background: #f0f4f8 !important; border-color: #515f6e !important; }
+  .tabulator-footer .tabulator-page.active { background: #0a6ed1 !important; border-color: #0a6ed1 !important; color: #fff !important; font-weight: 600 !important; }
+  .tabulator-footer .tabulator-page[disabled] { opacity: 0.4 !important; cursor: not-allowed !important; }
+  .tabulator-footer .tabulator-page-size {
+    font-size: 11px !important; padding: 3px 6px !important;
+    border: 1px solid #d9d9d9 !important; border-radius: 4px !important; cursor: pointer; font-family: inherit !important;
+  }
+  .tabulator-footer .tabulator-page-counter { font-size: 11px !important; color: #515f6e !important; margin: 0 6px !important; }
+  @media (min-width: 768px) {
+    :root { --rv-font-size-cell: 13px; --rv-cell-padding-v: 6px; --rv-cell-padding-h: 10px; --rv-header-padding-v: 6px; --rv-header-padding-h: 10px; }
+  }
+
+  /* ── Cabezal de empresa ── */
+  .company-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 16px; background: #fff;
+    border-bottom: 1px solid #ebebeb; flex-shrink: 0;
+  }
+  .company-logo-img {
+    width: 32px; height: 32px; border-radius: 5px;
+    object-fit: contain; border: 1px solid #ebebeb; background: #f5f6f7;
+    flex-shrink: 0;
+  }
+  .company-logo-initials {
+    width: 32px; height: 32px; border-radius: 5px;
+    background: linear-gradient(135deg, #0a6ed1 0%, #0854a0 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 12px; color: white;
+    letter-spacing: 0.5px; flex-shrink: 0;
+  }
+  .company-info { min-width: 0; flex: 1; }
+  .company-name { font-size: 12px; font-weight: 600; color: #1d2d3d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .company-meta { font-size: 10px; color: #515f6e; display: flex; align-items: center; gap: 5px; margin-top: 1px; flex-wrap: wrap; }
+  /* Selector de empresa */
+  #empresa-selector {
+    font-size: 11px; padding: 3px 6px; border: 1px solid #d9d9d9; border-radius: 4px;
+    background: #fff; color: #1d2d3d; cursor: pointer; outline: none; flex-shrink: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  #empresa-selector:focus { border-color: #0a6ed1; box-shadow: 0 0 0 2px rgba(10,110,209,.2); }
+  /* Skeleton */
+  .rv-skeleton {
+    border-radius: 4px;
+    background: linear-gradient(90deg, #ebebeb 25%, #f5f5f5 50%, #ebebeb 75%);
+    background-size: 200% 100%; animation: rv-shimmer 1.4s infinite;
+  }
+  @keyframes rv-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+</style>
+
 <body class="bg-canvas text-ink font-sans m-0 p-0 overflow-hidden flex flex-col h-screen">
 
   <!-- SHELLBAR -->
   <div class="shellbar shrink-0">
-    <div class="sb-left" onclick="window.open('<?= getWebAppUrl() ?>?page=launchpad', '_top')" style="cursor:pointer;">
-      <div class="sb-logo"><i data-lucide="layers" class="w-4 h-4 text-white"></i></div>
-      <span class="sb-name hover:underline">WorldClass ERP</span>
-      <span class="sb-sep">/</span>
-      <span class="sb-mod">Explorador de Reportes</span>
+    <div class="sb-left flex items-center min-w-0" onclick="window.open('<?= getWebAppUrl() ?>?page=launchpad', '_top')" style="cursor:pointer;">
+      <nav class="flex text-[13px] items-center min-w-0" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-1.5 min-w-0">
+          <li class="inline-flex items-center shrink-0">
+            <span class="inline-flex items-center text-white font-semibold hover:text-white/80 transition-colors">
+              <? if (APP_ERP_LOGO_URL) { ?>
+                <img src="<?= APP_ERP_LOGO_URL ?>" alt="Logo" class="w-[26px] h-[26px] rounded object-contain mr-1.5 bg-white border border-white/20 p-[1px]">
+              <? } else { ?>
+                <i data-lucide="home" class="w-4 h-4 mr-1.5 text-white/80"></i>
+              <? } ?>
+              <span class="hidden sm:inline hover:underline"><?= APP_ERP_NAME ?></span>
+            </span>
+          </li>
+          <li class="flex items-center shrink-0">
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-white/30"></i>
+            <span class="ml-1 md:ml-1.5 text-white/60 font-medium select-none">CORE</span>
+          </li>
+          <li class="flex items-center min-w-0" aria-current="page">
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-white/30"></i>
+            <span class="ml-1 md:ml-1.5 text-white font-medium select-none truncate">Explorador de Reportes</span>
+          </li>
+        </ol>
+      </nav>
     </div>
     <div class="sb-right">
       <div class="sb-status"><div class="sb-dot"></div>Online</div>
@@ -25,196 +172,594 @@
     </div>
   </div>
 
-  <div class="flex-1 flex overflow-hidden">
-    <!-- MENU LATERAL (Catálogo de Reportes) -->
-    <aside class="w-64 bg-white border-r border-border-subtle flex flex-col overflow-y-auto hidden md:flex shrink-0">
-      <div class="p-4 border-b border-border-subtle">
-        <h2 class="text-xs font-bold text-muted uppercase tracking-wider">Catálogo</h2>
+  <div class="flex-1 flex overflow-hidden min-h-0">
+
+    <!-- ── SIDEBAR ── -->
+    <aside id="sidebar" class="w-56 bg-white border-r border-[#ebebeb] flex flex-col overflow-y-auto shrink-0 hidden md:flex">
+      <div class="px-4 py-3 border-b border-[#ebebeb]">
+        <h2 class="text-[10px] font-bold text-muted uppercase tracking-wider">Catálogo</h2>
       </div>
-      <div class="p-3" id="menu-reportes">
-        <div class="text-center text-xs text-muted py-4">Cargando...</div>
+      <div class="p-2 flex-1" id="menu-reportes">
+        <div class="text-center text-xs text-muted py-6">
+          <div class="erp-spinner text-primary w-5 h-5 mx-auto mb-2"></div>
+          Cargando...
+        </div>
       </div>
     </aside>
 
-    <!-- AREA PRINCIPAL (Visor) -->
-    <main class="flex-1 flex flex-col bg-slate-50 relative">
-      
-      <!-- Encabezado del Reporte -->
-      <header class="bg-white border-b border-border-subtle p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
-        <div>
-          <h1 id="report-title" class="text-2xl font-bold text-ink leading-tight">Seleccione un reporte</h1>
-          <p id="report-desc" class="text-sm text-muted mt-1">Haga clic en el menú lateral para cargar datos.</p>
-        </div>
-        
-        <!-- Toolbar (Oculto al inicio) -->
-        <div id="report-toolbar" class="hidden flex items-center gap-2">
-          <button onclick="downloadPDF()" class="px-3 py-2 bg-white border border-border-subtle rounded-md text-sm hover:bg-slate-50 transition-colors text-red-700 flex items-center gap-1" title="Exportar PDF">
-            <i data-lucide="file-text" class="w-4 h-4"></i> PDF
-          </button>
-          <button onclick="downloadExcel()" class="px-3 py-2 bg-white border border-border-subtle rounded-md text-sm hover:bg-slate-50 transition-colors text-green-700 flex items-center gap-1" title="Exportar Excel">
-            <i data-lucide="sheet" class="w-4 h-4"></i> Excel
-          </button>
-        </div>
-      </header>
+    <!-- ── ÁREA PRINCIPAL ── -->
+    <main class="flex-1 flex flex-col bg-[#f5f6f7] min-w-0 overflow-y-auto">
 
-      <!-- Contenedor Tabulator -->
-      <div class="flex-1 p-6 overflow-hidden flex flex-col">
-        <div id="loader-table" class="hidden flex flex-col items-center justify-center py-20 flex-1">
-          <div class="erp-spinner text-primary w-8 h-8"></div>
-          <p class="text-sm text-muted mt-4 font-medium">Ejecutando consultas, por favor espere...</p>
+      <div class="max-w-7xl w-full mx-auto flex flex-col flex-1 min-h-0 px-0 sm:px-4">
+
+        <!-- ── CABEZAL EMPRESA ────────────────────────────────────────── -->
+        <div id="company-bar" class="company-bar">
+          <!-- Skeleton mientras carga -->
+          <div class="rv-skeleton w-8 h-8 rounded-[5px] shrink-0" id="cbar-skeleton"></div>
+          <div id="cbar-logo-wrap" style="display:none;"></div>
+          <div class="company-info">
+            <div class="company-name" id="cbar-nombre">
+              <div class="rv-skeleton h-3 w-28 rounded"></div>
+            </div>
+            <div class="company-meta" id="cbar-meta">
+              <div class="rv-skeleton h-2 w-20 rounded mt-1"></div>
+            </div>
+          </div>
+          <!-- Selector multi-empresa (aparece solo si hay más de 1 empresa) -->
+          <select id="empresa-selector" style="display:none;" onchange="cambiarEmpresa(this.value)" title="Cambiar empresa"></select>
         </div>
-        
-        <!-- La tabla ocupa el 100% del contenedor -->
-        <div id="report-table" class="flex-1 bg-white border border-border-subtle shadow-sm rounded-lg overflow-hidden"></div>
+
+        <!-- ── ENCABEZADO DEL REPORTE ── -->
+        <header class="bg-white border-b border-[#ebebeb] px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+          <div class="min-w-0">
+            <h1 id="report-title" class="text-[18px] font-bold text-ink leading-tight truncate">Seleccione un reporte</h1>
+            <p id="report-desc" class="text-[12px] text-muted mt-0.5">Haga clic en el menú lateral para cargar datos.</p>
+          </div>
+          <div id="report-toolbar" class="hidden items-center gap-2 shrink-0">
+            <button onclick="downloadPDF()"
+              class="erp-btn erp-btn-sm text-[#bb0000] border-[#fecaca] bg-[#fdf2f2] hover:bg-[#fee2e2]"
+              title="Exportar PDF">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
+            </button>
+            <button onclick="downloadExcel()"
+              class="erp-btn erp-btn-sm text-[#107e3e] border-[#bbf7d0] bg-[#eef7f2] hover:bg-[#dcfce7]"
+              title="Exportar Excel">
+              <i data-lucide="sheet" class="w-3.5 h-3.5"></i> Excel
+            </button>
+          </div>
+        </header>
+
+        <!-- Loader -->
+        <div id="loader-table" class="hidden flex-col items-center justify-center py-16 flex-1">
+          <div class="erp-spinner text-primary w-7 h-7"></div>
+          <p class="text-[12px] text-muted mt-3 font-medium">Ejecutando consultas, por favor espere...</p>
+        </div>
+
+        <!-- Contenedor Tabulator -->
+        <div id="table-wrapper" class="flex-1 min-h-0 p-3 sm:p-4 hidden flex-col">
+          <div id="report-table"
+            class="flex-1 min-h-0 bg-white border border-[#ebebeb] shadow-sap rounded-[8px] overflow-hidden w-full">
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div id="empty-state" class="flex-1 flex flex-col items-center justify-center py-16 text-center">
+          <div class="w-14 h-14 rounded-full bg-[#f0f4f8] flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="bar-chart-2" class="w-7 h-7 text-muted"></i>
+          </div>
+          <h3 class="text-[14px] font-semibold text-ink mb-1">Sin reporte cargado</h3>
+          <p class="text-[12px] text-muted max-w-xs">Selecciona un reporte del catálogo lateral para visualizar los datos.</p>
+        </div>
+
       </div>
-
     </main>
   </div>
 
   <script>
+    // ── Estado global ──────────────────────────────────────────────────────
+    let activeTable   = null;
+    let currentConfig = null;
+    let empresaCtx    = null;   // { nombre, logo_url, moneda_simbolo, moneda_codigo, nombre_pais, empresas }
+    let defaultLogoUrl = '';    // Conservar el logo principal en la vista Holding
+    let activeLogoBase64 = '';  // Caché local para el logotipo en Base64
+
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
+      loadEmpresaContext();
       loadCatalog();
     });
 
-    let activeTable = null;
-    let currentConfig = null;
+    // ══════════════════════════════════════════════════════════════════════
+    // 1. CONTEXTO DE EMPRESA
+    // ══════════════════════════════════════════════════════════════════════
+    function loadEmpresaContext() {
+      google.script.run
+        .withSuccessHandler(renderEmpresaBar)
+        .withFailureHandler(err => {
+          console.warn('[RV] loadEmpresaContext failed:', err);
+          renderEmpresaBar({ ok: true, data: { nombre: 'WorldClass ERP', logo_url: '', moneda_simbolo: '$', moneda_codigo: 'USD', nombre_pais: '', empresas: [] } });
+        })
+        .apiGetReportContext();
+    }
 
-    // 1. Cargar el menú de reportes disponibles
+    /** Cambia el contexto de empresa desde el selector */
+    function cambiarEmpresa(idEmpresa) {
+      if (!idEmpresa) return;
+      // Mini spinner en el cabezal mientras carga
+      document.getElementById('cbar-nombre').innerHTML = '<div class="rv-skeleton h-3 w-28 rounded"></div>';
+      document.getElementById('cbar-meta').innerHTML   = '<div class="rv-skeleton h-2 w-20 rounded mt-1"></div>';
+      document.getElementById('cbar-logo-wrap').style.display = 'none';
+      document.getElementById('cbar-skeleton').style.display = 'block';
+
+      if (idEmpresa === 'ALL') {
+        renderEmpresaBar({
+          ok: true,
+          data: {
+            id_empresa:      'ALL',
+            nombre:          'Holding WorldClass',
+            logo_url:        defaultLogoUrl,
+            logo_base64:     '',
+            moneda_simbolo:  '$',
+            moneda_codigo:   'USD',
+            nombre_pais:     'Multinacional',
+            empresas:        empresaCtx ? empresaCtx.empresas : []
+          }
+        });
+        if (currentConfig && currentConfig.id) {
+          fetchData(currentConfig.id);
+        }
+      } else {
+        google.script.run
+          .withSuccessHandler(res => {
+            renderEmpresaBar(res);
+            if (currentConfig && currentConfig.id) {
+              fetchData(currentConfig.id);
+            }
+          })
+          .withFailureHandler(err => console.warn('[RV] cambiarEmpresa failed:', err))
+          .apiGetReportContextForEmpresa(Number(idEmpresa));
+      }
+    }
+
+    function renderEmpresaBar(res) {
+      const ctx = (res && res.ok && res.data) ? res.data : {
+        nombre: 'WorldClass ERP', logo_url: '', moneda_simbolo: '$', moneda_codigo: 'USD', nombre_pais: '', empresas: []
+      };
+      if (!defaultLogoUrl && ctx.logo_url) {
+        defaultLogoUrl = ctx.logo_url;
+      }
+      empresaCtx = ctx;
+      activeLogoBase64 = ''; // Resetear el logo en caché
+
+      // Ocultar skeleton
+      document.getElementById('cbar-skeleton').style.display = 'none';
+
+      // Logo
+      const logoWrap = document.getElementById('cbar-logo-wrap');
+      logoWrap.innerHTML = '';
+      logoWrap.style.display = 'flex';
+      logoWrap.style.alignItems = 'center';
+
+      if (ctx.logo_base64 && ctx.logo_base64.trim()) {
+        activeLogoBase64 = ctx.logo_base64;
+        const img = document.createElement('img');
+        img.className = 'company-logo-img';
+        img.alt = ctx.nombre;
+        img.src = ctx.logo_base64;
+        
+        img.onerror = () => {
+          logoWrap.innerHTML = '';
+          logoWrap.appendChild(_makeInitialsEl(ctx.nombre));
+        };
+        logoWrap.appendChild(img);
+      } else {
+        logoWrap.appendChild(_makeInitialsEl(ctx.nombre));
+      }
+
+      // Nombre
+      document.getElementById('cbar-nombre').textContent = ctx.nombre;
+
+      // Meta: país · moneda
+      const metaEl = document.getElementById('cbar-meta');
+      const parts  = [];
+      if (ctx.nombre_pais) parts.push(ctx.nombre_pais);
+      if (ctx.moneda_codigo) parts.push(ctx.moneda_codigo + ' · ' + ctx.moneda_simbolo);
+      metaEl.textContent = parts.join(' · ');
+
+      // Selector multi-empresa
+      const sel = document.getElementById('empresa-selector');
+      if (ctx.empresas && ctx.empresas.length > 1) {
+        var optionsHtml = ctx.empresas.map(e =>
+          `<option value="${e.id}" ${e.id == ctx.id_empresa ? 'selected' : ''}>${e.nombre}</option>`
+        ).join('');
+        optionsHtml = `<option value="ALL" ${ctx.id_empresa === 'ALL' ? 'selected' : ''}>[Holding] Todas las empresas</option>` + optionsHtml;
+        sel.innerHTML = optionsHtml;
+        sel.style.display = 'block';
+      } else {
+        sel.style.display = 'none';
+      }
+    }
+
+    function _makeInitialsEl(nombre) {
+      const words    = (nombre || 'WC').trim().split(/\s+/);
+      const initials = words.length >= 2 ? (words[0][0] + words[1][0]).toUpperCase() : (words[0] || 'WC').substring(0, 2).toUpperCase();
+      const div = document.createElement('div');
+      div.className = 'company-logo-initials';
+      div.textContent = initials;
+      return div;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // 2. CATÁLOGO
+    // ══════════════════════════════════════════════════════════════════════
     function loadCatalog() {
       google.script.run
         .withSuccessHandler(renderMenu)
-        .withFailureHandler(err => alert("Error cargando catálogo: " + err))
+        .withFailureHandler(err => {
+          document.getElementById('menu-reportes').innerHTML =
+            `<p class="text-[11px] text-[#bb0000] px-3 py-2">Error: ${err.message || err}</p>`;
+        })
         .apiGetReportCatalog();
     }
 
     function renderMenu(res) {
-      if (!res.ok) {
-        document.getElementById('menu-reportes').innerHTML = `<p class="text-xs text-danger p-2">${res.errores.join(', ')}</p>`;
-        return;
-      }
-      
-      const reportes = res.data;
       const menu = document.getElementById('menu-reportes');
-      menu.innerHTML = '';
-
-      if(reportes.length === 0) {
-        menu.innerHTML = `<p class="text-xs text-muted text-center p-2">No hay reportes definidos.</p>`;
+      if (!res || !res.ok) {
+        menu.innerHTML = `<p class="text-[11px] text-[#bb0000] px-2 py-2">${_extractMsg(res)}</p>`;
         return;
       }
-
+      const reportes = res.data;
+      menu.innerHTML = '';
+      if (reportes.length === 0) {
+        menu.innerHTML = `<p class="text-[11px] text-muted text-center py-4">No hay reportes definidos.</p>`;
+        return;
+      }
       // Agrupar por módulo
       const modulos = {};
-      reportes.forEach(r => {
-        if (!modulos[r.modulo]) modulos[r.modulo] = [];
-        modulos[r.modulo].push(r);
-      });
-
-      // Dibujar menú
+      reportes.forEach(r => { if (!modulos[r.modulo]) modulos[r.modulo] = []; modulos[r.modulo].push(r); });
       for (const mod in modulos) {
-        menu.innerHTML += `<div class="mt-4 mb-1 px-2 text-[10px] font-bold text-muted uppercase tracking-wider">${mod}</div>`;
+        const group = document.createElement('div');
+        group.innerHTML = `<div class="mt-3 mb-1 px-2 text-[9px] font-bold text-muted uppercase tracking-widest">${mod}</div>`;
         modulos[mod].forEach(r => {
-          menu.innerHTML += `
-            <button onclick="openReport('${r.id}')" class="w-full text-left px-3 py-2 text-sm text-ink hover:bg-slate-100 rounded-md transition-colors flex items-center gap-2 mb-1">
-              <i data-lucide="${r.icono || 'file'}" class="w-4 h-4 text-primary"></i> ${r.titulo}
-            </button>
-          `;
+          const btn = document.createElement('button');
+          btn.className = 'w-full text-left px-2 py-1.5 text-[12px] text-ink hover:bg-[#f0f4f8] rounded-[5px] transition-colors flex items-center gap-1.5 mb-0.5';
+          btn.innerHTML = `<i data-lucide="${r.icono || 'file'}" class="w-3.5 h-3.5 text-primary shrink-0"></i><span class="truncate">${r.titulo}</span>`;
+          btn.onclick = () => openReport(r.id, btn);
+          group.appendChild(btn);
         });
+        menu.appendChild(group);
       }
       lucide.createIcons();
     }
 
-    // 2. Abrir un reporte (Carga metadatos y luego datos)
-    function openReport(reportId) {
-      document.getElementById('report-toolbar').classList.add('hidden');
-      document.getElementById('report-table').classList.add('hidden');
-      document.getElementById('loader-table').classList.remove('hidden');
-      
-      if (activeTable) {
-        activeTable.destroy();
-        activeTable = null;
-      }
+    // ══════════════════════════════════════════════════════════════════════
+    // 3. ABRIR REPORTE
+    // ══════════════════════════════════════════════════════════════════════
+    function openReport(reportId, btnEl) {
+      document.querySelectorAll('#menu-reportes button').forEach(b =>
+        b.classList.remove('bg-[#e8f1fb]', 'text-primary', 'font-semibold')
+      );
+      if (btnEl) btnEl.classList.add('bg-[#e8f1fb]', 'text-primary', 'font-semibold');
 
-      // Traer Metadatos
+      document.getElementById('report-toolbar').classList.add('hidden');
+      document.getElementById('report-toolbar').classList.remove('flex');
+      document.getElementById('table-wrapper').classList.add('hidden');
+      document.getElementById('table-wrapper').classList.remove('flex');
+      document.getElementById('empty-state').classList.add('hidden');
+      document.getElementById('loader-table').classList.remove('hidden');
+      document.getElementById('loader-table').classList.add('flex');
+
+      if (activeTable) { activeTable.destroy(); activeTable = null; }
+
       google.script.run
         .withSuccessHandler(res => {
-          if (!res.ok) { alert("Error: " + res.errores.join(', ')); return; }
+          if (!res || !res.ok) { showError(_extractMsg(res)); return; }
           currentConfig = res.data;
-          
           document.getElementById('report-title').innerText = currentConfig.titulo;
-          document.getElementById('report-desc').innerText = currentConfig.descripcion;
-          
-          // Ahora traer Datos
+          document.getElementById('report-desc').innerText  = currentConfig.descripcion;
           fetchData(currentConfig.id);
         })
+        .withFailureHandler(err => showError(err.message || err))
         .apiGetReportMetadata(reportId);
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // 4. DATOS
+    // ══════════════════════════════════════════════════════════════════════
     function fetchData(reportId) {
-      // Nota: En fase 2, aquí se leerán los filtros de un formulario previo.
-      const filters = {}; 
-      
       google.script.run
         .withSuccessHandler(res => {
           document.getElementById('loader-table').classList.add('hidden');
-          
-          if (!res.ok) { 
-            alert("Error ejecutando reporte: " + res.errores.join(', ')); 
-            return; 
-          }
-          
-          document.getElementById('report-table').classList.remove('hidden');
+          document.getElementById('loader-table').classList.remove('flex');
+          if (!res || !res.ok) { showError(_extractMsg(res)); return; }
+          document.getElementById('table-wrapper').classList.remove('hidden');
+          document.getElementById('table-wrapper').classList.add('flex');
           document.getElementById('report-toolbar').classList.remove('hidden');
+          document.getElementById('report-toolbar').classList.add('flex');
           renderTable(currentConfig, res.data);
         })
-        .apiExecuteReport(reportId, filters);
+        .withFailureHandler(err => showError(err.message || err))
+        .apiExecuteReport(reportId, { id_empresa: empresaCtx ? empresaCtx.id_empresa : null });
     }
 
-    // 3. Renderizar Tabulator
+    // ══════════════════════════════════════════════════════════════════════
+    // 5. TABULATOR
+    // ══════════════════════════════════════════════════════════════════════
     function renderTable(config, data) {
-      // Ajustes automáticos para Tabulator según nuestros metadatos
-      const tabulatorColumns = config.columnas.map(col => {
-        let tCol = { ...col };
-        if (tCol.type === 'currency') {
-          tCol.formatter = "money";
-          tCol.formatterParams = { symbol: "Q", thousand: ",", decimal: ".", precision: 2 };
+      const moneda = (empresaCtx && empresaCtx.moneda_simbolo) ? empresaCtx.moneda_simbolo : '$';
+
+      const cols = config.columnas.map(col => {
+        const c = { ...col };
+        if (c.type === 'currency') {
+          c.formatter = "money";
+          c.formatterParams = { symbol: moneda, thousand: ",", decimal: ".", precision: 2 };
+          c.hozAlign = "right";
+          c.bottomCalcFormatter = "money";
+          c.bottomCalcFormatterParams = { symbol: moneda, thousand: ",", decimal: ".", precision: 2 };
         }
-        return tCol;
+        if (c.type === 'date') { c.hozAlign = "center"; }
+        delete c.type;
+        return c;
       });
 
       activeTable = new Tabulator("#report-table", {
-        data: data,
-        layout: "fitColumns",
-        responsiveLayout: "collapse",
-        pagination: "local",
-        paginationSize: 50,
-        paginationSizeSelector: [50, 100, 500, 1000],
-        movableColumns: true,
-        columns: tabulatorColumns,
-        langs:{
-          "default":{
-            "pagination":{ "first":"Primero", "first_title":"Primera Página", "last":"Último", "last_title":"Última Página", "prev":"Anterior", "prev_title":"Página Anterior", "next":"Siguiente", "next_title":"Página Siguiente" },
+        data, layout: "fitColumns", responsiveLayout: "collapse", height: "100%",
+        pagination: "local", paginationSize: 50,
+        paginationSizeSelector: [25, 50, 100, 250, 500],
+        paginationCounter: "rows", movableColumns: true, columns: cols, locale: true,
+        langs: {
+          "default": {
+            "pagination": {
+              "first": "«", "first_title": "Primera Página",
+              "last":  "»", "last_title":  "Última Página",
+              "prev":  "‹", "prev_title":  "Página Anterior",
+              "next":  "›", "next_title":  "Página Siguiente",
+              "all": "Todo",
+              "counter": { "showing": "Mostrando", "of": "de", "rows": "filas", "pages": "páginas" }
+            }
+          }
+        },
+        placeholder: "No hay datos para mostrar.",
+      });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // 6. EXPORTACIÓN PDF  — con cabecera de empresa + título
+    // ══════════════════════════════════════════════════════════════════════
+    function downloadPDF() {
+      if (!activeTable || !currentConfig) return;
+
+      const pdfBtn = document.querySelector('button[onclick="downloadPDF()"]');
+      const originalHtml = pdfBtn.innerHTML;
+      pdfBtn.disabled = true;
+      pdfBtn.innerHTML = '<div class="erp-spinner border-t-transparent w-3 h-3 inline-block mr-1"></div> Generando...';
+
+      const logoUrl = (empresaCtx && empresaCtx.logo_url) ? empresaCtx.logo_url : '';
+      
+      if (activeLogoBase64) {
+        // Descarga instantánea usando caché pre-cargado
+        generatePDF(activeLogoBase64);
+        pdfBtn.disabled = false;
+        pdfBtn.innerHTML = originalHtml;
+      } else if (logoUrl) {
+        // Fallback si no ha terminado la carga asíncrona inicial
+        google.script.run
+          .withSuccessHandler(res => {
+            const logoBase64 = (res && res.ok) ? res.data : '';
+            activeLogoBase64 = logoBase64;
+            generatePDF(logoBase64);
+            pdfBtn.disabled = false;
+            pdfBtn.innerHTML = originalHtml;
+          })
+          .withFailureHandler(err => {
+            console.warn('[RV] Fetch logo base64 failed:', err);
+            generatePDF('');
+            pdfBtn.disabled = false;
+            pdfBtn.innerHTML = originalHtml;
+          })
+          .apiGetLogoBase64(logoUrl);
+      } else {
+        generatePDF('');
+        pdfBtn.disabled = false;
+        pdfBtn.innerHTML = originalHtml;
+      }
+    }
+
+    function generatePDF(logoBase64) {
+      const empresa = empresaCtx || {};
+      const titulo  = currentConfig.titulo  || 'Reporte';
+      const desc    = currentConfig.descripcion || '';
+      const moneda  = empresa.moneda_simbolo || '$';
+      const fecha   = new Date().toLocaleDateString('es-EC', { day:'2-digit', month:'long', year:'numeric' });
+      const nombreEmpresa = empresa.nombre || '';
+      const pais    = empresa.nombre_pais  || '';
+
+      // Calcular dinámicamente la posición inicial de la tabla para evitar solapamiento
+      // Un documento landscape A4 tiene un ancho útil de 267 mm. Estimamos 130 caracteres por línea.
+      var estimatedLines = desc ? Math.ceil(desc.length / 130) : 0;
+      var dynamicStartY = 58 + (estimatedLines * 4.5);
+      if (dynamicStartY < 64) dynamicStartY = 64; // Mantener un mínimo de 64 mm
+
+      activeTable.download("pdf", currentConfig.id + ".pdf", {
+        orientation: "landscape",
+        jsPDF: {
+          unit: "mm"
+        },
+        autoTable: {
+          startY: dynamicStartY,
+          margin: { top: 26, left: 15, right: 15, bottom: 15 },
+          styles: {
+            font: "helvetica",
+            fontSize: 8.5,
+            cellPadding: 2.5,
+            textColor: [51, 65, 85], // Slate 700
+            lineColor: [226, 232, 240], // Slate 200
+            lineWidth: 0.1
+          },
+          headStyles: {
+            fillColor: [15, 23, 42], // Slate 900 (Dark premium accent)
+            textColor: [255, 255, 255],
+            fontStyle: "bold",
+            fontSize: 9
+          },
+          alternateRowStyles: {
+            fillColor: [248, 250, 252] // Slate 50
+          },
+          didDrawPage: function(data) {
+            try {
+              const doc = data.doc;
+              // Compatibilidad de ancho de página (versiones antiguas y modernas de jsPDF)
+              const pageW = doc.internal.pageSize.width || doc.internal.pageSize.getWidth();
+              const pageNo = data.pageNumber || doc.internal.getNumberOfPages();
+              const margin = 15;
+              let y = 15;
+
+              if (pageNo === 1) {
+                // ── CABECERA PREMIUM (PÁGINA 1) ──
+
+                // 1. Logo o Iniciales (X=15, Y=15, W=20, H=20)
+                if (logoBase64) {
+                  try {
+                    let format = 'PNG';
+                    if (logoBase64.indexOf('image/jpeg') !== -1 || logoBase64.indexOf('image/jpg') !== -1) {
+                      format = 'JPEG';
+                    }
+                    doc.addImage(logoBase64, format, margin, y, 20, 20, undefined, 'FAST');
+                  } catch(e) {
+                    console.warn('[PDF] Failed to add image, falling back to initials:', e);
+                    _drawInitialsAvatar(doc, margin, y, 20, nombreEmpresa);
+                  }
+                } else {
+                  _drawInitialsAvatar(doc, margin, y, 20, nombreEmpresa);
+                }
+
+                // 2. Información Corporativa (X=38, Y=21.5 y Y=28.5)
+                doc.setTextColor(15, 23, 42); // Slate 900
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.text(nombreEmpresa, margin + 23, y + 6.5);
+
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(100, 116, 139); // Slate 500
+                const metaParts = [];
+                if (pais) metaParts.push(pais);
+                if (empresa.moneda_codigo) metaParts.push(empresa.moneda_codigo + ' (' + moneda + ')');
+                doc.text(metaParts.join('  ·  '), margin + 23, y + 13.5);
+
+                // 3. Metadata derecha (Fecha y Pagina)
+                doc.setFontSize(8);
+                doc.setTextColor(100, 116, 139); // Slate 500
+                doc.setFont('helvetica', 'normal');
+                doc.text('Generado: ' + fecha, pageW - margin, y + 6.5, { align: 'right' });
+                doc.text('Página ' + pageNo, pageW - margin, y + 13.5, { align: 'right' });
+
+                y += 23;
+
+                // 4. Línea Divisoria Principal
+                doc.setDrawColor(226, 232, 240); // Slate 200
+                doc.setLineWidth(0.4);
+                doc.line(margin, y, pageW - margin, y);
+                
+                y += 7;
+
+                // 5. Título del Reporte
+                doc.setFontSize(16);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(15, 23, 42); // Slate 900
+                doc.text(titulo, margin, y);
+
+                y += 5.5;
+
+                // 6. Descripción
+                if (desc) {
+                  doc.setFontSize(9);
+                  doc.setFont('helvetica', 'normal');
+                  doc.setTextColor(71, 85, 105); // Slate 600
+                  const splitDesc = doc.splitTextToSize(desc, pageW - margin * 2);
+                  doc.text(splitDesc, margin, y);
+                  y += (splitDesc.length * 4.5);
+                }
+
+                y += 1.5;
+
+                // 7. Segunda Línea Divisoria (cierra el bloque de titulo)
+                doc.setDrawColor(241, 245, 249); // Slate 100
+                doc.setLineWidth(0.2);
+                doc.line(margin, y, pageW - margin, y);
+
+              } else {
+                // ── CABECERA COMPACTA (PÁGINA 2+) ──
+                doc.setFontSize(8.5);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(15, 23, 42);
+                doc.text(nombreEmpresa + '  ·  ' + titulo, margin, y + 2);
+                
+                doc.setFontSize(7.5);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(100, 116, 139);
+                doc.text('Página ' + pageNo, pageW - margin, y + 2, { align: 'right' });
+                
+                doc.setDrawColor(226, 232, 240); // Slate 200
+                doc.setLineWidth(0.2);
+                doc.line(margin, y + 5, pageW - margin, y + 5);
+              }
+            } catch(pdfErr) {
+              console.error('[PDF] Error in didDrawPage:', pdfErr);
+            }
           }
         }
       });
     }
 
-    // 4. Exportaciones
-    function downloadPDF() {
-      if(!activeTable) return;
-      activeTable.download("pdf", currentConfig.id + ".pdf", {
-        orientation: "landscape",
-        title: currentConfig.titulo,
-        jsPDF: window.jspdf.jsPDF,
-        autoTable: window.jspdf.jsPDF.API.autotable
-      });
+    // Helper privado para dibujar el avatar de iniciales premium
+    function _drawInitialsAvatar(doc, x, y, size, nombre) {
+      doc.setFillColor(15, 23, 42); // Slate 900
+      doc.rect(x, y, size, size, 'F'); // rect estándar garantizado
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(size * 0.55);
+      doc.setFont('helvetica', 'bold');
+      
+      const words    = (nombre || 'WC').trim().split(/\s+/);
+      const initials = words.length >= 2 
+        ? (words[0][0] + words[1][0]).toUpperCase() 
+        : (words[0] || 'WC').substring(0, 2).toUpperCase();
+        
+      doc.text(initials, x + (size / 2), y + (size / 2) + (size * 0.17), { align: 'center' });
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // 7. EXPORTACIÓN EXCEL
+    // ══════════════════════════════════════════════════════════════════════
     function downloadExcel() {
-      if(!activeTable) return;
-      activeTable.download("xlsx", currentConfig.id + ".xlsx", { sheetName: "Reporte" });
+      if (!activeTable) return;
+      activeTable.download("xlsx", currentConfig.id + ".xlsx", { sheetName: currentConfig.titulo || "Reporte" });
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // 8. HELPERS
+    // ══════════════════════════════════════════════════════════════════════
+    function _extractMsg(res) {
+      if (!res) return 'Error desconocido';
+      if (res.error && res.error.mensaje) return res.error.mensaje;
+      if (res.errores && res.errores.length) return res.errores.join(', ');
+      return 'Error desconocido';
+    }
+
+    function showError(msg) {
+      document.getElementById('loader-table').classList.add('hidden');
+      document.getElementById('loader-table').classList.remove('flex');
+      const es = document.getElementById('empty-state');
+      es.classList.remove('hidden');
+      es.innerHTML = `
+        <div class="w-14 h-14 rounded-full bg-[#fdf2f2] flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="alert-circle" class="w-7 h-7 text-[#bb0000]"></i>
+        </div>
+        <h3 class="text-[14px] font-semibold text-ink mb-1">Error al cargar el reporte</h3>
+        <p class="text-[12px] text-muted max-w-xs">${msg}</p>
+      `;
+      lucide.createIcons();
+    }
   </script>
 </body>
 </html>

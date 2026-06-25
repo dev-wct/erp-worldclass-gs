@@ -2,14 +2,37 @@
 <html lang="es">
 <?!= include('02_core/ui/CORE_Head'); ?>
 <body class="bg-canvas text-ink font-sans m-0 p-0 overflow-hidden flex flex-col h-screen">
+  <? if (APP_MAINTENANCE_BANNER_ACTIVE) { ?>
+    <!-- Banner de Mantenimiento -->
+    <div class="w-full text-xxs font-semibold flex items-center justify-center gap-2 py-2 px-4 select-none shrink-0 border-b 
+      <?= APP_MAINTENANCE_BANNER_SEVERITY === 'critical' ? 'bg-[#fde8e8] text-[#9b1c1c] border-[#f8b4b4]' : 
+          (APP_MAINTENANCE_BANNER_SEVERITY === 'warning' ? 'bg-[#fef8e7] text-[#8a5b00] border-[#fde8a1]' : 
+                                                           'bg-[#e1effe] text-[#1e429f] border-[#b3d1ff]') ?>">
+      <i data-lucide="<?= APP_MAINTENANCE_BANNER_SEVERITY === 'critical' ? 'alert-octagon' : 
+                       (APP_MAINTENANCE_BANNER_SEVERITY === 'warning' ? 'alert-triangle' : 'info') ?>" style="width:14px;height:14px;" class="shrink-0"></i>
+      <span><?= APP_MAINTENANCE_BANNER_MSG ?></span>
+    </div>
+  <? } ?>
 
   <header class="shellbar">
-    <div class="sb-left">
-      <div class="sb-logo"><i data-lucide="layers" class="w-4 h-4 text-white"></i></div>
-      <span class="sb-name"><?= APP_ERP_NAME ?></span>
-      <span class="sb-sep">/</span>
-      <span class="sb-mod">Launchpad</span>
-    </div>
+      <nav class="flex text-[13px] items-center" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1.5 md:space-x-2">
+          <li class="inline-flex items-center">
+            <a href="<?= getWebAppUrl() ?>?page=launchpad" target="_top" class="inline-flex items-center text-white font-semibold hover:text-white/80 transition-colors">
+              <? if (APP_ERP_LOGO_URL) { ?>
+                <img src="<?= APP_ERP_LOGO_URL ?>" alt="Logo" class="w-[26px] h-[26px] rounded object-contain mr-2 bg-white border border-white/20 p-[1px] shrink-0">
+              <? } else { ?>
+                <i data-lucide="home" class="w-4 h-4 mr-2 text-white/80"></i>
+              <? } ?>
+              <span><?= APP_ERP_NAME ?></span>
+            </a>
+          </li>
+          <li class="flex items-center">
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-white/30"></i>
+            <span class="ml-1.5 text-white/60 font-medium select-none">Launchpad</span>
+          </li>
+        </ol>
+      </nav>
     <div class="sb-right">
       <div class="sb-status"><div class="sb-dot"></div><span>Conectado</span></div>
       <? if (APP_USER) { ?><span class="sb-email"><?= APP_USER ?></span><? } ?>
@@ -273,6 +296,14 @@
           </div>
           <div class="text-[13px] font-semibold text-ink leading-snug">Configuración Global</div>
           <div class="text-[11px] text-muted leading-tight mt-1">Sociedades y Localización</div>
+        </div>
+        <div class="group bg-white border border-border-subtle rounded-[10px] p-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-sap relative overflow-hidden" onclick="nav('admin_sistema')">
+          <div class="absolute top-0 left-0 right-0 h-[3px] bg-slate-800 rounded-t-[10px]"></div>
+          <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center mb-3">
+            <i data-lucide="sliders" class="w-5 h-5 text-slate-800"></i>
+          </div>
+          <div class="text-[13px] font-semibold text-ink leading-snug">Parámetros del Sistema</div>
+          <div class="text-[11px] text-muted leading-tight mt-1">Licencia, APIs, Backups y Banners</div>
         </div>
       </div>
     </div>

@@ -316,34 +316,35 @@ const CORE_TestSeeder = {
       }
       DataAdapter.insertBatch("Campanas", campanasRecords);
 
-      // --- SEMBRAR 20 LEADS ---
-      Logger.log("Sembrando Leads...");
+      // --- SEMBRAR 20 LEADS (Ecuador) ---
+      Logger.log("Sembrando Leads Ecuador...");
       const leadsNombres = [
-        "Francisco Ruiz", "Gabriela Soto", "Humberto Paz", "Isabel Méndez", "Julio Estrada",
-        "Laura Calderón", "Mauricio Vega", "Natalia Roldán", "Oscar Lemus", "Patricia Girón",
-        "Ricardo Santos", "Silvia Alvarez", "Teresa Pineda", "Victor Rosales", "Wendy López",
-        "Xavier Orellana", "Yolanda Dubón", "Zacarias Ortiz", "Alma Cardona", "Bernardo Cruz"
+        "Francisco Andrade",   "Gabriela Sotomayor", "Humberto Pazmiño",  "Isabel Méndez",     "Julio Estrella",
+        "Laura Calderón",      "Mauricio Vega",       "Natalia Roldán",    "Óscar Lema",        "Patricia Girón",
+        "Ricardo Santos",      "Silvia Alvarado",     "Teresa Pincay",     "Víctor Rosales",    "Wendy Llori",
+        "Xavier Orellana",     "Yolanda Duarte",      "Zacarías Ortega",   "Alma Cardona",      "Bernardo Cruz"
       ];
-      
-      const bancos     = ["BAC", "BANRURAL", "BI", "PROMERICA", "BAM"];
-      const tdcs       = ["VISA", "MASTERCARD", "AMERICAN EXPRESS", "NINGUNA"];
+
+      // Bancos reales de Ecuador
+      const bancos   = ["Banco Pichincha", "Produbanco", "Banco del Pacífico", "Banco Guayaquil", "Banco Internacional"];
+      const tdcs     = ["VISA", "MASTERCARD", "AMERICAN EXPRESS", "NINGUNA"];
       const estadosLead = ["NUEVO", "CONTACTADO", "INTERESADO", "CITA_AGENDADA"];
       const leadsRecords = [];
 
       for (let i = 0; i < 20; i++) {
-        const nombre   = leadsNombres[i];
-        const id_bp    = bpIds[nombre] || '';
+        const nombre = leadsNombres[i];
+        const id_bp  = bpIds[nombre] || '';
         leadsRecords.push({
           id_bp:           id_bp,
           nombre_completo: nombre,
-          telefono:        "3333" + String(5000 + i),
-          email:           nombre.toLowerCase().replace(" ", ".") + "@test.com",
+          telefono:        "09" + String(80000000 + i),   // Formato celular Ecuador 09XXXXXXXX
+          email:           nombre.toLowerCase().replace(/ /g, '.').normalize('NFD').replace(/[\u0300-\u036f]/g,'') + "@gmail.com",
           tipo_tdc:        tdcs[i % tdcs.length],
           banco_emisor:    bancos[i % bancos.length],
           id_campana:      (i % 2 === 0 ? 1 : 2),
           estado:          i < 10 ? "CITA_AGENDADA" : estadosLead[i % estadosLead.length],
-          fuente:          "FACEBOOK",
-          notas:           "Perfil con alto interés.",
+          fuente:          i % 3 === 0 ? "FACEBOOK" : (i % 3 === 1 ? "INSTAGRAM" : "REFERIDO"),
+          notas:           "Cliente con interés en membresía de viaje premium.",
           created_at:      new Date(),
           updated_at:      new Date(),
           created_by:      user,
@@ -357,40 +358,54 @@ const CORE_TestSeeder = {
       const llamadasRecords = [];
       for (let i = 0; i < 20; i++) {
         llamadasRecords.push({
-          id_lead: (i % 20) + 1,
-          id_empleado: (i % 5) + 1,
-          fecha_hora: new Date(Date.now() - (5 - i * 0.2) * 24 * 60 * 60 * 1000),
-          duracion_seg: 10 + (i * 30),
-          resultado: i < 10 ? "CITA AGENDADA" : resultadosCall[i % resultadosCall.length],
-          notas: "Llamada de seguimiento comercial.",
-          created_at: new Date(),
-          created_by: user
+          id_lead:      (i % 20) + 1,
+          id_empleado:  (i % 5) + 1,
+          fecha_hora:   new Date(Date.now() - (10 - i * 0.4) * 24 * 60 * 60 * 1000),
+          duracion_seg: 60 + (i * 45),
+          resultado:    i < 10 ? "CITA AGENDADA" : resultadosCall[i % resultadosCall.length],
+          notas:        "Seguimiento comercial. Cliente mostró interés en membresía Plus.",
+          created_at:   new Date(),
+          created_by:   user
         });
       }
       DataAdapter.insertBatch("Llamadas", llamadasRecords);
 
-      // --- SEMBRAR 10 CITAS ---
-      Logger.log("Sembrando Citas en Restaurantes...");
-      const restaurantes = ["Portal del Ángel", "Altuna", "Tre Fratelli", "Hacienda Real"];
+      // --- SEMBRAR 10 CITAS (restaurantes de Quito y Guayaquil) ---
+      Logger.log("Sembrando Citas Ecuador...");
+      // Restaurantes reales de Quito y Guayaquil
+      const restaurantes = [
+        "Zazu (Quito)",           "Theatrum (Quito)",
+        "La Guarida del Coyote (Quito)", "El Faro (Guayaquil)",
+        "La Canoa (Guayaquil)"
+      ];
+      // Montos realistas en USD para membresías de viaje en Ecuador
+      const montosVenta = [2800, 3200, 2500, 3600];
       const citasRecords = [];
       for (let i = 0; i < 10; i++) {
+        const esVenta = i < 4;
         citasRecords.push({
-          id_lead: i + 1,
-          id_empleado_agendo: (i % 5) + 1,
-          restaurante: restaurantes[i % restaurantes.length],
-          fecha_cita: new Date(Date.now() - (5 - i) * 24 * 60 * 60 * 1000),
-          hora_cita: "19:30",
-          num_acompanantes: (i % 3) + 1,
-          asistio: i < 6 ? "ASISTIO" : "PENDIENTE",
-          resultado_venta: i < 4 ? "VENTA" : "PENDIENTE",
-          id_membresia_vendida: i < 4 ? 100 + i : "",
-          notas: "Confirmó asistencia.",
-          created_at: new Date(),
-          updated_at: new Date(),
-          created_by: user
+          id_lead:             i + 1,
+          id_empleado_agendo:  (i % 5) + 1,
+          restaurante:         restaurantes[i % restaurantes.length],
+          fecha_cita:          new Date(Date.now() - (8 - i) * 24 * 60 * 60 * 1000),
+          hora_cita:           i % 2 === 0 ? "19:30" : "20:00",
+          num_acompanantes:    (i % 3) + 1,
+          asistio:             i < 6 ? "ASISTIO" : "PENDIENTE",
+          resultado_venta:     esVenta ? "VENTA" : "PENDIENTE",
+          monto_venta:         esVenta ? montosVenta[i] : 0,
+          id_membresia_vendida: esVenta ? 100 + i : "",
+          id_empresa_emisora:  (i % 2) + 1,
+          notas:               esVenta
+            ? "Venta cerrada. Cliente adquirió membresía premium."
+            : "Pendiente seguimiento post-cita.",
+          created_at:          new Date(),
+          updated_at:          new Date(),
+          created_by:          user
         });
       }
       DataAdapter.insertBatch("Citas", citasRecords);
+
+
 
       // --- SEMBRAR 15 PAGOS DE NÓMINA ---
       Logger.log("Sembrando Pagos de Nómina...");

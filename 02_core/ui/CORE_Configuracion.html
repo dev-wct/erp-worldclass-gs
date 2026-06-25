@@ -586,24 +586,38 @@
     var reader = new FileReader();
     reader.onload = function(e) {
       var rawBase64 = e.target.result.split(',')[1];
+      
+      // Mostrar la vista previa local de forma inmediata para evitar la pantalla rota por propagación de CDN
+      var previewImg = document.getElementById('logo-preview');
+      previewImg.src = e.target.result; // Data URL local
+      previewImg.style.display = 'block';
+      document.getElementById('logo-placeholder-icon').style.display = 'none';
+
       google.script.run
         .withSuccessHandler(function(res) {
           if (res && res.ok && res.url) {
             document.getElementById('logo_url').value = res.url;
-            var previewImg = document.getElementById('logo-preview');
-            previewImg.src = res.url;
-            previewImg.style.display = 'block';
-            document.getElementById('logo-placeholder-icon').style.display = 'none';
+            // Mantenemos la vista previa con el data URL local para no sufrir el lag de sincronización de CDN de Drive
             document.getElementById('deleteLogoBtn').style.display = 'inline-flex';
             ERP.UI.msg('success', '✔ Logotipo subido correctamente. Recuerda guardar los cambios de la empresa.', 'erp-msg-config');
           } else {
+            // Revertir vista previa en caso de error
+            previewImg.src = '';
+            previewImg.style.display = 'none';
+            document.getElementById('logo-placeholder-icon').style.display = 'block';
+            document.getElementById('deleteLogoBtn').style.display = 'none';
             ERP.UI.msg('error', '⚠️ Error al subir: ' + (res.error || 'Respuesta inválida.'), 'erp-msg-config');
           }
         })
         .withFailureHandler(function(err) {
+          // Revertir vista previa en caso de error
+          previewImg.src = '';
+          previewImg.style.display = 'none';
+          document.getElementById('logo-placeholder-icon').style.display = 'block';
+          document.getElementById('deleteLogoBtn').style.display = 'none';
           ERP.UI.msg('error', '⚠️ Error del servidor: ' + err.message, 'erp-msg-config');
         })
-        .apiSubirLogoEmpresa(rawBase64, file.name, file.type);
+        .apiUploadFile(rawBase64, file.name, file.type, ['CORE', 'Logos']);
     };
     reader.readAsDataURL(file);
   }

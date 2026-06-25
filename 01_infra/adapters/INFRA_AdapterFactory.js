@@ -13,6 +13,22 @@
 const AdapterFactory = (() => {
 
   let _cache = null;
+  let _storageCache = null;
+
+  function _instantiateStorage() {
+    let configStorage = 'GOOGLE_DRIVE';
+    try {
+      configStorage = PropertiesService.getScriptProperties().getProperty('PROVIDER_STORAGE') || 'GOOGLE_DRIVE';
+    } catch(e) {}
+
+    let provider;
+    if (configStorage === 'GOOGLE_DRIVE') provider = GDriveFileProvider;
+    else if (configStorage === 'MOCK') provider = MockFileProvider;
+    else provider = GDriveFileProvider;
+
+    Logger_ERP.info('INFRA', 'FileStorageAdapter inicializado con config: ' + configStorage);
+    return provider;
+  }
 
   function _getProviderConfig() {
     try {
@@ -102,14 +118,20 @@ const AdapterFactory = (() => {
       if (!_cache) _cache = _instantiate();
       return _cache;
     },
+
+    getFileStorageAdapter: function() {
+      if (!_storageCache) _storageCache = _instantiateStorage();
+      return _storageCache;
+    },
     
     clearCache: function() {
       _cache = null;
+      _storageCache = null;
       Logger_ERP.info('INFRA', 'AdapterFactory cache limpiado.');
     },
 
     getActiveAdapterName: function() {
-      return 'Aggregate (Email/Msg/Cal/Chat/Meet)';
+      return 'Aggregate (Email/Msg/Cal/Chat/Meet/Storage)';
     }
   };
 

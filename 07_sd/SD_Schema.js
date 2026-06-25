@@ -49,8 +49,9 @@ const SD_Schema = {
       'num_acompanantes',
       'asistio',
       'resultado_venta',
+      'monto_venta',          // Monto de la venta en la moneda de la empresa
       'id_membresia_vendida',
-      'id_empresa_emisora',  // FK -> CAT_Empresas (WorldClass o Rapivisa)
+      'id_empresa_emisora',   // FK -> CAT_Empresas (WorldClass o Rapivisa)
       'notas',
       'created_at',
       'updated_at',

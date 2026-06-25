@@ -3,12 +3,13 @@ function onOpen() {
   const url = getWebAppUrl();
 
   ui.createMenu('🏢 ' + Config.ERP_NAME)
-    .addItem('🚀 Abrir ERP',                       'abrirERP')
+    .addItem('🚀 Abrir ERP',                            'abrirERP')
     .addSeparator()
-    .addItem('⚙️ Inicializar ERP (Bootstrap)',      'apiInicializarERPCompleto')
-    .addItem('🔄 Sincronizar todas las tablas',     'apiSincronizarTodo')
+    .addItem('⚙️ Inicializar ERP (Bootstrap)',           'apiInicializarERPCompleto')
+    .addItem('🔄 Sincronizar todas las tablas',          'apiSincronizarTodo')
     .addItem('🧹 Limpiar y Re-sembrar Maestros (Ecuador)', 'apiEjecutarLimpiezaEcuador')
-    .addItem('🔍 Diagnosticar base de datos',      'apiEjecutarDiagnostico')
+    .addItem('🌱 Sembrar Datos de Prueba',               'apiSembrarDatosPrueba')
+    .addItem('🔍 Diagnosticar base de datos',             'apiEjecutarDiagnostico')
     .addToUi();
 }
 
@@ -223,9 +224,30 @@ function apiEjecutarDiagnostico() {
     return;
   }
 
-  var report = "=== DIAGNÓSTICO DE BASE DE DATOS ===\n\n";
+  var report = "=== 1. DIAGNÓSTICO DE REPORTES ===\n\n";
 
-  var tables = ['CAT_Paises', 'CAT_Empresas', 'BP_MASTER', 'CAT_Sucursales', 'CAT_UnidadesOrganizativas'];
+  report += "=== TEST REPORT CONTEXT ===\n";
+  try {
+    var contextResult = apiGetReportContext();
+    report += `Contexto: ${JSON.stringify(contextResult, null, 2)}\n\n`;
+  } catch(e) {
+    report += `❌ Error apiGetReportContext: ${e.message}\n${e.stack}\n\n`;
+  }
+
+  report += "=== TEST REPORT EJECUCIÓN (SD_VENTAS) ===\n";
+  try {
+    var reportResult = apiGetReporteVentasSD();
+    report += `Total filas reportadas: ${reportResult ? reportResult.length : 0}\n`;
+    if (reportResult && reportResult.length > 0) {
+      report += `Primera fila reporte: ${JSON.stringify(reportResult[0], null, 2)}\n`;
+    }
+  } catch(e) {
+    report += `❌ Error apiGetReporteVentasSD: ${e.message}\n${e.stack}\n`;
+  }
+
+  report += "\n=== 2. DETALLE DE HOJAS ===\n\n";
+
+  var tables = ['CAT_Paises', 'CAT_Empresas', 'BP_MASTER', 'CAT_Sucursales', 'CAT_UnidadesOrganizativas', 'Citas', 'Leads', 'Empleados'];
   tables.forEach(tableName => {
     var sh = ss.getSheetByName(tableName);
     if (!sh) {
@@ -238,21 +260,21 @@ function apiEjecutarDiagnostico() {
     report += `📁 Tabla '${tableName}': EXISTE (${lastRow} filas, ${lastCol} columnas)\n`;
     if (lastRow > 1) {
       var headers = sh.getRange(1, 1, 1, lastCol).getValues()[0];
-      var rows = sh.getRange(2, 1, Math.min(lastRow - 1, 15), lastCol).getValues();
+      var rows = sh.getRange(2, 1, 1, lastCol).getValues();
       report += `   Cabeceras: [${headers.join(', ')}]\n`;
-      report += `   Primeras filas:\n`;
-      rows.forEach((row, i) => {
-        report += `     Row ${i+2}: [${row.join(', ')}]\n`;
-      });
+      report += `   Fila 2: [${rows[0].join(', ')}]\n`;
     } else {
       report += `   ⚠️ La tabla está vacía (solo cabecera).\n`;
     }
     report += "\n";
   });
 
+  // Log en Apps Script Execution logs también
+  Logger.log(report);
+
   var html = HtmlService.createHtmlOutput(
     '<!DOCTYPE html><html><head><title>Diagnóstico</title></head>' +
-    '<body><h3>🔍 Reporte de Diagnóstico</h3>' +
+    '<body><h3>🔍 Reporte de Diagnóstico ERP</h3>' +
     '<pre style="background:#f5f5f5;padding:10px;border-radius:4px;white-space:pre-wrap;font-size:11px;word-break:break-all;">' + 
     report.replace(/</g, "&lt;").replace(/>/g, "&gt;") + 
     '</pre></body></html>'

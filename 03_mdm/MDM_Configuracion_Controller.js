@@ -69,14 +69,6 @@ function apiGuardarConfiguracionEmpresa(idEmpresa, payload) {
   }, 'MDM.Configuracion.guardarEmpresa');
 }
 
-function apiSubirLogoEmpresa(base64Data, fileName, mimeType) {
-  return safeExecute(function() {
-    // Subir a la carpeta central del ERP bajo CORE/Logos
-    var url = DriveService.subirArchivoBase64(base64Data, fileName, mimeType, ['CORE', 'Logos']);
-    return { ok: true, url: url };
-  }, 'MDM.Configuracion.subirLogo');
-}
-
 function apiLimpiarYReinstalarMaestros() {
   return safeExecute(function() {
     const ss = Utils.getActiveSpreadsheet();

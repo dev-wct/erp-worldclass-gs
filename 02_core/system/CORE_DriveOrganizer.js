@@ -159,6 +159,7 @@ const DriveOrganizer = {
         'Facturas': {},        // Facturas de proveedores
       },
       'CORE': {
+        'Logos':      {},      // Logotipos oficiales y sociedades
         'Reportes':   {},      // Reportes generados por el ERP
         'Plantillas': {},      // Plantillas de documentos
         'Backups':    {},      // Respaldos de datos

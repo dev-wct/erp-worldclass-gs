@@ -140,23 +140,48 @@
 <body>
   
   <div class="app-layout">
+    <? if (APP_MAINTENANCE_BANNER_ACTIVE) { ?>
+      <!-- Banner de Mantenimiento -->
+      <div class="w-full text-xxs font-semibold flex items-center justify-center gap-2 py-2 px-4 select-none shrink-0 border-b 
+        <?= APP_MAINTENANCE_BANNER_SEVERITY === 'critical' ? 'bg-[#fde8e8] text-[#9b1c1c] border-[#f8b4b4]' : 
+            (APP_MAINTENANCE_BANNER_SEVERITY === 'warning' ? 'bg-[#fef8e7] text-[#8a5b00] border-[#fde8a1]' : 
+                                                             'bg-[#e1effe] text-[#1e429f] border-[#b3d1ff]') ?>">
+        <i data-lucide="<?= APP_MAINTENANCE_BANNER_SEVERITY === 'critical' ? 'alert-octagon' : 
+                         (APP_MAINTENANCE_BANNER_SEVERITY === 'warning' ? 'alert-triangle' : 'info') ?>" style="width:14px;height:14px;" class="shrink-0"></i>
+        <span><?= APP_MAINTENANCE_BANNER_MSG ?></span>
+      </div>
+    <? } ?>
     
     <!-- Shellbar (Header Fijo) -->
     <header class="shellbar">
-      <div class="sb-left">
+      <div class="sb-left flex items-center min-w-0">
         <!-- Hamburguesa móvil -->
         <button type="button" class="md:hidden text-white mr-2 hover:bg-slate-800 p-1.5 rounded cursor-pointer" onclick="toggleMobileSidebar()" aria-label="Menú">
           <i data-lucide="menu" style="width:20px;height:20px;"></i>
         </button>
         
-        <a href="<?= getWebAppUrl() ?>?page=launchpad" target="_top" class="sb-logo" title="Volver al Launchpad">
-          <i data-lucide="layers" style="width:14px;height:14px;color:#fff;"></i>
-        </a>
-        <a href="<?= getWebAppUrl() ?>?page=launchpad" target="_top" class="sb-name"><?= APP_ERP_NAME ?></a>
-        <span class="sb-sep">/</span>
-        <span class="sb-mod"><?= SHELL_MODULE ?></span>
-        <span class="sb-sep">/</span>
-        <span class="sb-page" id="shell-page-title"><?= APP_TITLES[APP_PAGE] || 'Inicio' ?></span>
+        <nav class="flex text-[13px] items-center min-w-0" aria-label="Breadcrumb">
+          <ol class="inline-flex items-center space-x-1 md:space-x-1.5 min-w-0">
+            <li class="inline-flex items-center shrink-0">
+              <a href="<?= getWebAppUrl() ?>?page=launchpad" target="_top" class="inline-flex items-center text-white font-semibold hover:text-white/80 transition-colors">
+                <? if (APP_ERP_LOGO_URL) { ?>
+                  <img src="<?= APP_ERP_LOGO_URL ?>" alt="Logo" class="w-[26px] h-[26px] rounded object-contain mr-1.5 bg-white border border-white/20 p-[1px]">
+                <? } else { ?>
+                  <i data-lucide="home" class="w-4 h-4 mr-1.5 text-white/80"></i>
+                <? } ?>
+                <span class="hidden sm:inline"><?= APP_ERP_NAME ?></span>
+              </a>
+            </li>
+            <li class="flex items-center shrink-0">
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-white/30"></i>
+              <span class="ml-1 md:ml-1.5 text-white/60 font-medium select-none"><?= SHELL_MODULE ?></span>
+            </li>
+            <li class="flex items-center min-w-0" aria-current="page">
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-white/30"></i>
+              <span class="ml-1 md:ml-1.5 text-white font-medium select-none truncate" id="shell-page-title"><?= APP_TITLES[APP_PAGE] || 'Inicio' ?></span>
+            </li>
+          </ol>
+        </nav>
       </div>
       <div class="sb-right">
         <div class="sb-status"><div class="sb-dot"></div><span>Conectado</span></div>

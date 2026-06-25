@@ -19,6 +19,28 @@
  */
 const Config = (() => {
   let name = 'ERP WorldClass Travel';
+  let logoUrl = '';
+  let maintenanceActive = 'false';
+  let maintenanceMsg = '';
+  let maintenanceSeverity = 'warning';
+  try {
+    const propLogo = PropertiesService.getScriptProperties().getProperty('ERP_LOGO_URL');
+    if (propLogo && propLogo.trim()) {
+      logoUrl = propLogo.trim();
+    }
+    const propActive = PropertiesService.getScriptProperties().getProperty('MAINTENANCE_BANNER_ACTIVE');
+    if (propActive) {
+      maintenanceActive = propActive.trim();
+    }
+    const propMsg = PropertiesService.getScriptProperties().getProperty('MAINTENANCE_BANNER_MSG');
+    if (propMsg) {
+      maintenanceMsg = propMsg.trim();
+    }
+    const propSeverity = PropertiesService.getScriptProperties().getProperty('MAINTENANCE_BANNER_SEVERITY');
+    if (propSeverity) {
+      maintenanceSeverity = propSeverity.trim();
+    }
+  } catch(e) {}
 
   try {
     // Prioridad 1: Script Property (instalación independiente / SaaS)
@@ -42,6 +64,10 @@ const Config = (() => {
   return Object.freeze({
     VERSION:          '4.0.0',
     ERP_NAME:         name,
+    ERP_LOGO_URL:     logoUrl,
+    MAINTENANCE_BANNER_ACTIVE:   maintenanceActive === 'true',
+    MAINTENANCE_BANNER_MSG:      maintenanceMsg,
+    MAINTENANCE_BANNER_SEVERITY: maintenanceSeverity,
     STORAGE_PROVIDER: 'GOOGLE_DRIVE',
     DEBUG_MODE: (() => {
       try {

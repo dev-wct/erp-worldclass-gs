@@ -3,11 +3,29 @@
 
   <!-- SHELLBAR -->
   <div class="shellbar shrink-0">
-    <div class="sb-left" onclick="window.open('<?= getWebAppUrl() ?>?page=launchpad', '_top')" style="cursor:pointer;">
-      <div class="sb-logo"><i data-lucide="layers" class="w-4 h-4 text-white"></i></div>
-      <span class="sb-name hover:underline">WorldClass ERP</span>
-      <span class="sb-sep">/</span>
-      <span class="sb-mod">Analytics</span>
+    <div class="sb-left flex items-center min-w-0" onclick="window.open('<?= getWebAppUrl() ?>?page=launchpad', '_top')" style="cursor:pointer;">
+      <nav class="flex text-[13px] items-center min-w-0" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-1.5 min-w-0">
+          <li class="inline-flex items-center shrink-0">
+            <span class="inline-flex items-center text-white font-semibold hover:text-white/80 transition-colors">
+              <? if (APP_ERP_LOGO_URL) { ?>
+                <img src="<?= APP_ERP_LOGO_URL ?>" alt="Logo" class="w-[26px] h-[26px] rounded object-contain mr-1.5 bg-white border border-white/20 p-[1px]">
+              <? } else { ?>
+                <i data-lucide="home" class="w-4 h-4 mr-1.5 text-white/80"></i>
+              <? } ?>
+              <span class="hidden sm:inline hover:underline"><?= APP_ERP_NAME ?></span>
+            </span>
+          </li>
+          <li class="flex items-center shrink-0">
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-white/30"></i>
+            <span class="ml-1 md:ml-1.5 text-white/60 font-medium select-none">CORE</span>
+          </li>
+          <li class="flex items-center min-w-0" aria-current="page">
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-white/30"></i>
+            <span class="ml-1 md:ml-1.5 text-white font-medium select-none truncate">Analytics</span>
+          </li>
+        </ol>
+      </nav>
     </div>
     <div class="sb-right">
       <div class="sb-status"><div class="sb-dot"></div>Online</div>

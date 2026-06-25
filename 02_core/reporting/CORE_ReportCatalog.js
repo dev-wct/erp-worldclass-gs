@@ -6,7 +6,7 @@
  * NO CONTIENE LÓGICA DE NEGOCIO, solo configuración.
  */
 
-const ReportCatalog = {
+var ReportCatalog = {
 
   // Reporte 1: Ventas y Rendimiento Comercial (SD)
   'SD_VENTAS': {
@@ -18,6 +18,7 @@ const ReportCatalog = {
     dataSource: 'apiGetReporteVentasSD', // Función backend que provee los datos
     roles: ['ADMIN', 'SD_USER'], // Seguridad (próxima fase)
     columnas: [
+      { title: "Empresa", field: "nombre_empresa", type: "string", headerFilter: "input", width: 180 },
       { title: "ID Cita", field: "id_cita", type: "string", headerFilter: "input", width: 120 },
       { title: "Fecha Venta", field: "fecha_cita", type: "date", headerFilter: "input", width: 150 },
       { title: "Cliente (Lead)", field: "nombre_lead", type: "string", headerFilter: "input", width: 200 },

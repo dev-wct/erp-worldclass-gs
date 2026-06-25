@@ -58,6 +58,7 @@ var APP_ROUTES = {
   'asignacion':   '06_eam/asignacion/EAM_FormAsignacion',
   'nomina':       '08_fico/pago_nomina/FICO_FormPago',
   'configuracion':'02_core/ui/CORE_Configuracion',
+  'admin_sistema':'02_core/ui/CORE_SystemAdmin',
 };
 
 /**
@@ -81,6 +82,7 @@ var APP_TITLES = {
   'asignacion':   'Asignación de Activos — EAM',
   'nomina':       'Pago de Nómina — FICO',
   'configuracion':'Configuración Global — ERP WorldClass',
+  'admin_sistema':'Administración del Sistema — ERP WorldClass',
 };
 
 /**
@@ -169,7 +171,12 @@ function doGet(e) {
       APP_PAGE:      page,
       APP_USER:      user,
       APP_VERSION:   (typeof Config !== 'undefined') ? Config.VERSION  : '—',
+      APP_ERP_VERSION: (typeof Config !== 'undefined') ? Config.VERSION  : '—',
       APP_ERP_NAME:  (typeof Config !== 'undefined') ? Config.ERP_NAME : 'ERP',
+      APP_ERP_LOGO_URL: (typeof Config !== 'undefined') ? Config.ERP_LOGO_URL : '',
+      APP_MAINTENANCE_BANNER_ACTIVE: (typeof Config !== 'undefined') ? Config.MAINTENANCE_BANNER_ACTIVE : false,
+      APP_MAINTENANCE_BANNER_MSG:    (typeof Config !== 'undefined') ? Config.MAINTENANCE_BANNER_MSG : '',
+      APP_MAINTENANCE_BANNER_SEVERITY: (typeof Config !== 'undefined') ? Config.MAINTENANCE_BANNER_SEVERITY : 'warning',
       APP_PARAMS:    params,
       SHELL_MODE:    'standalone',
       SHELL_MODULE:  _getModuleLabel(page),
@@ -247,6 +254,7 @@ function _getModuleLabel(page) {
     'asignacion':   'EAM',
     'nomina':       'FICO',
     'configuracion':'Configuración',
+    'admin_sistema':'Administración',
   };
   return labels[page] || '';
 }
