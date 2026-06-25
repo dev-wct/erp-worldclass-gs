@@ -211,30 +211,20 @@
             <span class="nav-text">Launchpad Home</span>
           </a>
           
-          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Personal</div>
-          <a href="<?= getWebAppUrl() ?>?page=empleado" target="_top" class="nav-item <?= APP_PAGE === 'empleado' ? 'active' : '' ?>">
-            <i data-lucide="users" style="width:18px;height:18px;"></i>
-            <span class="nav-text">Colaboradores</span>
+          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Reportes</div>
+          <a href="<?= getWebAppUrl() ?>?page=analytics" target="_top" class="nav-item <?= APP_PAGE === 'analytics' ? 'active' : '' ?>">
+            <i data-lucide="pie-chart" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Command Center</span>
           </a>
-          
-          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Reclutamiento</div>
-          <a href="<?= getWebAppUrl() ?>?page=vacante" target="_top" class="nav-item <?= APP_PAGE === 'vacante' ? 'active' : '' ?>">
-            <i data-lucide="clipboard-list" style="width:18px;height:18px;"></i>
-            <span class="nav-text">Vacantes</span>
+          <a href="<?= getWebAppUrl() ?>?page=report_viewer" target="_top" class="nav-item <?= APP_PAGE === 'report_viewer' ? 'active' : '' ?>">
+            <i data-lucide="table2" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Explorador de Datos</span>
           </a>
-          <a href="<?= getWebAppUrl() ?>?page=generar-link" target="_top" class="nav-item <?= APP_PAGE === 'generar-link' ? 'active' : '' ?>">
-            <i data-lucide="link-2" style="width:18px;height:18px;"></i>
-            <span class="nav-text">Generar Link</span>
-          </a>
-          <a href="<?= getWebAppUrl() ?>?page=ver-links" target="_top" class="nav-item <?= APP_PAGE === 'ver-links' ? 'active' : '' ?>">
-            <i data-lucide="link" style="width:18px;height:18px;"></i>
-            <span class="nav-text">Links de Postulación</span>
-          </a>
-          
+
           <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Ventas</div>
           <a href="<?= getWebAppUrl() ?>?page=lead" target="_top" class="nav-item <?= APP_PAGE === 'lead' ? 'active' : '' ?>">
             <i data-lucide="user-check" style="width:18px;height:18px;"></i>
-            <span class="nav-text">Leads / Clientes</span>
+            <span class="nav-text">Leads y Clientes</span>
           </a>
           <a href="<?= getWebAppUrl() ?>?page=campana" target="_top" class="nav-item <?= APP_PAGE === 'campana' ? 'active' : '' ?>">
             <i data-lucide="megaphone" style="width:18px;height:18px;"></i>
@@ -249,24 +239,34 @@
             <span class="nav-text">Agendar Cita</span>
           </a>
           
-          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Activos</div>
+          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Inventario y Activos</div>
           <a href="<?= getWebAppUrl() ?>?page=equipo" target="_top" class="nav-item <?= APP_PAGE === 'equipo' ? 'active' : '' ?>">
             <i data-lucide="monitor" style="width:18px;height:18px;"></i>
-            <span class="nav-text">Equipos</span>
+            <span class="nav-text">Equipos Físicos</span>
           </a>
           <a href="<?= getWebAppUrl() ?>?page=chip" target="_top" class="nav-item <?= APP_PAGE === 'chip' ? 'active' : '' ?>">
             <i data-lucide="sim-card" style="width:18px;height:18px;"></i>
-            <span class="nav-text">Chips / Líneas</span>
+            <span class="nav-text">Líneas y SIMs</span>
           </a>
           <a href="<?= getWebAppUrl() ?>?page=asignacion" target="_top" class="nav-item <?= APP_PAGE === 'asignacion' ? 'active' : '' ?>">
             <i data-lucide="arrow-left-right" style="width:18px;height:18px;"></i>
-            <span class="nav-text">Asignar Activos</span>
+            <span class="nav-text">Asignaciones</span>
           </a>
 
-          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Finanzas</div>
+          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Contabilidad</div>
           <a href="<?= getWebAppUrl() ?>?page=nomina" target="_top" class="nav-item <?= APP_PAGE === 'nomina' ? 'active' : '' ?>">
             <i data-lucide="banknote" style="width:18px;height:18px;"></i>
             <span class="nav-text">Pagos de Nómina</span>
+          </a>
+
+          <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Personal</div>
+          <a href="<?= getWebAppUrl() ?>?page=empleado" target="_top" class="nav-item <?= APP_PAGE === 'empleado' ? 'active' : '' ?>">
+            <i data-lucide="users" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Colaboradores</span>
+          </a>
+          <a href="<?= getWebAppUrl() ?>?page=vacante" target="_top" class="nav-item <?= APP_PAGE === 'vacante' ? 'active' : '' ?>">
+            <i data-lucide="clipboard-list" style="width:18px;height:18px;"></i>
+            <span class="nav-text">Vacantes</span>
           </a>
 
           <div style="padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.3); letter-spacing: 0.5px;" class="nav-header nav-text">Configuración</div>

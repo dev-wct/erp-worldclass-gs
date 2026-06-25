@@ -47,14 +47,66 @@
   <div class="flex-1 overflow-y-auto p-6 sm:p-8">
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-ink leading-tight">Bienvenido al ERP</h1>
-      <p class="text-sm text-muted mt-1">Selecciona una transacción para comenzar.</p>
+      <p class="text-sm text-muted mt-1">Visión general de las métricas clave de la empresa.</p>
+    </div>
+
+    <!-- Dashboard KPIs -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <!-- KPI 1 -->
+      <div class="bg-surface border border-border-subtle rounded-[10px] p-5 shadow-sap relative overflow-hidden transition-all hover:-translate-y-1 hover:shadow-sap-md">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-muted">Ventas del Mes</span>
+          <div class="w-8 h-8 rounded-full bg-success-light flex items-center justify-center">
+            <i data-lucide="trending-up" class="w-4 h-4 text-success"></i>
+          </div>
+        </div>
+        <div class="text-2xl font-bold text-ink">$45,230</div>
+        <div class="text-xs text-success font-medium mt-1">+12% vs mes anterior</div>
+      </div>
+      <!-- KPI 2 -->
+      <div class="bg-surface border border-border-subtle rounded-[10px] p-5 shadow-sap relative overflow-hidden transition-all hover:-translate-y-1 hover:shadow-sap-md">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-muted">Órdenes Pendientes</span>
+          <div class="w-8 h-8 rounded-full bg-warning-light flex items-center justify-center">
+            <i data-lucide="shopping-cart" class="w-4 h-4 text-warning"></i>
+          </div>
+        </div>
+        <div class="text-2xl font-bold text-ink">14</div>
+        <div class="text-xs text-muted font-medium mt-1">Requieren despacho hoy</div>
+      </div>
+      <!-- KPI 3 -->
+      <div class="bg-surface border border-border-subtle rounded-[10px] p-5 shadow-sap relative overflow-hidden transition-all hover:-translate-y-1 hover:shadow-sap-md">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-muted">Aprobaciones</span>
+          <div class="w-8 h-8 rounded-full bg-info-light flex items-center justify-center">
+            <i data-lucide="inbox" class="w-4 h-4 text-info"></i>
+          </div>
+        </div>
+        <div class="text-2xl font-bold text-ink">5</div>
+        <div class="text-xs text-muted font-medium mt-1">Esperando autorización</div>
+      </div>
+      <!-- KPI 4 -->
+      <div class="bg-surface border border-border-subtle rounded-[10px] p-5 shadow-sap relative overflow-hidden transition-all hover:-translate-y-1 hover:shadow-sap-md">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-muted">Citas Agendadas</span>
+          <div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center">
+            <i data-lucide="calendar" class="w-4 h-4 text-primary"></i>
+          </div>
+        </div>
+        <div class="text-2xl font-bold text-ink">8</div>
+        <div class="text-xs text-primary font-medium mt-1">Para esta semana</div>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <h2 class="text-lg font-bold text-ink">Módulos del Sistema</h2>
     </div>
 
     <!-- Analytics Command Center -->
     <div class="mb-8">
       <div class="flex items-center gap-2 mb-3">
         <div class="w-2 h-2 rounded-full bg-slate-900"></div>
-        <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Inteligencia de Negocio</span>
+        <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Reportes</span>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         <div class="group bg-slate-900 border border-slate-800 rounded-[10px] p-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-sap relative overflow-hidden" onclick="nav('analytics')">
@@ -138,7 +190,7 @@
     <div class="mb-8">
       <div class="flex items-center gap-2 mb-3">
         <div class="w-2 h-2 rounded-full bg-[#5d4037]"></div>
-        <span class="text-[11px] font-bold uppercase tracking-wider text-muted">HCM — Recursos Humanos</span>
+        <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Personal</span>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         <div class="group bg-white border border-border-subtle rounded-[10px] p-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-sap relative overflow-hidden" onclick="nav('empleado')">
@@ -158,7 +210,7 @@
     <div class="mb-8">
       <div class="flex items-center gap-2 mb-3">
         <div class="w-2 h-2 rounded-full bg-[#00695c]"></div>
-        <span class="text-[11px] font-bold uppercase tracking-wider text-muted">EAM — Activos Corporativos</span>
+        <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Inventario y Activos</span>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         <div class="group bg-white border border-border-subtle rounded-[10px] p-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-sap relative overflow-hidden" onclick="nav('equipo')">
@@ -194,7 +246,7 @@
     <div class="mb-8">
       <div class="flex items-center gap-2 mb-3">
         <div class="w-2 h-2 rounded-full bg-[#6a1b9a]"></div>
-        <span class="text-[11px] font-bold uppercase tracking-wider text-muted">SD — Ventas y Call Center</span>
+        <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Ventas</span>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         <div class="group bg-white border border-border-subtle rounded-[10px] p-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-sap relative overflow-hidden" onclick="nav('campana')">
@@ -238,7 +290,7 @@
     <div class="mb-8">
       <div class="flex items-center gap-2 mb-3">
         <div class="w-2 h-2 rounded-full bg-[#1b5e20]"></div>
-        <span class="text-[11px] font-bold uppercase tracking-wider text-muted">FICO — Finanzas y Control</span>
+        <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Contabilidad</span>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         <div class="group bg-white border border-border-subtle rounded-[10px] p-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-sap relative overflow-hidden" onclick="nav('nomina')">
