@@ -31,58 +31,72 @@
  * ANTI VENDOR LOCK-IN:
  *   Cuando se migre a Hono/Vercel, este archivo se convierte en un
  *   router Express/Hono con las mismas rutas — sin cambiar los formularios.
+ *
+ * SINGLE SOURCE OF TRUTH:
+ *   Las rutas, títulos y menú se definen en:
+ *     00_portal/config/PORTAL_Routes.json
+ *   Este archivo lee ese JSON para evitar duplicación.
+ *
+ * CODE STYLE: ES6+ (const/let, arrow functions, template literals)
  * ─────────────────────────────────────────────────────────────────────────
  */
 
-var GLOBAL_CONTEXT = {};
+let GLOBAL_CONTEXT = {};
 
-/**
- * Mapa de rutas: page → archivo HTML del template.
- * Agregar nuevas páginas aquí — sin tocar más código.
- */
-var APP_ROUTES = {
-  'launchpad':    '00_portal/ui/PORTAL_Launchpad',
-  'analytics':    '13_analytics/ui/ANA_DashboardView',
-  'report_viewer':'00_portal/ui/PORTAL_ReportViewer',
-  'inbox':        '00_portal/ui/PORTAL_Inbox',
-  'vacante':      '06_erec/vacante/EREC_FormVacante',
-  'generar-link': '06_erec/vacante/EREC_FormGenerarLink',
-  'ver-links':    '06_erec/vacante/EREC_FormVerLinks',
-  'empleado':     '07_hcm/empleado/RRHH_FormEmpleado',
-  'lead':         '10_sd/lead/SD_FormLead',
-  'campana':      '10_sd/campana/SD_FormCampana',
-  'llamada':      '10_sd/llamada/SD_FormLlamada',
-  'cita':         '10_sd/cita/SD_FormCita',
-  'equipo':       '09_eam/equipo/EAM_FormEquipo',
-  'chip':         '09_eam/chip/EAM_FormChip',
-  'asignacion':   '09_eam/asignacion/EAM_FormAsignacion',
-  'nomina':       '11_fico/pago_nomina/FICO_FormPago',
-  'configuracion':'04_customizing/ui/CUST_BusinessConfig',
-  'admin_sistema':'03_sysadmin/ui/SYS_AdminView',
+// Security module (server-side)
+// Si SecurityServer no está disponible, usar fallback local
+const _escapeHtml = (str) => {
+  if (typeof SecurityServer !== 'undefined') {
+    return SecurityServer.escapeHtml(str);
+  }
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 };
 
 /**
- * Títulos de página para el <title> del browser.
+ * Carga la configuración centralizada de rutas desde JSON.
+ * Single Source of Truth: 00_portal/config/PORTAL_Routes.json
  */
-var APP_TITLES = {
-  'launchpad':    'ERP WorldClass — Launchpad',
-  'analytics':    'Command Center — ERP WorldClass',
-  'report_viewer':'Explorador de Reportes — ERP WorldClass',
-  'inbox':        'My Inbox — Workflow',
-  'vacante':      'Nueva Vacante — E-Recruiting',
-  'generar-link': 'Generar Link — E-Recruiting',
-  'ver-links':    'Links de Postulación — E-Recruiting',
-  'empleado':     'Registrar Empleado — HCM',
-  'lead':         'Registrar Lead — SD',
-  'campana':      'Nueva Campaña — SD',
-  'llamada':      'Registrar Llamada — SD',
-  'cita':         'Agendar Cita — SD',
-  'equipo':       'Registrar Equipo — EAM',
-  'chip':         'Registrar Chip — EAM',
-  'asignacion':   'Asignación de Activos — EAM',
-  'nomina':       'Pago de Nómina — FICO',
-  'configuracion':'Configuración Global — ERP WorldClass',
-  'admin_sistema':'Administración del Sistema — ERP WorldClass',
+const _loadRoutesConfig = () => {
+  try {
+    const json = HtmlService.createHtmlOutputFromFile('00_portal/config/PORTAL_Routes.json').getContent();
+    return JSON.parse(json);
+  } catch (e) {
+    Logger.log(`[AppRouter] Error cargando PORTAL_Routes.json: ${e.message}`);
+    return { routes: {}, menu: [] };
+  }
+};
+
+/** Obtiene el mapa de rutas page → archivo */
+const _getRoutes = () => {
+  const config = _loadRoutesConfig();
+  const routes = {};
+  Object.keys(config.routes).forEach((page) => {
+    routes[page] = config.routes[page].file;
+  });
+  return routes;
+};
+
+/** Obtiene el mapa de títulos page → título */
+const _getTitles = () => {
+  const config = _loadRoutesConfig();
+  const titles = {};
+  Object.keys(config.routes).forEach((page) => {
+    titles[page] = config.routes[page].title;
+  });
+  return titles;
+};
+
+/** Obtiene el label del módulo para el breadcrumb del shellbar */
+const _getModuleLabel = (page) => {
+  const config = _loadRoutesConfig();
+  const route = config.routes[page];
+  return route ? route.module : '';
 };
 
 /**
@@ -92,51 +106,49 @@ var APP_TITLES = {
  * el ÚNICO que define doGet(). El doGet() del módulo EREC fue
  * renombrado a _erecDoGetPublico() y se llama desde aquí.
  */
-function doGet(e) {
-  var params = (e && e.parameter) ? e.parameter : {};
+const doGet = (e) => {
+  const params = (e && e.parameter) ? e.parameter : {};
 
   if (params.test === 'logs') {
     try {
-      var ss = Utils.getActiveSpreadsheet();
-      var sheet = ss.getSheetByName('SYS_DEBUG_LOG');
+      const ss = Utils.getActiveSpreadsheet();
+      const sheet = ss.getSheetByName('SYS_DEBUG_LOG');
       if (!sheet) return HtmlService.createHtmlOutput('No logs sheet found.');
-      var data = sheet.getDataRange().getValues();
-      var html = '<!DOCTYPE html><html><head><title>System Logs</title><style>body{font-family:sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;}th,td{padding:8px;text-align:left;border-bottom:1px solid #ddd;}pre{white-space:pre-wrap;background:#f5f5f5;padding:8px;border-radius:4px;}</style></head><body><h1>System Logs</h1><table border="1"><thead><tr><th>Timestamp</th><th>Message</th><th>Stack</th></tr></thead><tbody>';
-      for (var i = data.length - 1; i >= 1; i--) {
-        html += '<tr><td>' + data[i][0] + '</td><td><strong>' + data[i][1] + '</strong></td><td><pre>' + data[i][2] + '</pre></td></tr>';
+      const data = sheet.getDataRange().getValues();
+      let html = '<!DOCTYPE html><html><head><title>System Logs</title><style>body{font-family:sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;}th,td{padding:8px;text-align:left;border-bottom:1px solid #ddd;}pre{white-space:pre-wrap;background:#f5f5f5;padding:8px;border-radius:4px;}</style></head><body><h1>System Logs</h1><table border="1"><thead><tr><th>Timestamp</th><th>Message</th><th>Stack</th></tr></thead><tbody>';
+      for (let i = data.length - 1; i >= 1; i--) {
+        html += `<tr><td>${data[i][0]}</td><td><strong>${data[i][1]}</strong></td><td><pre>${data[i][2]}</pre></td></tr>`;
       }
       html += '</tbody></table></body></html>';
       return HtmlService.createHtmlOutput(html);
-    } catch(err) {
-      return HtmlService.createHtmlOutput('Error reading logs: ' + err.message);
+    } catch (err) {
+      return HtmlService.createHtmlOutput(`Error reading logs: ${err.message}`);
     }
   }
 
   if (params.test === 'clear') {
     try {
-      var ss = Utils.getActiveSpreadsheet();
-      var sheet = ss.getSheetByName('SYS_DEBUG_LOG');
-      if (sheet) {
-        ss.deleteSheet(sheet);
-      }
+      const ss = Utils.getActiveSpreadsheet();
+      const sheet = ss.getSheetByName('SYS_DEBUG_LOG');
+      if (sheet) ss.deleteSheet(sheet);
       return HtmlService.createHtmlOutput('Logs cleared.');
-    } catch(err) {
-      return HtmlService.createHtmlOutput('Error clearing logs: ' + err.message);
+    } catch (err) {
+      return HtmlService.createHtmlOutput(`Error clearing logs: ${err.message}`);
     }
   }
 
   if (params.test === 'true') {
     try {
-      var res = include('00_portal/ui/PORTAL_Head');
-      return HtmlService.createHtmlOutput('Success: ' + res);
-    } catch(err) {
-      writeLog('doGet test error', err.message + '\n' + err.stack);
-      return HtmlService.createHtmlOutput('Error: ' + err.message + '<br><pre>' + err.stack + '</pre>');
+      const res = include('00_portal/ui/PORTAL_Head');
+      return HtmlService.createHtmlOutput(`Success: ${res}`);
+    } catch (err) {
+      writeLog('doGet test error', `${err.message}\n${err.stack}`);
+      return HtmlService.createHtmlOutput(`Error: ${err.message}<br><pre>${err.stack}</pre>`);
     }
   }
 
   // LOG de diagnóstico — ver en Apps Script > Ejecuciones
-  Logger.log('[AppRouter.doGet] params: ' + JSON.stringify(params));
+  Logger.log(`[AppRouter.doGet] params: ${JSON.stringify(params)}`);
 
   // ── Rutas públicas de candidatos EREC ────────────────────────────
   if (params.vacante || params.token) {
@@ -145,60 +157,63 @@ function doGet(e) {
   }
 
   // ── Rutas internas del ERP ────────────────────────────────────────
-  var page = (params.page || 'launchpad').toLowerCase().trim();
-  Logger.log('[AppRouter.doGet] → página interna: ' + page);
-  var file  = APP_ROUTES[page];
+  const page = (params.page || 'launchpad').toLowerCase().trim();
+  Logger.log(`[AppRouter.doGet] → página interna: ${page}`);
+  const APP_ROUTES = _getRoutes();
+  const file = APP_ROUTES[page];
 
   if (!file) {
     return _appPaginaError(
       'Página no encontrada',
-      'La ruta "' + page + '" no existe en el ERP.',
+      `La ruta "${_escapeHtml(page)}" no existe en el ERP.`,
       '?page=launchpad'
     );
   }
 
   try {
-    var user    = _getUser();
-    var tpl     = HtmlService.createTemplateFromFile(file);
+    const user = _getUser();
+    const tpl = HtmlService.createTemplateFromFile(file);
 
     // Determinar modo debug (prioridad: URL param > global Config)
-    var isDebug = (typeof Config !== 'undefined') ? Config.DEBUG_MODE : false;
-    if (params.debug === 'true')  isDebug = true;
+    let isDebug = (typeof Config !== 'undefined') ? Config.DEBUG_MODE : false;
+    if (params.debug === 'true') isDebug = true;
     if (params.debug === 'false') isDebug = false;
 
     // Poblar contexto global compartido para llamadas include()
     GLOBAL_CONTEXT = {
-      APP_PAGE:      page,
-      APP_USER:      user,
-      APP_VERSION:   (typeof Config !== 'undefined') ? Config.VERSION  : '—',
-      APP_ERP_VERSION: (typeof Config !== 'undefined') ? Config.VERSION  : '—',
-      APP_ERP_NAME:  (typeof Config !== 'undefined') ? Config.ERP_NAME : 'ERP',
+      APP_PAGE: page,
+      APP_USER: user,
+      APP_VERSION: (typeof Config !== 'undefined') ? Config.VERSION : '—',
+      APP_ERP_VERSION: (typeof Config !== 'undefined') ? Config.VERSION : '—',
+      APP_ERP_NAME: (typeof Config !== 'undefined') ? Config.ERP_NAME : 'ERP',
       APP_ERP_LOGO_URL: (typeof Config !== 'undefined') ? Config.ERP_LOGO_URL : '',
       APP_MAINTENANCE_BANNER_ACTIVE: (typeof Config !== 'undefined') ? Config.MAINTENANCE_BANNER_ACTIVE : false,
-      APP_MAINTENANCE_BANNER_MSG:    (typeof Config !== 'undefined') ? Config.MAINTENANCE_BANNER_MSG : '',
+      APP_MAINTENANCE_BANNER_MSG: (typeof Config !== 'undefined') ? Config.MAINTENANCE_BANNER_MSG : '',
       APP_MAINTENANCE_BANNER_SEVERITY: (typeof Config !== 'undefined') ? Config.MAINTENANCE_BANNER_SEVERITY : 'warning',
-      APP_PARAMS:    params,
-      SHELL_MODE:    'standalone',
-      SHELL_MODULE:  _getModuleLabel(page),
-      SHELL_USER:    user,
-      APP_DEBUG:     isDebug
+      APP_PARAMS: params,
+      SHELL_MODE: 'standalone',
+      SHELL_MODULE: _getModuleLabel(page),
+      SHELL_USER: user,
+      SHELL_FULL_HEIGHT: ['inbox', 'report_viewer', 'analytics'].includes(page),
+      APP_DEBUG: isDebug
     };
 
     // Copiar variables al template principal
-    Object.keys(GLOBAL_CONTEXT).forEach(function(k) {
+    Object.keys(GLOBAL_CONTEXT).forEach((k) => {
       tpl[k] = GLOBAL_CONTEXT[k];
     });
 
-    var output = tpl.evaluate();
-    Logger.log('[AppRouter] Template evaluado OK: ' + file);
+    const output = tpl.evaluate();
+    Logger.log(`[AppRouter] Template evaluado OK: ${file}`);
 
+    const APP_TITLES = _getTitles();
     return output
       .setTitle((APP_TITLES[page] || 'ERP'))
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
-  } catch(err) {
-    Logger.log('[AppRouter] ERROR evaluando template "' + file + '": ' + err.message + ' | stack: ' + err.stack);
-    writeLog('doGet evaluation error: ' + file, err.message + '\n' + err.stack);
+  } catch (err) {
+    Logger.log(`[AppRouter] ERROR evaluando template "${file}": ${err.message} | stack: ${err.stack}`);
+    writeLog(`doGet evaluation error: ${file}`, `${err.message}\n${err.stack}`);
     // Página de error sin dependencias externas
     return HtmlService.createHtmlOutput(
       '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
@@ -214,57 +229,34 @@ function doGet(e) {
       'color:#fff;border-radius:6px;text-decoration:none;font-size:14px;}' +
       '</style></head><body><div class="card">' +
       '<h2>⚠️ Error al cargar la página</h2>' +
-      '<p style="color:#515f6e;font-size:13px;margin-bottom:12px;">Archivo: <code>' + file + '</code></p>' +
-      '<pre>' + err.message + '</pre>' +
+      `<p style="color:#515f6e;font-size:13px;margin-bottom:12px;">Archivo: <code>${file}</code></p>` +
+      `<pre>${err.message}</pre>` +
       '<a href="?page=launchpad">← Volver al Launchpad</a>' +
       '</div></body></html>'
     ).setTitle('Error — ERP')
      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
-}
+};
 
 // ─── Helpers privados ─────────────────────────────────────────────────────
 
 /** Obtiene el email del usuario autenticado con fallback seguro */
-function _getUser() {
+const _getUser = () => {
   try {
-    var email = Session.getActiveUser().getEmail();
+    const email = Session.getActiveUser().getEmail();
     if (email && email.length > 0) return email;
     return Session.getEffectiveUser().getEmail();
-  } catch(e) {
+  } catch (e) {
     return '';
   }
-}
-
-/** Retorna el label del módulo para el breadcrumb del shellbar */
-function _getModuleLabel(page) {
-  var labels = {
-    'launchpad':    '',
-    'inbox':        'Mis Tareas',
-    'vacante':      'E-Recruiting',
-    'generar-link': 'E-Recruiting',
-    'ver-links':    'E-Recruiting',
-    'empleado':     'HCM',
-    'lead':         'SD',
-    'campana':      'SD',
-    'llamada':      'SD',
-    'cita':         'SD',
-    'equipo':       'EAM',
-    'chip':         'EAM',
-    'asignacion':   'EAM',
-    'nomina':       'FICO',
-    'configuracion':'Configuración',
-    'admin_sistema':'Administración',
-  };
-  return labels[page] || '';
-}
+};
 
 /**
  * Página de error genérica para el router.
  * No depende de ningún template para evitar recursión.
  */
-function _appPaginaError(titulo, mensaje, backUrl) {
-  var html =
+const _appPaginaError = (titulo, mensaje, backUrl) => {
+  const html =
     '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">' +
@@ -281,52 +273,139 @@ function _appPaginaError(titulo, mensaje, backUrl) {
     '</style></head>' +
     '<body><div class="card">' +
     '<div class="code">⚠️</div>' +
-    '<h2>' + titulo + '</h2>' +
-    '<p>' + mensaje + '</p>' +
-    (backUrl ? '<a href="' + backUrl + '">← Volver al Launchpad</a>' : '') +
+    `<h2>${titulo}</h2>` +
+    `<p>${mensaje}</p>` +
+    (backUrl ? `<a href="${backUrl}">← Volver al Launchpad</a>` : '') +
     '</div></body></html>';
 
   return HtmlService.createHtmlOutput(html)
-    .setTitle('Error — ' + Config.ERP_NAME)
+    .setTitle(`Error — ${Config.ERP_NAME}`)
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-}
+};
 
 /**
  * Expone la URL del Web App para que otros módulos puedan
  * construir links absolutos (ej. links de postulación en EREC).
  * @returns {string} URL base del Web App o '' si no está configurada
  */
-function getWebAppUrl() {
+const getWebAppUrl = () => {
   try {
     return PropertiesService.getScriptProperties()
       .getProperty('WEBAPP_URL') || ScriptApp.getService().getUrl();
-  } catch(e) {
+  } catch (e) {
     return '';
   }
-}
+};
 
 /**
  * doPost — Recibe el formulario público de candidatos EREC.
  * Solo las rutas públicas usan POST (formulario nativo HTML de postulación).
  * Las rutas internas usan google.script.run (no POST).
  */
-function doPost(e) {
-  return _erecDoPostPublico(e);
-}
+const doPost = (e) => _erecDoPostPublico(e);
 
 /**
  * Registra un error de sistema en la hoja de cálculo SYS_DEBUG_LOG para diagnóstico remoto.
  */
-function writeLog(message, stack) {
+const writeLog = (message, stack) => {
   try {
-    var ss = Utils.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('SYS_DEBUG_LOG');
+    const ss = Utils.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName('SYS_DEBUG_LOG');
     if (!sheet) {
       sheet = ss.insertSheet('SYS_DEBUG_LOG');
       sheet.appendRow(['Timestamp', 'Message', 'Stack']);
     }
     sheet.appendRow([new Date(), message, stack || '']);
-  } catch(e) {
-    Logger.log('Fallo writeLog: ' + e.message);
+  } catch (e) {
+    Logger.log(`Fallo writeLog: ${e.message}`);
   }
-}
+};
+
+/**
+ * Retorna el contenido HTML evaluado de una vista para el enrutador SPA.
+ * IMPORTANTE: Esta función NO usa safeExecute para mantener control total
+ * del sobre de respuesta { ok, data } que espera el cliente SPA.
+ * @param {string} page
+ * @returns {{ok:boolean, data:string}|{ok:boolean, mensaje:string}}
+ */
+const apiGetPageHtml = (page) => {
+  try {
+    const user = _getUser();
+    const userClean = user ? user.replace(/[^a-zA-Z0-9]/g, '_') : 'anonymous';
+
+    const APP_ROUTES = _getRoutes();
+    const file = APP_ROUTES[page];
+    if (!file) {
+      Logger.log(`[AppRouter.apiGetPageHtml] Página no encontrada: ${page}`);
+      return { ok: false, mensaje: `Página no encontrada: ${page}` };
+    }
+
+    const version = (typeof Config !== 'undefined') ? Config.VERSION.replace(/\./g, '_') : '4_0_0';
+    const cacheKey = `spa_view_${version}_${userClean}_${page}`;
+
+    // Corregir enlaces dinámicamente para desarrollo vs producción
+    const isDev = (typeof Config !== 'undefined') ? Config.DEBUG_MODE : false;
+
+    // Determinar si estamos en modo debug
+    const isDebug = (typeof Config !== 'undefined') ? Config.DEBUG_MODE : false;
+
+    // Capa 1: Servidor - Recuperar de caché si no es modo debug
+    if (!isDebug) {
+      try {
+        const cachedHtml = CacheService_ERP.get(cacheKey);
+        if (cachedHtml && typeof cachedHtml === 'string' && cachedHtml.length > 10) {
+          Logger.log(`[AppRouter] Cache HIT para: ${page} (${cachedHtml.length} chars)`);
+          return { ok: true, data: cachedHtml };
+        }
+      } catch (cacheErr) {
+        Logger.log(`[AppRouter] Error leyendo caché para ${page}: ${cacheErr.message}`);
+      }
+    }
+
+    Logger.log(`[AppRouter] Evaluando template: ${file}`);
+    const tpl = HtmlService.createTemplateFromFile(file);
+
+    // Poblar contexto global dinámico para que sub-plantillas tengan acceso a las variables
+    GLOBAL_CONTEXT = {
+      APP_PAGE: page,
+      APP_USER: user,
+      APP_VERSION: (typeof Config !== 'undefined') ? Config.VERSION : '—',
+      APP_ERP_VERSION: (typeof Config !== 'undefined') ? Config.VERSION : '—',
+      APP_ERP_NAME: (typeof Config !== 'undefined') ? Config.ERP_NAME : 'ERP',
+      APP_ERP_LOGO_URL: (typeof Config !== 'undefined') ? Config.ERP_LOGO_URL : '',
+      APP_MAINTENANCE_BANNER_ACTIVE: (typeof Config !== 'undefined') ? Config.MAINTENANCE_BANNER_ACTIVE : false,
+      APP_MAINTENANCE_BANNER_MSG: (typeof Config !== 'undefined') ? Config.MAINTENANCE_BANNER_MSG : '',
+      APP_MAINTENANCE_BANNER_SEVERITY: (typeof Config !== 'undefined') ? Config.MAINTENANCE_BANNER_SEVERITY : 'warning',
+      APP_PARAMS: {},
+      SHELL_MODE: 'spa',
+      SHELL_MODULE: _getModuleLabel(page),
+      SHELL_USER: user,
+      SHELL_FULL_HEIGHT: ['inbox', 'report_viewer', 'analytics'].includes(page),
+      APP_DEBUG: isDebug
+    };
+
+    // Copiar variables de contexto al template principal
+    Object.keys(GLOBAL_CONTEXT).forEach((k) => {
+      tpl[k] = GLOBAL_CONTEXT[k];
+    });
+
+    const html = tpl.evaluate().getContent();
+    Logger.log(`[AppRouter] Template OK: ${file} | tamaño: ${html.length} chars`);
+
+    // Guardar en la caché por 2 horas para cargas rápidas
+    if (!isDebug) {
+      try {
+        CacheService_ERP.put(cacheKey, html, 7200);
+      } catch (cacheWriteErr) {
+        Logger.log(`[AppRouter] No se pudo guardar en caché: ${cacheWriteErr.message}`);
+      }
+    }
+
+    return { ok: true, data: html };
+
+  } catch (err) {
+    Logger.log(`[AppRouter.apiGetPageHtml] ERROR para "${page}": ${err.message} | ${err.stack}`);
+    writeLog(`apiGetPageHtml error: ${page}`, `${err.message}\n${err.stack}`);
+    return { ok: false, mensaje: err.message || 'Error al cargar la vista.' };
+  }
+};

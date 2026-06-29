@@ -6,6 +6,7 @@
 
   Proporciona:
     • Meta tags responsive / PWA-ready
+    • Design tokens centralizados (PORTAL_Tokens.css)
     • Tailwind CSS Play CDN + config de tokens corporativos SAP Horizon
     • Inter (tipografía corporativa) vía Google Fonts
     • Lucide Icons CDN — uso: <i data-lucide="name"></i> + lucide.createIcons()
@@ -42,117 +43,12 @@
     })();
   </script>
 
-  <!-- ── Definición de Variables CSS de Temas (Light / Dark) ── -->
-  <style>
-    :root {
-      /* Tema Claro (Por Defecto SAP Horizon Horizon-like) */
-      --color-canvas: #f5f6f7;
-      --color-surface: #ffffff;
-      --color-ink: #1d2d3d;
-      --color-muted: #515f6e;
-      --color-border: #d9d9d9;
-      --color-border-subtle: #ebebeb;
-      --color-shell: #1d2b3a;
-      --color-primary: #0a6ed1;
-      --color-primary-hover: #0854a0;
-      --color-primary-light: #e8f1fb;
-      --color-success: #107e3e;
-      --color-success-light: #eef7f2;
-      --color-warning: #e9730c;
-      --color-warning-light: #fff3e6;
-      --color-error: #bb0000;
-      --color-error-light: #fdf2f2;
-      --color-info: #0a6ed1;
-      --color-info-light: #f2f7fd;
-    }
-    
-    html.dark {
-      /* Tema Oscuro (Zafiro & Vidrio Esmerilado Premium) */
-      --color-canvas: #080c14;
-      --color-surface: #111827;
-      --color-ink: #f8fafc;
-      --color-muted: #94a3b8;
-      --color-border: #1e293b;
-      --color-border-subtle: rgba(30, 41, 59, 0.5);
-      --color-shell: #0d1527;
-      --color-primary: #3b82f6;
-      --color-primary-hover: #2563eb;
-      --color-primary-light: rgba(59, 130, 246, 0.1);
-      --color-success: #10b981;
-      --color-success-light: rgba(16, 185, 129, 0.1);
-      --color-warning: #f59e0b;
-      --color-warning-light: rgba(245, 158, 11, 0.1);
-      --color-error: #ef4444;
-      --color-error-light: rgba(239, 68, 68, 0.1);
-      --color-info: #3b82f6;
-      --color-info-light: rgba(59, 130, 246, 0.1);
-    }
-  </style>
+  <!-- ── Design Tokens Centralizados (Single Source of Truth) ── -->
+  <?!= include('00_portal/config/PORTAL_Tokens'); ?>
 
-  <!-- ── Tailwind Play CDN ───────────────────────────────────────────── -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- ── Security Module (XSS Prevention) ── -->
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-          },
-          colors: {
-            primary:   { DEFAULT: 'var(--color-primary)', hover: 'var(--color-primary-hover)', light: 'var(--color-primary-light)' },
-            success:   { DEFAULT: 'var(--color-success)', light: 'var(--color-success-light)' },
-            warning:   { DEFAULT: 'var(--color-warning)', light: 'var(--color-warning-light)' },
-            error:     { DEFAULT: 'var(--color-error)', light: 'var(--color-error-light)' },
-            info:      { DEFAULT: 'var(--color-info)', light: 'var(--color-info-light)' },
-
-            /* ── Semánticos de superficie ───────────────────────────── */
-            shell:     'var(--color-shell)',
-            canvas:    'var(--color-canvas)',
-            surface:   'var(--color-surface)',
-            overlay:   'rgba(59, 130, 246, 0.05)',
-
-            /* ── Texto ──────────────────────────────────────────────── */
-            ink:       'var(--color-ink)',
-            muted:     'var(--color-muted)',
-            placeholder: 'var(--color-muted)',
-
-            /* ── Bordes ─────────────────────────────────────────────── */
-            border:    'var(--color-border)',
-            'border-subtle': 'var(--color-border-subtle)',
-          },
-          boxShadow: {
-            'sap':       '0 4px 12px rgba(29,45,61,.04), 0 1px 2px rgba(29,45,61,.06)',
-            'sap-md':    '0 8px 24px rgba(29,45,61,.08), 0 2px 6px rgba(29,45,61,.06)',
-            'sap-focus': '0 0 0 3px rgba(10,110,209,.28)',
-          },
-          borderRadius: {
-            'sap': '6px',
-            'sap-lg': '10px',
-          },
-          spacing: {
-            /* Escala de espaciado SAP Horizon (4px base) */
-            'xs': '4px',
-            'sm': '8px',
-            'md': '16px',
-            'lg': '24px',
-            'xl': '32px',
-            '2xl': '48px',
-          },
-          fontSize: {
-            'xxs': ['10px', { lineHeight: '14px' }],
-            'xs':  ['12px', { lineHeight: '16px' }],
-            'sm':  ['13px', { lineHeight: '18px' }],
-            'base':['14px', { lineHeight: '20px' }],
-            'md':  ['15px', { lineHeight: '22px' }],
-            'lg':  ['16px', { lineHeight: '24px' }],
-            'xl':  ['18px', { lineHeight: '28px' }],
-            '2xl': ['22px', { lineHeight: '32px' }],
-          },
-        },
-      },
-      plugins: [],
-    };
+    <?!= include('00_portal/config/PORTAL_Security'); ?>
   </script>
 
   <!-- ── Utilidades e Inyección Isomórfica ────────────────────────────── -->
@@ -169,85 +65,122 @@
   -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
-  <!-- ── Tailwind Components (Single Source of Truth: SAP Horizon) ── -->
-  <style type="text/tailwindcss">
-    @layer components {
-      /* ── Reset & Body ────────────────────────────────────────────────── */
-      body {
-        @apply font-sans text-ink bg-canvas antialiased m-0 p-0 text-[14px] leading-relaxed;
-      }
-      
-      /* ── Shellbar ──────────────────────────────────────────────────── */
-      .shellbar {
-        @apply h-[48px] bg-shell flex items-center justify-between px-5 shrink-0 shadow-md;
-      }
-      .sb-left { @apply flex items-center gap-2.5 min-w-0; }
-      .sb-logo { @apply min-w-[26px] max-w-[80px] h-[26px] rounded bg-primary flex items-center justify-center shrink-0; }
-      .sb-name { @apply text-white font-semibold text-[14px] whitespace-nowrap no-underline; }
-      .sb-sep { @apply text-white/30 mx-[2px]; }
-      .sb-mod { @apply text-white/60 text-[13px] no-underline hover:underline hover:text-white/80 transition-colors; }
-      .sb-page { @apply text-white/90 text-[13px] font-medium; }
-      .sb-right { @apply flex items-center gap-2.5 shrink-0; }
-      .sb-status { @apply flex items-center gap-1.5 px-2.5 py-[3px] rounded-full bg-success-light text-success text-[11px] font-medium; }
-      .sb-dot { @apply w-[7px] h-[7px] rounded-full bg-success shrink-0; }
-      .sb-email { @apply text-white/50 text-[12px] max-w-[160px] truncate; }
-      .sb-avatar { @apply w-[29px] h-[29px] rounded-full bg-white/10 flex items-center justify-center border-[1.5px] border-white/20; }
+  <!--
+    ── Componentes CSS (Single Source of Truth) ──────────────────────────
+    NOTA: Estos componentes están definidos en CSS puro (sin @apply).
+    Para usar Tailwind utilities en HTML, se mantienen como referencia.
 
-      /* ── Inputs / Selects / Textareas ─────────────────────────────── */
-      .erp-input, .erp-select, .erp-textarea {
-        @apply block w-full px-3 py-2.5 text-[14px] text-ink bg-surface border border-border rounded-sap transition-all duration-150 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary-light hover:border-muted disabled:bg-canvas disabled:text-muted disabled:cursor-not-allowed disabled:border-border-subtle;
-      }
-      .erp-input::placeholder, .erp-textarea::placeholder { @apply text-placeholder; }
-      .erp-select {
-        @apply pr-8 cursor-pointer bg-no-repeat bg-[right_10px_center];
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23515f6e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-      }
-      .erp-textarea { @apply resize-y min-h-[80px]; }
+    FUTURO: Cuando se migre a Hono/Node, compilar Tailwind offline:
+      npx tailwindcss -i ./input.css -o ./dist/ds.min.css --minify
+  -->
 
-      /* ── Labels & Fields ──────────────────────────────────────────── */
-      .erp-label { @apply block text-[13px] font-medium text-muted mb-1; }
-      .erp-label-required::after { content: ' *'; @apply text-error font-semibold; }
-      .erp-field { @apply flex flex-col gap-0.5; }
-
-      /* ── Botones ──────────────────────────────────────────────────── */
-      .erp-btn {
-        @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 text-[14px] font-medium border border-border rounded-sap bg-surface text-ink cursor-pointer transition-all duration-150 whitespace-nowrap outline-none focus-visible:ring-[3px] focus-visible:ring-primary-light focus-visible:border-primary hover:bg-overlay hover:border-muted active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
-      }
-      .erp-btn-primary { @apply bg-primary border-primary text-white hover:bg-primary-hover hover:border-primary-hover; }
-      .erp-btn-success { @apply bg-success border-success text-white hover:opacity-90; }
-      .erp-btn-danger  { @apply bg-error border-error text-white hover:opacity-90; }
-      .erp-btn-ghost   { @apply bg-transparent border-transparent text-primary hover:bg-primary-light; }
-      
-      .erp-btn-sm { @apply px-3 py-1.5 text-[12px]; }
-      .erp-btn-lg { @apply px-6 py-3 text-[15px]; }
-
-      /* ── Card ─────────────────────────────────────────────────────── */
-      .erp-card { @apply bg-surface border border-border-subtle rounded-[10px] shadow-sap overflow-hidden shrink-0; }
-      .erp-card-header { @apply flex items-center justify-between px-6 py-4 border-b border-border-subtle; }
-      .erp-card-body  { @apply p-6; }
-      .erp-card-footer { @apply flex items-center justify-end gap-3 px-6 py-3.5 bg-canvas border-t border-border-subtle; }
-
-      /* ── Section title ────────────────────────────────────────────── */
-      .erp-section-title { @apply col-span-full text-[11px] font-semibold uppercase tracking-wider text-muted border-b border-border-subtle pb-1.5 mt-1; }
-
-      /* ── Message strips ───────────────────────────────────────────── */
-      .erp-msg { @apply flex items-start gap-3 px-3.5 py-3 rounded-sap text-[13px] border-l-4 mb-4; }
-      .erp-msg-success { @apply bg-success-light text-success border-success; }
-      .erp-msg-error   { @apply bg-error-light text-error border-error; }
-      .erp-msg-warning { @apply bg-warning-light text-warning border-warning; }
-      .erp-msg-info    { @apply bg-info-light text-info border-info; }
-
-      /* ── Badge ────────────────────────────────────────────────────── */
-      .erp-badge { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-medium; }
-      .erp-badge-blue    { @apply bg-info-light text-info; }
-      .erp-badge-green   { @apply bg-success-light text-success; }
-      .erp-badge-orange  { @apply bg-warning-light text-warning; }
-      .erp-badge-red     { @apply bg-error-light text-error; }
-      .erp-badge-neutral { @apply bg-canvas text-muted; }
-
-      /* ── Form grid ─────────────────────────────────────────────────── */
-      .erp-form-grid { @apply grid grid-cols-1 sm:grid-cols-2 gap-4; }
-      .erp-full { @apply col-span-full; }
+  <!-- ── Componentes CSS del Design System ── -->
+  <style>
+    /* ── Reset & Body ────────────────────────────────────────────────── */
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 14px; color: var(--color-ink); background: var(--color-canvas);
+      line-height: 1.5; margin: 0; padding: 0;
+      -webkit-font-smoothing: antialiased;
     }
+
+    /* ── Shellbar ──────────────────────────────────────────────────── */
+    .shellbar {
+      height: 48px; background: var(--color-shell);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    .sb-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .sb-logo { min-width: 26px; max-width: 80px; height: 26px; border-radius: 5px; background: var(--color-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .sb-name { color: #fff; font-weight: 600; font-size: 14px; white-space: nowrap; text-decoration: none; }
+    .sb-sep { color: rgba(255,255,255,.3); margin: 0 2px; }
+    .sb-mod { color: rgba(255,255,255,.6); font-size: 13px; text-decoration: none; }
+    .sb-page { color: rgba(255,255,255,.9); font-size: 13px; font-weight: 500; }
+    .sb-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .sb-status { display: flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 99px; background: var(--color-success-light); color: var(--color-success); font-size: 11px; font-weight: 500; }
+    .sb-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-success); flex-shrink: 0; }
+    .sb-email { color: rgba(255,255,255,.5); font-size: 12px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sb-avatar { width: 29px; height: 29px; border-radius: 50%; background: rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; border: 1.5px solid rgba(255,255,255,.2); }
+
+    /* ── Inputs / Selects / Textareas ─────────────────────────────── */
+    .erp-input, .erp-select, .erp-textarea {
+      display: block; width: 100%; padding: 10px 12px;
+      font-size: 14px; color: var(--color-ink); background: var(--color-surface);
+      border: 1px solid var(--color-border); border-radius: 6px;
+      transition: border-color 150ms, box-shadow 150ms;
+    }
+    .erp-input::placeholder, .erp-textarea::placeholder { color: var(--color-muted); }
+    .erp-input:hover, .erp-select:hover, .erp-textarea:hover { border-color: var(--color-muted); }
+    .erp-input:focus, .erp-select:focus, .erp-textarea:focus {
+      outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(59,130,246,.28);
+    }
+    .erp-input:disabled, .erp-select:disabled, .erp-textarea:disabled {
+      background: var(--color-canvas); color: var(--color-muted); cursor: not-allowed; border-color: var(--color-border-subtle);
+    }
+    .erp-select {
+      padding-right: 32px; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23515f6e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+    }
+    .erp-textarea { resize: vertical; min-height: 80px; }
+
+    /* ── Labels & Fields ──────────────────────────────────────────── */
+    .erp-label { display: block; font-size: 13px; font-weight: 500; color: var(--color-muted); margin-bottom: 4px; }
+    .erp-label-required::after { content: ' *'; color: var(--color-error); font-weight: 600; }
+    .erp-field { display: flex; flex-direction: column; gap: 2px; }
+
+    /* ── Botones ──────────────────────────────────────────────────── */
+    .erp-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 20px; font-size: 14px; font-weight: 500; font-family: inherit;
+      border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: var(--color-ink);
+      cursor: pointer; transition: background 150ms, border-color 150ms, opacity 150ms, transform 100ms;
+      text-decoration: none; white-space: nowrap;
+    }
+    .erp-btn:hover:not(:disabled)   { background: var(--color-overlay); border-color: var(--color-muted); }
+    .erp-btn:active                  { transform: scale(.98); }
+    .erp-btn:focus-visible           { box-shadow: 0 0 0 3px rgba(59,130,246,.28); border-color: var(--color-primary); }
+    .erp-btn:disabled                { opacity: .5; cursor: not-allowed; transform: none; }
+    .erp-btn-primary                 { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+    .erp-btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
+    .erp-btn-success                 { background: var(--color-success); border-color: var(--color-success); color: #fff; }
+    .erp-btn-success:hover:not(:disabled) { opacity: .9; }
+    .erp-btn-danger                  { background: var(--color-error); border-color: var(--color-error); color: #fff; }
+    .erp-btn-danger:hover:not(:disabled)  { opacity: .9; }
+    .erp-btn-ghost                   { background: transparent; border-color: transparent; color: var(--color-primary); }
+    .erp-btn-ghost:hover:not(:disabled)   { background: var(--color-primary-light); }
+    .erp-btn-sm { padding: 6px 12px; font-size: 12px; }
+    .erp-btn-lg { padding: 12px 24px; font-size: 15px; }
+
+    /* ── Card ─────────────────────────────────────────────────────── */
+    .erp-card { background: var(--color-surface); border: 1px solid var(--color-border-subtle); border-radius: 10px; box-shadow: 0 4px 12px rgba(9,13,22,.04), 0 1px 2px rgba(9,13,22,.06); overflow: hidden; }
+    .erp-card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--color-border-subtle); }
+    .erp-card-body  { padding: 20px 24px; }
+    .erp-card-footer { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 14px 24px; background: var(--color-canvas); border-top: 1px solid var(--color-border-subtle); }
+
+    /* ── Section title ────────────────────────────────────────────── */
+    .erp-section-title { grid-column: 1 / -1; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: var(--color-muted); border-bottom: 1px solid var(--color-border-subtle); padding-bottom: 6px; margin-top: 4px; }
+
+    /* ── Message strips ───────────────────────────────────────────── */
+    .erp-msg { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 6px; font-size: 13px; border-left: 4px solid; margin-bottom: 16px; }
+    .erp-msg-success { background: var(--color-success-light); color: var(--color-success); border-left-color: var(--color-success); }
+    .erp-msg-error   { background: var(--color-error-light); color: var(--color-error); border-left-color: var(--color-error); }
+    .erp-msg-warning { background: var(--color-warning-light); color: var(--color-warning); border-left-color: var(--color-warning); }
+    .erp-msg-info    { background: var(--color-info-light); color: var(--color-info); border-left-color: var(--color-info); }
+
+    /* ── Badge ────────────────────────────────────────────────────── */
+    .erp-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; font-size: 12px; font-weight: 500; }
+    .erp-badge-blue    { background: var(--color-info-light); color: var(--color-info); }
+    .erp-badge-green   { background: var(--color-success-light); color: var(--color-success); }
+    .erp-badge-orange  { background: var(--color-warning-light); color: var(--color-warning); }
+    .erp-badge-red     { background: var(--color-error-light); color: var(--color-error); }
+    .erp-badge-neutral { background: var(--color-border); color: var(--color-muted); }
+
+    /* ── Form grid ─────────────────────────────────────────────────── */
+    .erp-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .erp-full { grid-column: 1 / -1; }
+    @media (max-width: 480px) { .erp-form-grid { grid-template-columns: 1fr; } }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   </style>
 </head>

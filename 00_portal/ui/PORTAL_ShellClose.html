@@ -1,46 +1,215 @@
+<? if (typeof SHELL_MODE === 'undefined' || SHELL_MODE !== 'spa') { ?>
+      <? if (!SHELL_FULL_HEIGHT) { ?>
+        </div>
+      <? } ?>
       </main>
     </div>
-  </div>
 
   <?!= include('00_portal/ui/PORTAL_Components'); ?>
   <?!= include('00_portal/ui/PORTAL_FormHandler'); ?>
 
-  <!-- Scripts del Sidebar Layout -->
+  <!-- Scripts del Sidebar Layout y Buscador SAP Horizon -->
   <script>
-    // Recuperar estado del sidebar desde LocalStorage para mantener consistencia
-    var sidebarState = localStorage.getItem('erp-sidebar-collapsed');
-    var sidebar = document.getElementById('app-sidebar');
-    var toggleIcon = document.getElementById('toggle-icon');
-    
-    if (sidebarState === 'true' && sidebar) {
-      sidebar.classList.add('collapsed');
-      if (toggleIcon) {
-        toggleIcon.setAttribute('data-lucide', 'chevrons-right');
+    // Single Source of Truth: 00_portal/config/PORTAL_Routes.json
+    // El menú se carga desde el JSON centralizado
+    var _ROUTES_CONFIG = null;
+    var ERP_MENU_STRUCTURE = [];
+
+    function _loadMenuConfig() {
+      if (_ROUTES_CONFIG) return _ROUTES_CONFIG;
+      try {
+        // En GAS, leemos el JSON del mismo proyecto
+        var jsonText = <?= HtmlService.createHtmlOutputFromFile('00_portal/config/PORTAL_Routes.json').getContent() ?>;
+        _ROUTES_CONFIG = typeof jsonText === 'string' ? JSON.parse(jsonText) : jsonText;
+      } catch(e) {
+        console.error('[ShellClose] Error cargando PORTAL_Routes.json:', e);
+        _ROUTES_CONFIG = { routes: {}, menu: [] };
       }
+      return _ROUTES_CONFIG;
     }
-    
-    function toggleSidebar() {
-      if (!sidebar) return;
-      var collapsed = sidebar.classList.toggle('collapsed');
-      localStorage.setItem('erp-sidebar-collapsed', collapsed ? 'true' : 'false');
-      
-      if (toggleIcon) {
-        toggleIcon.setAttribute('data-lucide', collapsed ? 'chevrons-right' : 'chevrons-left');
-        if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [toggleIcon] });
-      }
+
+    function _buildMenuStructure() {
+      var config = _loadMenuConfig();
+      var routes = config.routes || {};
+      var menuItems = config.menu || [];
+
+      ERP_MENU_STRUCTURE = menuItems.map(function(section) {
+        var sectionRoutes = section.items.map(function(pageKey) {
+          var route = routes[pageKey] || {};
+          return {
+            page: pageKey,
+            label: route.title ? route.title.split(' — ')[0] : pageKey,
+            icon: route.icon || 'circle'
+          };
+        });
+        return {
+          id: section.id,
+          label: section.label,
+          icon: section.icon,
+          items: sectionRoutes
+        };
+      });
     }
-    
-    function toggleMobileSidebar() {
-      if (!sidebar) return;
-      sidebar.classList.toggle('mobile-open');
-    }
-    
-    // Cerrar sidebar móvil si se hace clic fuera de él
-    document.addEventListener('click', function(e) {
-      if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('mobile-open')) {
-        if (!sidebar.contains(e.target) && !e.target.closest('button[onclick*="toggleMobileSidebar"]')) {
-          sidebar.classList.remove('mobile-open');
+
+    _buildMenuStructure();
+
+    function getActiveModule(page) {
+      for (var i = 0; i < ERP_MENU_STRUCTURE.length; i++) {
+        var m = ERP_MENU_STRUCTURE[i];
+        for (var j = 0; j < m.items.length; j++) {
+          if (m.items[j].page === page) {
+            return m;
+          }
         }
+      }
+      return null;
+    }
+
+    function renderERPNavigation(currentPage) {
+      try {
+        var dropdownBtnName = document.getElementById('shell-active-module-name');
+        var dropdownBtnIcon = document.getElementById('shell-active-module-icon');
+        var dropdown = document.getElementById('shell-module-dropdown');
+        var secondBar = document.getElementById('shell-second-bar');
+        
+        if (secondBar) {
+          if (currentPage === 'launchpad') {
+            secondBar.classList.add('hidden');
+          } else {
+            secondBar.classList.remove('hidden');
+          }
+        }
+        
+        if (!dropdownBtnName || !dropdown) {
+          console.warn('[Navigation] Contenedores de navegación no encontrados en el DOM.');
+          return;
+        }
+
+        console.log('[Navigation] renderERPNavigation (Tailwind First) para:', currentPage);
+
+        var activeMod = getActiveModule(currentPage);
+        
+        // 1. Actualizar el botón de la barra
+        if (currentPage === 'launchpad') {
+          dropdownBtnName.textContent = 'Módulos';
+          if (dropdownBtnIcon) {
+            dropdownBtnIcon.setAttribute('data-lucide', 'layout-grid');
+          }
+        } else if (activeMod) {
+          dropdownBtnName.textContent = activeMod.label;
+          if (dropdownBtnIcon) {
+            dropdownBtnIcon.setAttribute('data-lucide', activeMod.icon);
+          }
+        }
+        
+        if (dropdownBtnIcon && typeof lucide !== 'undefined') {
+          try { lucide.createIcons({ nodes: [dropdownBtnIcon] }); } catch(e) {}
+        }
+
+        // 2. Generar el contenido del desplegable (Acordeón)
+        var html = '';
+        ERP_MENU_STRUCTURE.forEach(function(m) {
+          var isCurrentMod = activeMod && activeMod.id === m.id;
+          var submenuId = 'submenu-' + m.id;
+          var arrowIcon = isCurrentMod ? 'chevron-up' : 'chevron-down';
+          var submenuClass = isCurrentMod ? 'flex flex-col gap-1 pl-6 pr-2 py-1 bg-slate-950/40' : 'hidden bg-slate-950/40 py-1 pl-6 pr-2';
+          
+          html += `
+            <div class="border-b border-slate-800/40 last:border-0">
+              <button type="button" class="w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer" onclick="window.toggleModuleSection(event, '${m.id}')">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="${m.icon}" class="w-3.5 h-3.5 opacity-70"></i>
+                  <span>${m.label}</span>
+                </div>
+                <i data-lucide="${arrowIcon}" id="arrow-${m.id}" class="w-3 h-3 opacity-50"></i>
+              </button>
+              <div id="${submenuId}" class="module-submenu ${submenuClass}">
+          `;
+
+          m.items.forEach(function(item) {
+            var isCurrentPage = item.page === currentPage;
+            var itemClass = isCurrentPage 
+              ? 'bg-primary/20 text-primary font-bold border-l-2 border-primary pl-2' 
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50 pl-2';
+            
+            html += `
+              <a href="?page=${item.page}" class="flex items-center gap-2 py-1.5 rounded text-xs transition-colors ${itemClass}" onclick="window.closeModuleDropdown()">
+                <i data-lucide="${item.icon}" class="w-3 h-3 opacity-60"></i>
+                <span>${item.label}</span>
+              </a>
+            `;
+          });
+
+          html += `
+              </div>
+            </div>
+          `;
+        });
+
+        dropdown.innerHTML = html;
+        if (typeof lucide !== 'undefined') {
+          try { lucide.createIcons({ nodes: [dropdown] }); } catch(e) {}
+        }
+      } catch(err) {
+        console.error('[Navigation] Error crítico en renderERPNavigation:', err);
+      }
+    }
+
+    // Exponer a nivel global para que el router SPA pueda actualizar el menú al navegar
+    window.renderERPNavigation = renderERPNavigation;
+
+    // Controladores de eventos del menú superior dropdown
+    function toggleModuleDropdown(event) {
+      if (event) event.stopPropagation();
+      var dropdown = document.getElementById('shell-module-dropdown');
+      if (dropdown) {
+        dropdown.classList.toggle('hidden');
+      }
+    }
+    window.toggleModuleDropdown = toggleModuleDropdown;
+
+    function toggleModuleSection(event, moduleId) {
+      if (event) event.stopPropagation();
+      var submenu = document.getElementById('submenu-' + moduleId);
+      var arrow = document.getElementById('arrow-' + moduleId);
+      if (submenu) {
+        var isHidden = submenu.classList.contains('hidden');
+        
+        // Colapsar todas las demás secciones
+        document.querySelectorAll('.module-submenu').forEach(function(el) {
+          el.classList.add('hidden');
+          el.classList.remove('flex', 'flex-col', 'gap-1', 'pl-6', 'pr-2', 'py-1', 'bg-slate-950/40');
+        });
+        document.querySelectorAll('[id^="arrow-"]').forEach(function(el) {
+          el.setAttribute('data-lucide', 'chevron-down');
+        });
+        
+        // Abrir la sección seleccionada si estaba oculta
+        if (isHidden) {
+          submenu.classList.remove('hidden');
+          submenu.classList.add('flex', 'flex-col', 'gap-1', 'pl-6', 'pr-2', 'py-1', 'bg-slate-950/40');
+          if (arrow) arrow.setAttribute('data-lucide', 'chevron-up');
+        }
+        
+        if (typeof lucide !== 'undefined') {
+          try { lucide.createIcons({ nodes: [document.getElementById('shell-module-dropdown')] }); } catch(e) {}
+        }
+      }
+    }
+    window.toggleModuleSection = toggleModuleSection;
+
+    function closeModuleDropdown() {
+      var dropdown = document.getElementById('shell-module-dropdown');
+      if (dropdown) dropdown.classList.add('hidden');
+    }
+    window.closeModuleDropdown = closeModuleDropdown;
+
+    // Cerrar dropdown si se hace click fuera
+    document.addEventListener('click', function(e) {
+      var dropdown = document.getElementById('shell-module-dropdown');
+      var btn = document.getElementById('shell-module-dropdown-btn');
+      if (dropdown && !dropdown.contains(e.target) && btn && !btn.contains(e.target)) {
+        dropdown.classList.add('hidden');
       }
     });
 
@@ -49,9 +218,130 @@
       localStorage.setItem('erp-theme', isDark ? 'dark' : 'light');
     }
 
-    if (typeof lucide !== 'undefined') {
-      lucide.createIcons();
+    // ── BUSCADOR DE TRANSACCIONES FIORI ──
+    (function() {
+      var searchInput = document.getElementById('fiori-search-input');
+      var searchDropdown = document.getElementById('fiori-search-dropdown');
+      if (!searchInput || !searchDropdown) return;
+
+      // Recopilar todas las transacciones navegables del catálogo
+      var searchablePages = [];
+      ERP_MENU_STRUCTURE.forEach(function(m) {
+        m.items.forEach(function(item) {
+          searchablePages.push({
+            page: item.page,
+            label: item.label,
+            module: m.label,
+            icon: item.icon
+          });
+        });
+      });
+
+      searchInput.addEventListener('input', function() {
+        var query = searchInput.value.toLowerCase().trim();
+        if (!query) {
+          searchDropdown.classList.add('hidden');
+          return;
+        }
+
+        var matches = searchablePages.filter(function(p) {
+          return p.label.toLowerCase().indexOf(query) !== -1 || 
+                 p.module.toLowerCase().indexOf(query) !== -1 ||
+                 p.page.toLowerCase().indexOf(query) !== -1;
+        });
+
+        if (matches.length === 0) {
+          searchDropdown.innerHTML = '<div class="px-4 py-3 text-xs text-slate-400 text-center">No se encontraron resultados</div>';
+        } else {
+          var html = '';
+          matches.forEach(function(p) {
+            html += `
+              <a href="?page=${p.page}" class="flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300 text-xs" onclick="window.closeModuleDropdown()">
+                <div class="flex items-center gap-3 min-w-0">
+                  <i data-lucide="${p.icon}" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                  <div class="truncate">
+                    <span class="font-semibold text-slate-900 dark:text-white">${p.label}</span>
+                    <span class="text-[10px] text-slate-400 block">${p.module}</span>
+                  </div>
+                </div>
+                <span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded uppercase font-bold shrink-0">Ir</span>
+              </a>
+            `;
+          });
+          searchDropdown.innerHTML = html;
+          if (typeof lucide !== 'undefined') {
+            try { lucide.createIcons({ nodes: [searchDropdown] }); } catch(e) {}
+          }
+        }
+        searchDropdown.classList.remove('hidden');
+      });
+
+      // Cerrar y limpiar al seleccionar
+      searchDropdown.addEventListener('click', function() {
+        searchDropdown.classList.add('hidden');
+        searchInput.value = '';
+      });
+
+      // Cerrar buscador si se hace click fuera
+      document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+          searchDropdown.classList.add('hidden');
+        }
+      });
+
+      // Cerrar con Escape
+      searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          searchDropdown.classList.add('hidden');
+          searchInput.blur();
+        }
+      });
+    })();
+
+    // Corregir enlaces estáticos en carga inicial
+    var isDev = <?= (typeof APP_DEBUG !== 'undefined' && APP_DEBUG) ? 'true' : 'false' ?>;
+    if (isDev) {
+      document.querySelectorAll('a[href*="/exec"]').forEach(function(a) {
+        a.href = a.href.replace(/\/exec(\?|$)/, '/dev$1');
+      });
     }
+  </script>
+
+  <!-- Enrutador SPA Reactivo (Agnóstico e Isomórfico) -->
+  <?!= include('00_portal/ui/PORTAL_Router'); ?>
+
+  <script>
+    if (typeof lucide !== 'undefined') {
+      try {
+        lucide.createIcons();
+      } catch(le) {
+        console.warn('[ShellClose] Error al inicializar iconos Lucide:', le);
+      }
+    }
+
+    // Iniciar pre-fetching de módulos secundarios en segundo plano
+    if (window.ERP_Router && typeof ERP_Router.initPrefetch === 'function') {
+      ERP_Router.initPrefetch();
+    }
+
+    // Sembrar el caché cliente e inicializar navegación
+    (function() {
+      try {
+        var currentPage = '<?= APP_PAGE ?>'.toLowerCase().trim() || 'launchpad';
+        
+        // Renderizar menús de navegación iniciales
+        if (window.renderERPNavigation) {
+          renderERPNavigation(currentPage);
+        }
+
+        var outlet = document.querySelector('[data-router-outlet]');
+        if (outlet && outlet.innerHTML.trim().length > 0 && window.ERP_Router && ERP_Router.seed) {
+          ERP_Router.seed(currentPage, outlet.innerHTML);
+          console.log('[Router] Seed inicial desde DOM para página: ' + currentPage);
+        }
+      } catch(e) { /* silencioso */ }
+    })();
   </script>
 </body>
 </html>
+<? } ?>

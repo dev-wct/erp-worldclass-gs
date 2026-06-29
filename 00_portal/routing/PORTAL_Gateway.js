@@ -22,22 +22,18 @@
  * añadiendo trazabilidad sin romper el contrato de safeExecute.
  *
  * Uso típico en Controller:
- *   function apiGuardarLead(data) {
- *     return Gateway.route('SD.Lead.guardar', data, function(d) {
- *       return LeadUseCases.registrar(d);
- *     });
- *   }
+ *   const apiGuardarLead = (data) => Gateway_route('SD.Lead.guardar', data, (d) => {
+ *     return LeadUseCases.registrar(d);
+ *   });
  *
  * @param {string}   route   — Nombre de la ruta (para logs y trazabilidad)
  * @param {any}      payload — Datos recibidos del front
  * @param {Function} handler — Función que ejecuta el caso de uso
  * @returns {{ ok: boolean, data?: any, errores?: string[], mensaje: string }}
  */
-function Gateway_route(route, payload, handler) {
-  return safeExecute(function() {
-    return handler(payload);
-  }, route);
-}
+const Gateway_route = (route, payload, handler) => {
+  return safeExecute(() => handler(payload), route);
+};
 
 /**
  * Normaliza cualquier respuesta de un UseCase al contrato estándar.
@@ -47,12 +43,12 @@ function Gateway_route(route, payload, handler) {
  * @param {string} [mensaje]
  * @returns {{ ok: boolean, data: any, mensaje: string }}
  */
-function Gateway_normalize(result, mensaje) {
+const Gateway_normalize = (result, mensaje) => {
   if (result && typeof result === 'object' && 'ok' in result) {
     return result; // Ya viene en contrato estándar
   }
   return { ok: true, data: result, mensaje: mensaje || 'OK' };
-}
+};
 
 /**
  * Construye una respuesta de error estándar desde cualquier excepción.
@@ -62,8 +58,8 @@ function Gateway_normalize(result, mensaje) {
  * @param {string}       route
  * @returns {{ ok: false, errores: string[], mensaje: string }}
  */
-function Gateway_buildError(err, route) {
-  var msg = (err && err.message) ? err.message : String(err);
-  ErrorHandler.log('[Gateway] ' + route + ' → ' + msg);
-  return { ok: false, errores: [msg], mensaje: 'Error en ' + route };
-}
+const Gateway_buildError = (err, route) => {
+  const msg = (err && err.message) ? err.message : String(err);
+  ErrorHandler.log(`[Gateway] ${route} → ${msg}`);
+  return { ok: false, errores: [msg], mensaje: `Error en ${route}` };
+};

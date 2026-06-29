@@ -12,57 +12,15 @@
     <head>
       <meta charset="UTF-8">
       ...CDNs...
+      include('00_portal/config/PORTAL_Tokens');
       include('00_portal/ui/PORTAL_Styles');
     </head>
   ─────────────────────────────────────────────────────────────────────────
 -->
-<style>
-  :root {
-    /* Tema Claro (Por Defecto SAP Horizon Horizon-like) */
-    --color-canvas: #f5f6f7;
-    --color-surface: #ffffff;
-    --color-ink: #1d2d3d;
-    --color-muted: #515f6e;
-    --color-border: #d9d9d9;
-    --color-border-subtle: #ebebeb;
-    --color-shell: #1d2b3a;
-    --color-primary: #0a6ed1;
-    --color-primary-hover: #0854a0;
-    --color-primary-light: #e8f1fb;
-    --color-success: #107e3e;
-    --color-success-light: #eef7f2;
-    --color-warning: #e9730c;
-    --color-warning-light: #fff3e6;
-    --color-error: #bb0000;
-    --color-error-light: #fdf2f2;
-    --color-info: #0a6ed1;
-    --color-info-light: #f2f7fd;
-    --color-overlay: rgba(10,110,209,0.05);
-  }
-  
-  html.dark {
-    /* Tema Oscuro (Zafiro & Vidrio Esmerilado Premium) */
-    --color-canvas: #080c14;
-    --color-surface: #111827;
-    --color-ink: #f8fafc;
-    --color-muted: #94a3b8;
-    --color-border: #1e293b;
-    --color-border-subtle: rgba(30, 41, 59, 0.5);
-    --color-shell: #0d1527;
-    --color-primary: #3b82f6;
-    --color-primary-hover: #2563eb;
-    --color-primary-light: rgba(59, 130, 246, 0.1);
-    --color-success: #10b981;
-    --color-success-light: rgba(16, 185, 129, 0.1);
-    --color-warning: #f59e0b;
-    --color-warning-light: rgba(245, 158, 11, 0.1);
-    --color-error: #ef4444;
-    --color-error-light: rgba(239, 68, 68, 0.1);
-    --color-info: #3b82f6;
-    --color-info-light: rgba(59, 130, 246, 0.1);
-    --color-overlay: rgba(59, 130, 246, 0.05);
-  }
+<!-- Design Tokens Centralizados (Single Source of Truth) -->
+<?!= include('00_portal/config/PORTAL_Tokens'); ?>
 
+<style>
   /* ── Reset ──────────────────────────────────────────────────────── */
   *, *::before, *::after { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }

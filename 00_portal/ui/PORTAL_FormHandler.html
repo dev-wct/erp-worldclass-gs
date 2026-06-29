@@ -332,91 +332,161 @@ ERP.Form = (function() {
 
 /* ══════════════════════════════════════════════════════════════════════
    ERP.Gateway — adaptador isomórfico GAS ↔ Hono/Vercel
+
+   ANTI VENDOR LOCK-IN:
+   Usa Adapter Pattern para desacoplar la lógica de negocio del
+   transporte de red. Cuando se migre a Hono/Vercel, solo se cambia
+   el adapter — el código de negocio NO cambia.
+
+   ADAPTERS DISPONIBLES:
+   - ERP.Gateway.adapters.gas   → Google Apps Script (actual)
+   - ERP.Gateway.adapters.fetch → REST API (futuro Hono/Vercel)
    ══════════════════════════════════════════════════════════════════════ */
 ERP.Gateway = (function() {
 
+  /** Adapter activo (por defecto: GAS) */
+  let _adapter = null;
+
+  /** Adapters disponibles */
+  const _adapters = {
+    /**
+     * Adapter para Google Apps Script
+     * Usa google.script.run para comunicación cliente-servidor
+     */
+    gas: {
+      call(method, payload, onSuccess, onFailure) {
+        const successWrapper = (res) => {
+          if (ERP.Debug) ERP.Debug.log('CALL_SUCCESS', `${method} retornó`, res);
+          if (onSuccess) onSuccess(res);
+        };
+
+        const failureWrapper = (err) => {
+          if (ERP.Debug) ERP.Debug.log('CALL_ERROR', `${method} falló físicamente`, err);
+          if (onFailure) onFailure(err);
+        };
+
+        google.script.run
+          .withSuccessHandler(successWrapper)
+          .withFailureHandler(failureWrapper)
+          [method](payload);
+      },
+
+      callArgs(method, args, onSuccess, onFailure) {
+        const successWrapper = (res) => {
+          if (ERP.Debug) ERP.Debug.log('CALL_SUCCESS', `${method} retornó`, res);
+          if (onSuccess) onSuccess(res);
+        };
+
+        const failureWrapper = (err) => {
+          if (ERP.Debug) ERP.Debug.log('CALL_ERROR', `${method} falló físicamente`, err);
+          if (onFailure) onFailure(err);
+        };
+
+        const runner = google.script.run
+          .withSuccessHandler(successWrapper)
+          .withFailureHandler(failureWrapper);
+        runner[method].apply(runner, args || []);
+      }
+    },
+
+    /**
+     * Adapter para REST API (Hono/Vercel/Node)
+     * Usa fetch() para comunicación HTTP estándar
+     */
+    fetch: {
+      call(method, payload, onSuccess, onFailure) {
+        fetch(`/api/${method}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then(onSuccess)
+        .catch(onFailure);
+      },
+
+      callArgs(method, args, onSuccess, onFailure) {
+        this.call(method, { args }, onSuccess, onFailure);
+      }
+    }
+  };
+
   /** Handler de error por defecto */
-  function _defaultFailure(err) {
-    ERP.Msg.error('Error del sistema: ' + (err && err.message ? err.message : String(err)));
-  }
+  const _defaultFailure = (err) => {
+    ERP.Msg.error(`Error del sistema: ${err && err.message ? err.message : String(err)}`);
+  };
 
   /**
-   * Llama a una función del servidor GAS con UN argumento (payload).
+   * Inicializa el gateway con el adapter especificado.
+   * @param {string} adapterName — 'gas' | 'fetch'
+   */
+  const init = (adapterName = 'gas') => {
+    if (!_adapters[adapterName]) {
+      console.error(`[Gateway] Adapter "${adapterName}" no existe. Disponibles: ${Object.keys(_adapters).join(', ')}`);
+      return;
+    }
+    _adapter = _adapters[adapterName];
+    console.log(`[Gateway] Adapter inicializado: ${adapterName}`);
+  };
+
+  /**
+   * Llama a una función del servidor con UN argumento (payload).
    *
-   * @param {string}   method    — nombre de la función GAS
+   * @param {string}   method    — nombre de la función
    * @param {any}      payload   — datos a enviar
    * @param {Function} onSuccess — callback(res)
    * @param {Function} [onFailure] — callback(err)
    */
-  function call(method, payload, onSuccess, onFailure) {
+  const call = (method, payload, onSuccess, onFailure) => {
+    if (!_adapter) init();
+
     if (ERP.Debug) {
-      ERP.Debug.log('CALL', 'Llamando a ' + method, payload);
+      ERP.Debug.log('CALL', `Llamando a ${method}`, payload);
     }
 
-    var successWrapper = function(res) {
-      if (ERP.Debug) {
-        ERP.Debug.log('CALL_SUCCESS', method + ' retornó', res);
-      }
-      if (onSuccess) onSuccess(res);
-    };
-
-    var failureWrapper = function(err) {
-      if (ERP.Debug) {
-        ERP.Debug.log('CALL_ERROR', method + ' falló físicamente', err);
-      }
+    const wrappedFailure = (err) => {
+      if (ERP.Debug) ERP.Debug.log('CALL_ERROR', `${method} falló`, err);
       if (onFailure) onFailure(err);
       else _defaultFailure(err);
     };
 
-    google.script.run
-      .withSuccessHandler(successWrapper)
-      .withFailureHandler(failureWrapper)
-      [method](payload);
-  }
+    _adapter.call(method, payload, onSuccess, wrappedFailure);
+  };
 
   /**
-   * Llama a una función GAS con MÚLTIPLES argumentos posicionales.
-   * Para funciones como: apiCalc(idEmp, anio, mes, quincena)
+   * Llama a una función con MÚLTIPLES argumentos posicionales.
    *
-   * @param {string}   method    — nombre de la función GAS
+   * @param {string}   method    — nombre de la función
    * @param {Array}    args      — array de argumentos en orden
    * @param {Function} onSuccess — callback(res)
    * @param {Function} [onFailure] — callback(err)
    */
-  function callArgs(method, args, onSuccess, onFailure) {
+  const callArgs = (method, args, onSuccess, onFailure) => {
+    if (!_adapter) init();
+
     if (ERP.Debug) {
-      ERP.Debug.log('CALL_ARGS', 'Llamando a ' + method + ' con argumentos', args);
+      ERP.Debug.log('CALL_ARGS', `Llamando a ${method} con argumentos`, args);
     }
 
-    var successWrapper = function(res) {
-      if (ERP.Debug) {
-        ERP.Debug.log('CALL_SUCCESS', method + ' retornó', res);
-      }
-      if (onSuccess) onSuccess(res);
-    };
-
-    var failureWrapper = function(err) {
-      if (ERP.Debug) {
-        ERP.Debug.log('CALL_ERROR', method + ' falló físicamente', err);
-      }
+    const wrappedFailure = (err) => {
+      if (ERP.Debug) ERP.Debug.log('CALL_ERROR', `${method} falló`, err);
       if (onFailure) onFailure(err);
       else _defaultFailure(err);
     };
 
-    var runner = google.script.run
-      .withSuccessHandler(successWrapper)
-      .withFailureHandler(failureWrapper);
-    runner[method].apply(runner, args || []);
-  }
+    _adapter.callArgs(method, args, onSuccess, wrappedFailure);
+  };
 
   /**
-   * Shortcut: llama, muestra spinner en un botón y maneja la respuesta
-   * de forma estándar.
+   * Shortcut: llama, muestra spinner en un botón y maneja la respuesta.
    *
    * @param {object} opts
-   *   opts.method      — nombre de la función GAS
+   *   opts.method      — nombre de la función
    *   opts.payload     — datos (default: {})
-   *   opts.args        — array de args (alternativa a payload, usa callArgs)
+   *   opts.args        — array de args (alternativa a payload)
    *   opts.btnId       — id del botón a deshabilitar durante la llamada
    *   opts.btnText     — texto original del botón (para restaurar)
    *   opts.loadingText — texto del spinner (default: 'Guardando...')
@@ -424,20 +494,20 @@ ERP.Gateway = (function() {
    *   opts.onSuccess   — callback(res) extra después de mostrar mensaje
    *   opts.onError     — callback(res) extra después de mostrar error
    */
-  function submit(opts) {
-    var o = opts || {};
+  const submit = (opts) => {
+    const o = opts || {};
     ERP.Msg.hide(o.msgId);
     if (o.btnId) ERP.Btn.loading(o.btnId, o.loadingText || 'Guardando...');
 
     if (ERP.Debug) {
-      ERP.Debug.log('SUBMIT_REQUEST', 'Enviando formulario a ' + o.method, o.payload || o.args || {});
+      ERP.Debug.log('SUBMIT_REQUEST', `Enviando formulario a ${o.method}`, o.payload || o.args || {});
     }
 
-    var handleSuccess = function(res) {
+    const handleSuccess = (res) => {
       if (o.btnId) ERP.Btn.ready(o.btnId, o.btnText || 'Guardar');
-      
+
       if (ERP.Debug) {
-        ERP.Debug.log(res && res.ok ? 'SUCCESS' : 'FAIL', o.method + ' procesado', res);
+        ERP.Debug.log(res && res.ok ? 'SUCCESS' : 'FAIL', `${o.method} procesado`, res);
       }
 
       if (!res) {
@@ -454,14 +524,14 @@ ERP.Gateway = (function() {
       }
     };
 
-    var handleFailure = function(err) {
+    const handleFailure = (err) => {
       if (o.btnId) ERP.Btn.ready(o.btnId, o.btnText || 'Guardar');
-      
+
       if (ERP.Debug) {
-        ERP.Debug.log('ERROR', o.method + ' falló físicamente', err);
+        ERP.Debug.log('ERROR', `${o.method} falló físicamente`, err);
       }
 
-      ERP.Msg.error('Error de comunicación: ' + (err && err.message ? err.message : String(err)), o.msgId);
+      ERP.Msg.error(`Error de comunicación: ${err && err.message ? err.message : String(err)}`, o.msgId);
       if (o.onError) o.onError(err);
     };
 
@@ -470,8 +540,17 @@ ERP.Gateway = (function() {
     } else {
       call(o.method, o.payload || {}, handleSuccess, handleFailure);
     }
-  }
+  };
 
-  return { call: call, callArgs: callArgs, submit: submit };
+  // Auto-inicializar con adapter GAS por defecto
+  init('gas');
+
+  return {
+    init,
+    call,
+    callArgs,
+    submit,
+    adapters: _adapters
+  };
 })();
 </script>

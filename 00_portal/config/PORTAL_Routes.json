@@ -1,0 +1,168 @@
+{
+  "routes": {
+    "launchpad": {
+      "title": "ERP WorldClass — Launchpad",
+      "module": "",
+      "icon": "home",
+      "file": "00_portal/ui/PORTAL_Launchpad"
+    },
+    "analytics": {
+      "title": "Command Center — ERP WorldClass",
+      "module": "Inteligencia",
+      "icon": "pie-chart",
+      "file": "13_analytics/ui/ANA_DashboardView"
+    },
+    "report_viewer": {
+      "title": "Explorador de Reportes — ERP WorldClass",
+      "module": "Reportes",
+      "icon": "table-2",
+      "file": "00_portal/ui/PORTAL_ReportViewer"
+    },
+    "inbox": {
+      "title": "My Inbox — Workflow",
+      "module": "Mis Tareas",
+      "icon": "inbox",
+      "file": "00_portal/ui/PORTAL_Inbox"
+    },
+    "vacante": {
+      "title": "Nueva Vacante — E-Recruiting",
+      "module": "E-Recruiting",
+      "icon": "clipboard-list",
+      "file": "06_erec/vacante/EREC_FormVacante"
+    },
+    "generar-link": {
+      "title": "Generar Link — E-Recruiting",
+      "module": "E-Recruiting",
+      "icon": "link",
+      "file": "06_erec/vacante/EREC_FormGenerarLink"
+    },
+    "ver-links": {
+      "title": "Links de Postulación — E-Recruiting",
+      "module": "E-Recruiting",
+      "icon": "globe",
+      "file": "06_erec/vacante/EREC_FormVerLinks"
+    },
+    "empleado": {
+      "title": "Registrar Empleado — HCM",
+      "module": "HCM",
+      "icon": "users",
+      "file": "07_hcm/empleado/RRHH_FormEmpleado"
+    },
+    "lead": {
+      "title": "Registrar Lead — SD",
+      "module": "SD",
+      "icon": "user-check",
+      "file": "10_sd/lead/SD_FormLead"
+    },
+    "campana": {
+      "title": "Nueva Campaña — SD",
+      "module": "SD",
+      "icon": "megaphone",
+      "file": "10_sd/campana/SD_FormCampana"
+    },
+    "llamada": {
+      "title": "Registrar Llamada — SD",
+      "module": "SD",
+      "icon": "phone-call",
+      "file": "10_sd/llamada/SD_FormLlamada"
+    },
+    "cita": {
+      "title": "Agendar Cita — SD",
+      "module": "SD",
+      "icon": "calendar",
+      "file": "10_sd/cita/SD_FormCita"
+    },
+    "equipo": {
+      "title": "Registrar Equipo — EAM",
+      "module": "EAM",
+      "icon": "monitor",
+      "file": "09_eam/equipo/EAM_FormEquipo"
+    },
+    "chip": {
+      "title": "Registrar Chip — EAM",
+      "module": "EAM",
+      "icon": "cpu",
+      "file": "09_eam/chip/EAM_FormChip"
+    },
+    "asignacion": {
+      "title": "Asignación de Activos — EAM",
+      "module": "EAM",
+      "icon": "arrow-left-right",
+      "file": "09_eam/asignacion/EAM_FormAsignacion"
+    },
+    "nomina": {
+      "title": "Pago de Nómina — FICO",
+      "module": "FICO",
+      "icon": "banknote",
+      "file": "11_fico/pago_nomina/FICO_FormPago"
+    },
+    "configuracion": {
+      "title": "Configuración Global — ERP WorldClass",
+      "module": "Configuración",
+      "icon": "settings",
+      "file": "04_customizing/ui/CUST_BusinessConfig"
+    },
+    "admin_sistema": {
+      "title": "Parámetros del Sistema — ERP WorldClass",
+      "module": "Administración",
+      "icon": "sliders",
+      "file": "03_sysadmin/ui/SYS_AdminView"
+    }
+  },
+  "menu": [
+    {
+      "id": "inbox",
+      "label": "Mis Tareas",
+      "icon": "inbox",
+      "items": ["inbox"]
+    },
+    {
+      "id": "erec",
+      "label": "E-Recruiting",
+      "icon": "clipboard-list",
+      "items": ["vacante", "generar-link", "ver-links"]
+    },
+    {
+      "id": "hcm",
+      "label": "Personal (HCM)",
+      "icon": "users",
+      "items": ["empleado"]
+    },
+    {
+      "id": "eam",
+      "label": "Activos (EAM)",
+      "icon": "monitor",
+      "items": ["equipo", "chip", "asignacion"]
+    },
+    {
+      "id": "sd",
+      "label": "Ventas (SD)",
+      "icon": "phone-call",
+      "items": ["campana", "lead", "llamada", "cita"]
+    },
+    {
+      "id": "fico",
+      "label": "Finanzas (FICO)",
+      "icon": "banknote",
+      "items": ["nomina"]
+    },
+    {
+      "id": "reportes",
+      "label": "Reportes",
+      "icon": "table-2",
+      "items": ["report_viewer"]
+    },
+    {
+      "id": "analytics",
+      "label": "Inteligencia",
+      "icon": "pie-chart",
+      "items": ["analytics"]
+    },
+    {
+      "id": "admin",
+      "label": "Administración",
+      "icon": "settings",
+      "items": ["configuracion", "admin_sistema"]
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+/*
+ * PORTAL_Tokens.css
+ * ─────────────────────────────────────────────────────────────────────────
+ * Single Source of Truth para todos los design tokens del ERP.
+ * Importar en TODOS los archivos CSS/HTML que necesiten estos valores.
+ *
+ * Uso:
+ *   <?!= include('00_portal/config/PORTAL_Tokens'); ?>
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+
+:root {
+  /* ── Colores Semánticos ─────────────────────────────────────────────── */
+  --color-canvas: #f5f6f7;
+  --color-surface: #ffffff;
+  --color-ink: #1d2d3d;
+  --color-muted: #515f6e;
+  --color-border: #d9d9d9;
+  --color-border-subtle: #ebebeb;
+  --color-shell: #1d2b3a;
+  --color-overlay: rgba(10,110,209,0.05);
+
+  /* ── Primarios ──────────────────────────────────────────────────────── */
+  --color-primary: #0a6ed1;
+  --color-primary-hover: #0854a0;
+  --color-primary-light: #e8f1fb;
+
+  /* ── Estados ────────────────────────────────────────────────────────── */
+  --color-success: #107e3e;
+  --color-success-light: #eef7f2;
+  --color-warning: #e9730c;
+  --color-warning-light: #fff3e6;
+  --color-error: #bb0000;
+  --color-error-light: #fdf2f2;
+  --color-info: #0a6ed1;
+  --color-info-light: #f2f7fd;
+
+  /* ── Tipografía ─────────────────────────────────────────────────────── */
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-md: 15px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 22px;
+
+  /* ── Espaciado (4px base) ──────────────────────────────────────────── */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* ── Border Radius ──────────────────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-full: 9999px;
+
+  /* ── Shadows ────────────────────────────────────────────────────────── */
+  --shadow-sap: 0 4px 12px rgba(29,45,61,.04), 0 1px 2px rgba(29,45,61,.06);
+  --shadow-sap-md: 0 8px 24px rgba(29,45,61,.08), 0 2px 6px rgba(29,45,61,.06);
+  --shadow-focus: 0 0 0 3px rgba(10,110,209,.28);
+
+  /* ── Transiciones ───────────────────────────────────────────────────── */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+}
+
+/* ── Tema Oscuro ─────────────────────────────────────────────────────── */
+html.dark {
+  --color-canvas: #080c14;
+  --color-surface: #111827;
+  --color-ink: #f8fafc;
+  --color-muted: #94a3b8;
+  --color-border: #1e293b;
+  --color-border-subtle: rgba(30, 41, 59, 0.5);
+  --color-shell: #0d1527;
+  --color-overlay: rgba(59, 130, 246, 0.05);
+
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-light: rgba(59, 130, 246, 0.1);
+
+  --color-success: #10b981;
+  --color-success-light: rgba(16, 185, 129, 0.1);
+  --color-warning: #f59e0b;
+  --color-warning-light: rgba(245, 158, 11, 0.1);
+  --color-error: #ef4444;
+  --color-error-light: rgba(239, 68, 68, 0.1);
+  --color-info: #3b82f6;
+  --color-info-light: rgba(59, 130, 246, 0.1);
+
+  --shadow-sap: 0 4px 12px rgba(0,0,0,.2), 0 1px 2px rgba(0,0,0,.3);
+  --shadow-sap-md: 0 8px 24px rgba(0,0,0,.3), 0 2px 6px rgba(0,0,0,.2);
+  --shadow-focus: 0 0 0 3px rgba(59,130,246,.3);
+}
